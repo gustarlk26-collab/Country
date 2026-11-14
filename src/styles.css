@@ -202,3 +202,8 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
 @media(max-width:760px){.main::before{inset:0}.feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.form-team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.row-actions{width:100%}}
 @media(max-width:460px){.feature-grid,.form-team-grid{grid-template-columns:1fr}.feature-tile{min-height:145px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+/* Fundo de arena leve: CSS puro, sem imagem pesada para baixar. */
+body{background-color:#050b14;background-image:radial-gradient(ellipse at 50% -18%,rgba(30,111,176,.22),transparent 52%),radial-gradient(ellipse at 92% 36%,rgba(191,125,43,.10),transparent 34%),linear-gradient(180deg,#071321 0%,#050b14 72%);background-attachment:fixed}
+.main::before{background-image:linear-gradient(rgba(5,12,22,.82),rgba(5,12,22,.91)),repeating-linear-gradient(0deg,transparent 0 68px,rgba(118,169,211,.025) 69px 70px),radial-gradient(ellipse at 50% 0%,rgba(47,132,194,.12),transparent 65%);pointer-events:none}
+.panel,.feature-tile,.metric-card{content-visibility:auto;contain-intrinsic-size:auto 280px}
