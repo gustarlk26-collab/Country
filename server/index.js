@@ -845,7 +845,7 @@ app.get('/api/records', async (_req, res) => {
 
 app.get('/api/news', async (_req, res) => {
   try {
-    const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news');
+    const body = await cached('espn:news', () => espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news'), 5 * 60 * 1000);
     const data = (body.articles || []).slice(0,30).map(item => ({
       id: item.id || item.dataSourceIdentifier || item.headline,
       title: item.headline || item.title || 'Notícia NBA',
@@ -859,7 +859,7 @@ app.get('/api/news', async (_req, res) => {
 });
 app.get('/api/injuries', async (_req, res) => {
   try {
-    const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries');
+    const body = await cached('espn:injuries', () => espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries'), 2 * 60 * 1000);
     const teams = body.injuries || body.teams || [];
     const data = teams.flatMap(group => (group.injuries || group.items || []).map(item => ({
       name: item.athlete?.displayName || item.athlete?.fullName || item.name || 'Jogador',
