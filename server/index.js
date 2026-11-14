@@ -284,7 +284,7 @@ app.get('/api/games', async (req, res) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) return res.status(400).json({ error: 'Período de datas inválido.' });
     const span = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
     if (span > 90) return res.status(400).json({ error: 'Consulte no máximo 90 dias por vez.' });
-    const data = await cached(`games:${start}:${end}`, async () => {
+    let data = await cached(`games:${start}:${end}`, async () => {
       const days = Array.from({ length: span }, (_, i) => new Date(new Date(start + 'T12:00:00Z').getTime() + i * 86400000).toISOString().slice(0,10));
       const all = [];
       for (let i = 0; i < days.length; i += 4) {
@@ -306,7 +306,16 @@ app.get('/api/games', async (req, res) => {
       }
       return all.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
     }, 15 * 1000);
-    res.json({ data, updatedAt: new Date().toISOString() });
+    const today = new Date().toISOString().slice(0,10);
+    if (start <= today && end >= today) {
+      try {
+        const liveToday = await cached(`live-scoreboard:${today}`, () => nbaCdnGames(today, today), 15 * 1000);
+        const byId = new Map(data.map(g => [String(g.id), g]));
+        liveToday.forEach(g => byId.set(String(g.id), g));
+        data = [...byId.values()].sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+      } catch { /* O placar principal continua disponível se o feed ao vivo falhar. */ }
+    }
+    res.json({ data, updatedAt: new Date().toISOString(), liveUpdatedAt: new Date().toISOString() });
   } catch (e) {
     try {
       const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 15 * 1000);
