@@ -114,6 +114,7 @@ function DataTable({rows,render,t}){return rows?.length?<div className="table-wr
 function gameLocalDate(game){
  const value=game.datetime||game.date;
  if(!value)return '';
+ if(!game.datetime&&/^\\d{4}-\\d{2}-\\d{2}$/.test(String(game.date)))return String(game.date);
  const date=new Date(value);
  if(!Number.isFinite(date.getTime()))return String(game.date||'').slice(0,10);
  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);
@@ -123,9 +124,9 @@ function gameLocalDate(game){
 function formatGameDateTime(game){
  const value=game.datetime||game.date;
  if(!value)return 'Horário não informado';
- const date=new Date(value);
- if(!Number.isFinite(date.getTime()))return game.date||'Horário não informado';
  const hasTime=typeof value==='string'&&value.includes('T');
+ const date=new Date(hasTime?value:String(value)+'T12:00:00Z');
+ if(!Number.isFinite(date.getTime()))return game.date||'Horário não informado';
  const dateText=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'}).format(date);
  if(!hasTime)return dateText+' · horário não informado';
  const timeText=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hour12:false}).format(date);
