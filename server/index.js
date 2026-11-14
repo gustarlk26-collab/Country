@@ -65,6 +65,14 @@ function seasonFor(date = new Date()) {
   const year = date.getUTCFullYear();
   return date.getUTCMonth() >= 9 ? `${year}-${String(year + 1).slice(-2)}` : `${year - 1}-${String(year).slice(-2)}`;
 }
+function playerDashFilters() {
+  return {
+    College: '', Conference: '', Country: '', DateFrom: '', DateTo: '', Division: '',
+    DraftPick: '', DraftYear: '', GameScope: '', GameSegment: '', Height: '',
+    Location: '', OpponentTeamID: 0, Outcome: '', PORound: 0, SeasonSegment: '',
+    ShotClockRange: '', TeamID: 0, VsConference: '', VsDivision: '', Weight: ''
+  };
+}
 async function nba(endpoint, params = {}) {
   const url = new URL(`${NBA_STATS}/${endpoint}`);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, String(value));
@@ -188,7 +196,7 @@ app.get('/api/games/:id/stats', async (req, res) => {
 app.get('/api/rankings/recent', async (_req, res) => {
   try {
     const rows = (await cached(`last5:${seasonFor()}`, () => nba('leaguedashplayerstats', {
-      LeagueID: '00', Season: seasonFor(), SeasonType: 'Regular Season', PerMode: 'PerGame',
+      ...playerDashFilters(), LeagueID: '00', Season: seasonFor(), SeasonType: 'Regular Season', PerMode: 'PerGame',
       LastNGames: '5', MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 10 * 60 * 1000))[0] || [];
@@ -206,7 +214,7 @@ app.get('/api/mvp', async (_req, res) => {
   try {
     const season = seasonFor();
     const rows = (await cached(`season-leaders:${season}`, () => nba('leaguedashplayerstats', {
-      LeagueID: '00', Season: season, SeasonType: 'Regular Season', PerMode: 'PerGame',
+      ...playerDashFilters(), LeagueID: '00', Season: season, SeasonType: 'Regular Season', PerMode: 'PerGame',
       MeasureType: 'Base', LastNGames: '0', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 15 * 60 * 1000))[0] || [];
