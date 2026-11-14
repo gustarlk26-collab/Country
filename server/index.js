@@ -359,7 +359,7 @@ async function requireFamily(req, res, next) {
     next();
   } catch { res.status(401).json({ error: 'Não foi possível validar sua sessão.' }); }
 }
-app.get('/api/health', (_req, res) => res.json({ ok: true, dataSource: 'NBA Stats + NBA CDN + ESPN fallback', supabaseConfigured: Boolean(SUPABASE_URL && SUPABASE_KEY), familyAllowlistEnabled: FAMILY_EMAILS.length > 0 }));
+app.get('/api/health', (_req, res) => res.json({ ok: true, dataSource: 'ESPN + NBA Stats + NBA Live CDN', supabaseConfigured: Boolean(SUPABASE_URL && SUPABASE_KEY), familyAllowlistEnabled: FAMILY_EMAILS.length > 0 }));
 app.use('/api', requireFamily);
 
 app.get('/api/teams', (_req, res) => {
