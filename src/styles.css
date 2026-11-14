@@ -311,3 +311,47 @@ body{background-color:#050b14;background-image:radial-gradient(ellipse at 50% -1
 .layout.light .sidebar nav button.active,.layout.light .sidebar nav button:hover{background:#dcecff;color:#14518a}
 .layout.light .mobile-nav-categories button{background:#edf3fa;color:#52677f;border-color:#d4dfeb}
 .layout.light .mobile-nav-categories button.active{background:#1767a8;color:#fff;border-color:#4da7f1}
+
+/* Courtside: conteúdo legível sem rolagem horizontal */
+.evolution-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:12px;margin-top:14px}
+.evolution-card{min-width:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.evolution-player{display:flex;align-items:center;gap:10px;min-width:0;margin-bottom:13px}
+.evolution-player>div{display:grid;gap:3px;min-width:0;flex:1}
+.evolution-player>div b{overflow-wrap:anywhere}
+.evolution-player small{color:var(--muted);font-size:11px}
+.evolution-player .text-btn{flex-shrink:0}
+.evolution-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.evolution-stats>div{min-width:0;padding:8px 5px;border-radius:8px;background:var(--panel);display:grid;gap:4px;text-align:center}
+.evolution-stats small{font-size:9px;letter-spacing:.5px;color:var(--muted)}
+.evolution-stats b{font-size:14px;overflow-wrap:anywhere}
+.game-row{grid-template-columns:minmax(0,1fr) 120px 150px}
+.game-matchup,.game-score,.game-meta{min-width:0}
+.game-score b{font-size:19px;font-variant-numeric:tabular-nums}
+.game-score small{font-size:10px;letter-spacing:.4px}
+.status-live{color:#ff7777!important;font-weight:800}
+.status-final{color:var(--muted)}
+.status-scheduled{color:#63a9ed}
+.game-live{background:linear-gradient(90deg,rgba(220,65,65,.09),transparent 70%);border-left:3px solid #e35b62;padding-left:10px}
+@media(max-width:650px){
+ .table-wrap{overflow:visible}
+ .table-wrap table{width:100%;table-layout:fixed;white-space:normal;font-size:10px}
+ .table-wrap th,.table-wrap td{padding:7px 4px;overflow-wrap:anywhere;word-break:normal}
+ .table-wrap th{font-size:8px;letter-spacing:0}
+ .table-wrap .player-cell{min-width:0;gap:5px}
+ .table-wrap .player-headshot{width:30px;height:30px;flex-shrink:0}
+ .table-wrap button{font-size:10px;white-space:normal}
+ .game-row{grid-template-columns:minmax(0,1fr) 92px;gap:7px;padding:12px 3px}
+ .game-score b{font-size:17px}
+ .game-meta{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;text-align:left!important;gap:8px}
+ .game-meta small{font-size:10px}
+ .evolution-grid{grid-template-columns:1fr}
+ .evolution-card{padding:11px}
+ .evolution-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+ .evolution-stats>div{padding:7px 3px}
+ .evolution-stats b{font-size:13px}
+}
+@media(max-width:360px){
+ .evolution-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .evolution-player .player-headshot{width:34px;height:34px}
+ .table-wrap th,.table-wrap td{padding:6px 2px;font-size:9px}
+}
