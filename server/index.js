@@ -355,14 +355,14 @@ async function espnBoxscore(gameId) {
         }
         return null;
       };
-      const fg = madeAttempt(pick('FG','FIELD GOALS')), three = madeAttempt(pick('3PT','3P','THREE POINTERS'));
+      const fg = madeAttempt(pick('FG','FIELD GOALS','FGM-A','FGM/A')), three = madeAttempt(pick('3PT','3P','THREE POINTERS','3PM-A','3PM/A'));
       const athlete = entry.athlete || {};
       const fullName = athlete.displayName || athlete.fullName || athlete.shortName || '';
       const parts = fullName.split(' ');
       const min = formatMinutes(pick('MIN','MINUTES'));
       if (minutesAsNumber(min) <= 0) return null;
       const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
-      const ft = madeAttempt(pick('FT','FREE THROWS'));
+      const ft = madeAttempt(pick('FT','FREE THROWS','FTM-A','FTM/A'));
       const row = {
         id: Number(athlete.id), player: { id: Number(athlete.id), first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot?.href||athlete.headshot||null },
         team: { id: Number(group.team?.id), abbreviation: canonicalTeamAbbr(group.team?.abbreviation || ''), full_name: group.team?.displayName || group.team?.name || '' },
