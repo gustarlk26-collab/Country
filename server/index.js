@@ -462,6 +462,28 @@ app.get('/api/rankings/recent', async (_req, res) => {
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
 
+app.get('/api/averages', async (req, res) => {
+  try {
+    const requested = Number(req.query.last ?? 5);
+    const allowed = [5, 10, 15, 20, 0];
+    if (!allowed.includes(requested)) return res.status(400).json({ error: 'Período inválido. Use 5, 10, 15, 20 ou 0 para a temporada.' });
+    const season = seasonFor();
+    const rows = (await cached(`averages:${season}:${requested}`, () => nba('leaguedashplayerstats', {
+      ...playerDashFilters(), LeagueID: '00', Season: season, SeasonType: 'Regular Season', PerMode: 'PerGame',
+      LastNGames: String(requested), MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
+      Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
+    }), 3 * 60 * 1000))[0] || [];
+    const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
+      player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
+      team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION },
+      gamesPlayed: Number(r.GP), pts: Number(r.PTS || 0), reb: Number(r.REB || 0), ast: Number(r.AST || 0),
+      stl: Number(r.STL || 0), blk: Number(r.BLK || 0), turnover: Number(r.TOV || 0),
+      fg_pct: r.FG_PCT == null ? null : Number(r.FG_PCT), fg3_pct: r.FG3_PCT == null ? null : Number(r.FG3_PCT),
+      min: r.MIN == null ? null : Number(r.MIN)
+    })).sort((a,b) => b.pts - a.pts);
+    res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats', season, lastGames: requested, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa', totalPlayers: data.length });
+  } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
+});
 app.get('/api/mvp', async (_req, res) => {
   try {
     const season = seasonFor();
