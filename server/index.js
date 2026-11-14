@@ -402,7 +402,7 @@ async function espnPlayers() {
         last_name: p.lastName || parts.slice(-1)[0] || '',
         position: p.position?.abbreviation || p.position?.name || '',
         team: { abbreviation, full_name: fullTeam },
-        is_active: true, headshot: p.headshot?.href || null, espn_id:Number(p.id||String(p.uid).split(':').pop()),
+        is_active: true, headshot: p.headshot?.href || p.headshot || null, espn_id:Number(p.id||String(p.uid).split(':').pop()),
         height:p.displayHeight||p.height||null,weight:p.displayWeight||p.weight||null,
         birth_date:p.dateOfBirth||null,age:p.age??null,birth_place:p.birthPlace||null,
         college:p.college?.name||p.college||null,experience:p.experience?.displayValue||p.experience?.years||null,
