@@ -436,6 +436,24 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
+app.get('/api/games/:id/summary', async (req, res) => {
+  try {
+    const id = String(req.params.id);
+    if (!/^\d{5,12}$/.test(id)) return res.status(400).json({error:'ID de partida inválido.'});
+    const body = await cached('espn-summary:'+id, () => espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event='+encodeURIComponent(id)), 60*1000);
+    const competition = body.header?.competitions?.[0] || body.boxscore?.teams?.[0]?.team || {};
+    const competitors = (competition.competitors || body.header?.competitions?.[0]?.competitors || []).map(team => ({
+      name: team.team?.displayName || team.team?.name || team.team?.abbreviation || 'Time',
+      abbreviation: team.team?.abbreviation || team.abbreviation || '',
+      score: team.score ?? null,
+      linescores: (team.linescores || []).map(line => line.displayValue ?? line.value ?? null)
+    }));
+    const periods = competitors.reduce((max,team)=>Math.max(max,team.linescores.length),0);
+    if (!competitors.length || !periods) throw new Error('A ESPN não publicou parciais por período para este jogo.');
+    res.json({data:{competitors,periods:Array.from({length:periods},(_,i)=>i+1)},source:'ESPN game summary'});
+  } catch(e) { res.status(503).json({error:e.message || 'Parciais indisponíveis.'}); }
+});
+
 app.get('/api/games/:id/stats', async (req, res) => {
   try {
     const id = String(req.params.id);
@@ -523,6 +541,26 @@ app.get('/api/mvp', async (_req, res) => {
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
 
+
+app.get('/api/records', async (_req, res) => {
+  try {
+    const categories = [
+      ['PTS','Pontos'],['REB','Rebotes'],['AST','Assistências'],['STL','Roubos'],['BLK','Tocos']
+    ];
+    const data = await cached('nba-all-time-record-leaders', async () => Promise.all(categories.map(async ([category,label]) => {
+      const sets = await nba('leagueleaders', {
+        LeagueID:'00', PerMode:'Totals', Scope:'S', Season:'All Time',
+        SeasonType:'Regular Season', StatCategory:category
+      });
+      const rows = sets[0] || [];
+      return { category, label, leaders: rows.slice(0,10).map(row => ({
+        player_id: row.PLAYER_ID, player_name: row.PLAYER || row.PLAYER_NAME || 'Jogador',
+        value: Number(row[category] ?? row.VALUE ?? 0), team: row.TEAM
+      })) };
+    })), 12 * 60 * 60 * 1000);
+    res.json({ data, source:'NBA Stats all-time league leaders', updatedAt:new Date().toISOString() });
+  } catch (e) { res.status(e.status || 503).json({ error:'Recordes históricos temporariamente indisponíveis: '+e.message }); }
+});
 
 app.get('/api/news', async (_req, res) => {
   try {
