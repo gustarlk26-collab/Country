@@ -143,10 +143,19 @@ async function espnJson(url) {
   return response.json();
 }
 async function nbaCdnGames(start, end) {
-  const body = await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json', {
+  const schedulePromise = fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json', {
     headers: NBA_HEADERS, signal: AbortSignal.timeout(20000)
-  }).then(async r => { if (!r.ok) throw new Error(`NBA CDN indisponível (HTTP ${r.status}).`); return r.json(); });
-  const dates = body?.leagueSchedule?.gameDates || [];
+  }).then(async r => { if (!r.ok) throw new Error(`NBA CDN schedule HTTP ${r.status}`); return r.json(); });
+  const today = new Date().toISOString().slice(0,10);
+  const [schedule, live] = await Promise.all([
+    schedulePromise,
+    start <= today && end >= today
+      ? fetch('https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json', {
+          headers: NBA_HEADERS, signal: AbortSignal.timeout(15000)
+        }).then(async r => r.ok ? r.json() : null).catch(() => null)
+      : Promise.resolve(null)
+  ]);
+  const dates = schedule?.leagueSchedule?.gameDates || [];
   const games = dates.flatMap(d => d.games || []).filter(g => {
     const date = String(g.gameDateEst || g.gameDateTimeEst || g.gameDate || '').slice(0, 10);
     return date >= start && date <= end;
@@ -154,7 +163,7 @@ async function nbaCdnGames(start, end) {
     const home = g.homeTeam || {}, away = g.awayTeam || {};
     const statusCode = Number(g.gameStatus);
     const status = statusCode === 3 ? 'Final' : statusCode === 2 ? 'Em andamento' : 'Agendado';
-    const date = String(g.gameDateTimeEst || g.gameDateEst || g.gameDate || '').slice(0, 10);
+    const date = String(g.gameDateEst || g.gameDateTimeEst || g.gameDate || '').slice(0, 10);
     return {
       id: String(g.gameId), date, datetime: g.gameDateTimeUTC || g.gameDateTimeEst || date,
       status, status_state: statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled',
@@ -164,6 +173,23 @@ async function nbaCdnGames(start, end) {
       visitor_team_score: statusCode === 1 ? null : (g.awayTeamScore ?? null)
     };
   });
+  const liveGames = live?.scoreboard?.games || [];
+  for (const g of liveGames) {
+    const idx = games.findIndex(x => x.id === String(g.gameId));
+    const home = g.homeTeam || {}, away = g.awayTeam || {};
+    const statusCode = Number(g.gameStatus);
+    const mapped = {
+      id: String(g.gameId), date: String(g.gameTimeUTC || today).slice(0,10),
+      datetime: g.gameTimeUTC || today,
+      status: g.gameStatusText || (statusCode === 3 ? 'Final' : statusCode === 2 ? 'Em andamento' : 'Agendado'),
+      status_state: statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled',
+      home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: home.teamName || home.teamCity || '' },
+      visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: away.teamName || away.teamCity || '' },
+      home_team_score: home.score === '' || home.score == null ? null : Number(home.score),
+      visitor_team_score: away.score === '' || away.score == null ? null : Number(away.score)
+    };
+    if (idx >= 0) games[idx] = mapped; else games.push(mapped);
+  }
   return games.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
 }
 async function espnPlayers() {
@@ -252,9 +278,9 @@ app.get('/api/players', async (req, res) => {
 });
 
 app.get('/api/games', async (req, res) => {
+  const start = String(req.query.start || new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10));
+  const end = String(req.query.end || new Date(Date.now() + 30 * 86400000).toISOString().slice(0,10));
   try {
-    const start = String(req.query.start || new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10));
-    const end = String(req.query.end || new Date(Date.now() + 30 * 86400000).toISOString().slice(0,10));
     if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) return res.status(400).json({ error: 'Período de datas inválido.' });
     const span = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
     if (span > 90) return res.status(400).json({ error: 'Consulte no máximo 90 dias por vez.' });
@@ -279,11 +305,11 @@ app.get('/api/games', async (req, res) => {
         all.push(...batch.flat());
       }
       return all.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
-    }, 2 * 60 * 1000);
+    }, 15 * 1000);
     res.json({ data, updatedAt: new Date().toISOString() });
   } catch (e) {
     try {
-      const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 2 * 60 * 1000);
+      const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 15 * 1000);
       res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA CDN schedule', fallback: true });
     } catch (fallbackError) { res.status(503).json({ error: `Calendário indisponível. NBA Stats: ${e.message} NBA CDN: ${fallbackError.message}` }); }
   }
