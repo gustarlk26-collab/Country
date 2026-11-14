@@ -9,11 +9,11 @@ const I18N={pt:{overview:'Visão geral',games:'Jogos',players:'Jogadores',rankin
 const nav=[['overview',Activity],['games',CalendarDays],['players',Users],['rankings',BarChart3],['teams',Shield],['mvp',Trophy],['favorites',Heart],['settings',Settings]];
 const fmt=(v,d=1)=>v===null||v===undefined||v===''||!Number.isFinite(Number(v))?'':Number(v).toFixed(d);
 const pct=(v)=>v===null||v===undefined||v===''||!Number.isFinite(Number(v))?'':`${(Number(v)*100).toFixed(1)}%`;
-const dateNow=()=>new Date().toISOString().slice(0,10);
+const dateNow=(offset=0)=>{const d=new Date();d.setDate(d.getDate()+offset);const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;};
 export default function App(){
  const [session,setSession]=useState(null),[authReady,setAuthReady]=useState(false),[authMode,setAuthMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authMsg,setAuthMsg]=useState(''),[authBusy,setAuthBusy]=useState(false);
  const [page,setPage]=useState('overview'),[lang,setLang]=useState('pt'),[theme,setTheme]=useState('dark'),[busy,setBusy]=useState(false),[error,setError]=useState(''),[toast,setToast]=useState('');
- const [teams,setTeams]=useState([]),[players,setPlayers]=useState([]),[playerCursor,setPlayerCursor]=useState(null),[playerSearch,setPlayerSearch]=useState(''),[games,setGames]=useState([]),[from,setFrom]=useState(new Date(Date.now()-7*86400000).toISOString().slice(0,10)),[to,setTo]=useState(new Date(Date.now()+30*86400000).toISOString().slice(0,10)),[boxGame,setBoxGame]=useState(null),[boxStats,setBoxStats]=useState([]),[ranking,setRanking]=useState([]),[mvp,setMvp]=useState(null),[standings,setStandings]=useState([]),[favorites,setFavorites]=useState([]),[settingsLoaded,setSettingsLoaded]=useState(false),[lastSync,setLastSync]=useState(null);
+ const [teams,setTeams]=useState([]),[players,setPlayers]=useState([]),[playerCursor,setPlayerCursor]=useState(null),[playerSearch,setPlayerSearch]=useState(''),[games,setGames]=useState([]),[from,setFrom]=useState(dateNow(-7)),[to,setTo]=useState(dateNow(30)),[boxGame,setBoxGame]=useState(null),[boxStats,setBoxStats]=useState([]),[ranking,setRanking]=useState([]),[mvp,setMvp]=useState(null),[standings,setStandings]=useState([]),[favorites,setFavorites]=useState([]),[settingsLoaded,setSettingsLoaded]=useState(false),[lastSync,setLastSync]=useState(null);
  const t=I18N[lang]||I18N.pt;
  useEffect(()=>{
   if(!supabase){setAuthMsg('Supabase não está configurado. Confira as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no Render.');setAuthReady(true);return;}
