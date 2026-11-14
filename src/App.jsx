@@ -15,7 +15,28 @@ export default function App(){
  const [page,setPage]=useState('overview'),[lang,setLang]=useState('pt'),[theme,setTheme]=useState('dark'),[busy,setBusy]=useState(false),[error,setError]=useState(''),[toast,setToast]=useState('');
  const [teams,setTeams]=useState([]),[players,setPlayers]=useState([]),[playerCursor,setPlayerCursor]=useState(null),[playerSearch,setPlayerSearch]=useState(''),[games,setGames]=useState([]),[from,setFrom]=useState(new Date(Date.now()-7*86400000).toISOString().slice(0,10)),[to,setTo]=useState(new Date(Date.now()+30*86400000).toISOString().slice(0,10)),[boxGame,setBoxGame]=useState(null),[boxStats,setBoxStats]=useState([]),[ranking,setRanking]=useState([]),[mvp,setMvp]=useState(null),[standings,setStandings]=useState([]),[favorites,setFavorites]=useState([]),[settingsLoaded,setSettingsLoaded]=useState(false),[lastSync,setLastSync]=useState(null);
  const t=I18N[lang]||I18N.pt;
- useEffect(()=>{if(!supabase){setAuthReady(true);return;}supabase.auth.getSession().then(({data})=>{setSession(data.session);setAuthReady(true);});const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>subscription.unsubscribe();},[]);
+ useEffect(()=>{
+  if(!supabase){setAuthMsg('Supabase não está configurado. Confira as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no Render.');setAuthReady(true);return;}
+  let active=true;
+  const timeout=window.setTimeout(()=>{
+    if(active){setAuthMsg('A conexão com o Supabase está demorando. Verifique a conexão e tente entrar novamente.');setAuthReady(true);}
+  },8000);
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>{if(active)setSession(s);});
+  supabase.auth.getSession()
+    .then(({data,error})=>{
+      if(!active)return;
+      if(error)throw error;
+      setSession(data?.session||null);
+    })
+    .catch(error=>{
+      if(active)setAuthMsg(`Não foi possível recuperar sua sessão: ${error.message||'erro de conexão'}`);
+    })
+    .finally(()=>{
+      window.clearTimeout(timeout);
+      if(active)setAuthReady(true);
+    });
+  return()=>{active=false;window.clearTimeout(timeout);subscription.unsubscribe();};
+},[]);
  const api=useCallback(async(path,opts={})=>{if(!session?.access_token)throw new Error('Faça login novamente.');const r=await fetch(path,{...opts,headers:{...(opts.headers||{}),Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'}});const body=await r.json().catch(()=>({}));if(!r.ok)throw new Error(body.error||`Erro ${r.status}`);return body;},[session]);
  const flash=(s)=>{setToast(s);setTimeout(()=>setToast(''),2600)};
  const loadSettings=useCallback(async()=>{if(!supabase||!session?.user)return;const {data,error:e}=await supabase.from('user_settings').select('*').eq('user_id',session.user.id).maybeSingle();if(!e&&data){setLang(data.language||'pt');setTheme(data.theme||'dark');}setSettingsLoaded(true);},[session]);
