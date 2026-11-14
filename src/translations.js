@@ -252,7 +252,7 @@ export function translateText(input, language = "pt") {
   const values = PHRASES[canonical];
   if (!values) return raw;
   const translated = language === "en" ? values[0] : language === "es" ? values[1] : canonical;
-  const start = raw.match(/^\\s*/)?.[0] || "";
-  const end = raw.match(/\\s*$/)?.[0] || "";
+  const start = raw.match(/^\s*/)?.[0] || "";
+  const end = raw.match(/\s*$/)?.[0] || "";
   return start + translated + end;
 }
