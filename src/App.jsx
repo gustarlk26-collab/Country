@@ -81,8 +81,14 @@ useEffect(()=>{
     try {
       if(page==='rankings'){const r=await api('/api/rankings/recent');setRanking(r.data||[]);}
       if(page==='highlights'||page==='averages'){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
-      if(page==='teams'){const r=await api('/api/standings');setStandings(r.data||[]);}
-      if(page==='mvp'){const r=await api('/api/mvp');setMvp(r);}
+      if(['teams','playoffs','power','teamhub','teamanalytics'].includes(page)){const r=await api('/api/standings');setStandings(r.data||[]);}
+      if(['mvp','mvpRace'].includes(page)){const r=await api('/api/mvp');setMvp(r);}
+      if(['records','historicstats'].includes(page)){const r=await api('/api/records');setRecordLeaders(r.data||[]);}
+      if(page==='injuries'){const r=await api('/api/injuries');setFeatureInjuries(r.data||[]);}
+      if(page==='news'){const r=await api('/api/news');setFeatureNews(r.data||[]);}
+      if(page==='advanced'){const r=await api('/api/advanced?last=0');setAdvanced(r.data||[]);}
+      if(page==='quarters'&&quarterGameId){const r=await api('/api/games/'+quarterGameId+'/summary');setQuarterSummary(r.data||null);}
+      if(['history','evolution','fantasy','awards','playercards','teamanalytics'].includes(page)){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
     } catch(e) { /* Mantém a última resposta válida. */ }
   },60000);
   return()=>window.clearInterval(timer);
