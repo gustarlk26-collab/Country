@@ -136,6 +136,72 @@ async function getGameBoxscore(gameId) {
     }
   }
 }
+
+async function espnJson(url) {
+  const response = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': NBA_HEADERS['User-Agent'] }, signal: AbortSignal.timeout(15000) });
+  if (!response.ok) throw new Error(`ESPN indisponível (HTTP ${response.status}).`);
+  return response.json();
+}
+async function nbaCdnGames(start, end) {
+  const body = await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json', {
+    headers: NBA_HEADERS, signal: AbortSignal.timeout(20000)
+  }).then(async r => { if (!r.ok) throw new Error(`NBA CDN indisponível (HTTP ${r.status}).`); return r.json(); });
+  const dates = body?.leagueSchedule?.gameDates || [];
+  const games = dates.flatMap(d => d.games || []).filter(g => {
+    const date = String(g.gameDateEst || g.gameDateTimeEst || g.gameDate || '').slice(0, 10);
+    return date >= start && date <= end;
+  }).map(g => {
+    const home = g.homeTeam || {}, away = g.awayTeam || {};
+    const statusCode = Number(g.gameStatus);
+    const status = statusCode === 3 ? 'Final' : statusCode === 2 ? 'Em andamento' : 'Agendado';
+    const date = String(g.gameDateTimeEst || g.gameDateEst || g.gameDate || '').slice(0, 10);
+    return {
+      id: String(g.gameId), date, datetime: g.gameDateTimeUTC || g.gameDateTimeEst || date,
+      status, status_state: statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled',
+      home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: [home.teamCity, home.teamName].filter(Boolean).join(' ') },
+      visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: [away.teamCity, away.teamName].filter(Boolean).join(' ') },
+      home_team_score: statusCode === 1 ? null : (g.homeTeamScore ?? null),
+      visitor_team_score: statusCode === 1 ? null : (g.awayTeamScore ?? null)
+    };
+  });
+  return games.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+}
+async function espnPlayers() {
+  const abbreviations = Object.values(TEAM_META).map(meta => meta[0]);
+  const rosters = await Promise.all(abbreviations.map(async abbreviation => {
+    const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${abbreviation.toLowerCase()}/roster`);
+    const groups = body.athletes || [];
+    const athletes = groups.flatMap(group => Array.isArray(group.items) ? group.items : [group]);
+    return athletes.filter(p => p && (p.id || p.uid)).map(p => ({
+      id: Number(p.id || String(p.uid).split(':').pop()),
+      first_name: p.firstName || String(p.fullName || p.displayName || '').split(' ').slice(0,-1).join(' '),
+      last_name: p.lastName || String(p.fullName || p.displayName || '').split(' ').slice(-1)[0],
+      position: p.position?.abbreviation || p.position?.name || '',
+      team: { abbreviation, full_name: TEAM_META[Object.keys(TEAM_META).find(id => TEAM_META[id][0] === abbreviation)]?.[1] || abbreviation },
+      is_active: true, headshot: p.headshot?.href || null
+    }));
+  }));
+  const unique = new Map();
+  rosters.flat().forEach(p => { if (p.id) unique.set(p.id, p); });
+  return [...unique.values()].sort((a,b) => a.last_name.localeCompare(b.last_name));
+}
+async function espnStandings() {
+  const body = await espnJson('https://site.api.espn.com/apis/v2/sports/basketball/nba/standings');
+  const groups = body.children || body.standings?.children || [];
+  const entries = groups.flatMap(group => (group.standings?.entries || []).map(entry => {
+    const team = entry.team || {};
+    const stats = Object.fromEntries((entry.stats || []).map(x => [x.name, x.value]));
+    const meta = Object.values(TEAM_META).find(x => x[0] === team.abbreviation);
+    return {
+      team: { id: Number(team.id), full_name: team.displayName || team.name || '', name: team.displayName || team.name || '',
+        abbreviation: team.abbreviation || '', conference: group.name || group.abbreviation || meta?.[2] || '' },
+      wins: stats.wins ?? null, losses: stats.losses ?? null,
+      win_pct: stats.winPercent ?? stats.win_pct ?? null
+    };
+  }));
+  return entries.sort((a,b) => (b.win_pct ?? 0) - (a.win_pct ?? 0));
+}
+
 async function requireFamily(req, res, next) {
   try {
     if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(503).json({ error: 'Configure SUPABASE_URL e SUPABASE_ANON_KEY no Render.' });
@@ -176,7 +242,13 @@ app.get('/api/players', async (req, res) => {
       team: { abbreviation: p.TEAM_ABBREVIATION || '—' }, is_active: p.ROSTERSTATUS === 1
     }));
     res.json({ data, meta: { next_cursor: (page * 100 < filtered.length) ? String(page + 1) : null, total_count: filtered.length } });
-  } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
+  } catch (e) {
+    try {
+      const all = await cached('espn:active-players', espnPlayers, 30 * 60 * 1000);
+      const filtered = all.filter(p => !search || `${p.first_name} ${p.last_name}`.toLowerCase().includes(search));
+      res.json({ data: filtered.slice((page - 1) * 100, page * 100), meta: { next_cursor: page * 100 < filtered.length ? String(page + 1) : null, total_count: filtered.length }, source: 'ESPN rosters' });
+    } catch (fallbackError) { res.status(503).json({ error: `Elenco indisponível. NBA Stats: ${e.message} ESPN: ${fallbackError.message}` }); }
+  }
 });
 
 app.get('/api/games', async (req, res) => {
@@ -209,7 +281,12 @@ app.get('/api/games', async (req, res) => {
       return all.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
     }, 2 * 60 * 1000);
     res.json({ data, updatedAt: new Date().toISOString() });
-  } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
+  } catch (e) {
+    try {
+      const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 2 * 60 * 1000);
+      res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA CDN schedule', fallback: true });
+    } catch (fallbackError) { res.status(503).json({ error: `Calendário indisponível. NBA Stats: ${e.message} NBA CDN: ${fallbackError.message}` }); }
+  }
 });
 
 app.get('/api/games/:id/stats', async (req, res) => {
@@ -265,7 +342,10 @@ app.get('/api/standings', async (_req, res) => {
       wins: r.WINS, losses: r.LOSSES, win_pct: r.WIN_PCT
     }));
     res.json({ data });
-  } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
+  } catch (e) {
+    try { const data = await cached('espn:standings', espnStandings, 5 * 60 * 1000); res.json({ data, source: 'ESPN standings', fallback: true }); }
+    catch (fallbackError) { res.status(503).json({ error: `Classificação indisponível. NBA Stats: ${e.message} ESPN: ${fallbackError.message}` }); }
+  }
 });
 
 const limiter = new Map();
