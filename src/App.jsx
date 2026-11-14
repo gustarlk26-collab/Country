@@ -104,4 +104,15 @@ useEffect(()=>{
  <footer>{t.source} · {t.updated}: {lastSync?lastSync.toLocaleTimeString(lang==='pt'?'pt-BR':lang==='es'?'es-ES':'en-US'):'—'} · <a href="https://www.nba.com/stats/" target="_blank" rel="noreferrer">API docs <ExternalLink size={12}/></a></footer></div></main></div>;
 }
 function DataTable({rows,render,t}){return rows?.length?<div className="table-wrap"><table><thead><tr><th>#</th><th>{t.player}</th><th>{t.team}</th><th>{t.pts}</th><th>{t.reb}</th><th>{t.ast}</th><th>{t.stl}</th><th>{t.blk}</th><th>FG%</th><th>3P%</th><th>★</th></tr></thead><tbody>{rows.map((p,i)=>render(p,i))}</tbody></table></div>:<p className="muted">{t.noData}</p>}
-function GameList({games,onOpen,t}){return games?.length?<div className="games-list">{games.map(g=><div className="game-row" key={g.id}><div><b>{g.visitor_team?.abbreviation||'—'} @ {g.home_team?.abbreviation||'—'}</b><small>{g.visitor_team?.full_name} vs {g.home_team?.full_name}</small></div><div><b>{g.visitor_team_score??'—'} : {g.home_team_score??'—'}</b><small>{g.status||g.status_state}</small></div><div><small>{g.date}</small><button className="text-btn" onClick={()=>onOpen(g)}>{t.details} →</button></div></div>)}</div>:<p className="muted">{t.noData}</p>}
+function formatGameDateTime(game){
+ const value=game.datetime||game.date;
+ if(!value)return 'Horário não informado';
+ const date=new Date(value);
+ if(!Number.isFinite(date.getTime()))return game.date||'Horário não informado';
+ const hasTime=typeof value==='string'&&value.includes('T');
+ const dateText=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'}).format(date);
+ if(!hasTime)return dateText+' · horário não informado';
+ const timeText=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hour12:false}).format(date);
+ return dateText+' · '+timeText+' (Brasília)';
+}
+function GameList({games,onOpen,t}){return games?.length?<div className="games-list">{games.map(g=><div className="game-row" key={g.id}><div><b>{g.visitor_team?.abbreviation||'—'} @ {g.home_team?.abbreviation||'—'}</b><small>{g.visitor_team?.full_name} vs {g.home_team?.full_name}</small></div><div><b>{g.visitor_team_score??'—'} : {g.home_team_score??'—'}</b><small>{g.status||g.status_state}</small></div><div><small>{formatGameDateTime(g)}</small><button className="text-btn" onClick={()=>onOpen(g)}>{t.details} →</button></div></div>)}</div>:<p className="muted">{t.noData}</p>}
