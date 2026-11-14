@@ -108,15 +108,20 @@ export default function App(){
     try {
       const gamesResult=await api('/api/games/live',{cache:false});
       const updates=gamesResult.data||[];
+      const sameGame=(left,right)=>String(left?.id)===String(right?.id)||(left?.date===right?.date&&left?.home_team?.abbreviation===right?.home_team?.abbreviation&&left?.visitor_team?.abbreviation===right?.visitor_team?.abbreviation);
       if(updates.length)setGames(current=>{
         const byId=new Map(current.map(game=>[String(game.id),game]));
-        updates.forEach(game=>byId.set(String(game.id),{...(byId.get(String(game.id))||{}),...game}));
+        updates.forEach(game=>{
+          const match=[...byId.entries()].find(([,existing])=>sameGame(existing,game));
+          if(match){byId.delete(match[0]);byId.set(String(game.id),{...match[1],...game});}
+          else byId.set(String(game.id),game);
+        });
         return [...byId.values()].sort((x,y)=>new Date(x.datetime||x.date)-new Date(y.datetime||y.date));
       });
       setLastSync(new Date());
       const selectedGame=boxGameRef.current;
-      const updated=updates.find(game=>String(game.id)===String(selectedGame?.id));
-      if(updated)setBoxGame(current=>current&&String(current.id)===String(updated.id)?({...current,...updated}):current);
+      const updated=updates.find(game=>sameGame(game,selectedGame));
+      if(updated)setBoxGame(current=>current&&sameGame(current,updated)?({...current,...updated}):current);
       const activeGame=updated||selectedGame;
       if(page==='boxscore'&&activeGame?.id&&(activeGame.status_state==='in_progress'||activeGame.status_state==='final')){
         const score=await api('/api/games/'+encodeURIComponent(activeGame.id)+'/stats',{cache:false});
