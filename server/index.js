@@ -484,6 +484,28 @@ app.get('/api/averages', async (req, res) => {
     res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats', season, lastGames: requested, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa', totalPlayers: data.length });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
+app.get('/api/advanced', async (req, res) => {
+  try {
+    const requested = Number(req.query.last ?? 0);
+    if (![5, 10, 15, 20, 0].includes(requested)) return res.status(400).json({ error: 'Período inválido.' });
+    const season = seasonFor();
+    const rows = (await cached(`advanced:${season}:${requested}`, () => nba('leaguedashplayerstats', {
+      ...playerDashFilters(), LeagueID: '00', Season: season, SeasonType: 'Regular Season', PerMode: 'PerGame',
+      LastNGames: String(requested), MeasureType: 'Advanced', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
+      Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
+    }), 3 * 60 * 1000))[0] || [];
+    const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
+      player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
+      team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION }, gamesPlayed: Number(r.GP),
+      pie: r.PIE == null ? null : Number(r.PIE), ts_pct: r.TS_PCT == null ? null : Number(r.TS_PCT),
+      usg_pct: r.USG_PCT == null ? null : Number(r.USG_PCT), off_rating: r.OFF_RATING == null ? null : Number(r.OFF_RATING),
+      def_rating: r.DEF_RATING == null ? null : Number(r.DEF_RATING), net_rating: r.NET_RATING == null ? null : Number(r.NET_RATING),
+      ast_pct: r.AST_PCT == null ? null : Number(r.AST_PCT), tov_pct: r.TOV_PCT == null ? null : Number(r.TOV_PCT)
+    })).sort((a,b) => Number(b.pie || 0) - Number(a.pie || 0));
+    res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats Advanced', season, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa' });
+  } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
+});
+
 app.get('/api/mvp', async (_req, res) => {
   try {
     const season = seasonFor();
