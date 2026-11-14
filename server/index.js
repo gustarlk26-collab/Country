@@ -697,8 +697,22 @@ async function nbaLivePlayByPlay(gameId) {
 app.get('/api/players/:id/shots', async (req, res) => {
   try {
     const playerId = String(req.params.id);
-    const team = canonicalTeamAbbr(req.query.team || '');
+    let team = canonicalTeamAbbr(req.query.team || '');
+    const playerName = String(req.query.name || '').trim();
     if (!/^\d{1,12}$/.test(playerId)) return res.status(400).json({ error: 'ID de jogador inválido. Selecione um atleta da lista oficial.' });
+    // A lista de médias pode vir sem franquia em cache antigo. Reconciliamos pelo nome
+    // com os elencos atuais da ESPN, sem depender do NBA Stats nem confundir IDs ESPN/NBA.
+    if (!team && playerName) {
+      try {
+        const normalizePlayerName = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const targetName = normalizePlayerName(playerName);
+        const roster = await cached('espn:active-players', espnPlayers, 30 * 60 * 1000);
+        const match = roster.find(player => normalizePlayerName([player.first_name, player.last_name].filter(Boolean).join(' ')) === targetName);
+        team = canonicalTeamAbbr(match?.team?.abbreviation || '');
+      } catch {
+        // O feed alternativo ainda pode usar a franquia enviada pelo frontend.
+      }
+    }
     const season = seasonFor();
     try {
       const rows = (await cached('shot-chart:'+season+':'+playerId, () => nba('shotchartdetail', {
@@ -719,7 +733,7 @@ app.get('/api/players/:id/shots', async (req, res) => {
       // Fallback abaixo usa jogadas oficiais da NBA Live CDN, sem depender do NBA Stats.
     }
 
-    if (!team) return res.status(503).json({error:'NBA Stats está indisponível e não foi possível identificar o time atual do atleta para consultar o feed alternativo.'});
+    if (!team) return res.status(503).json({error: playerName ? 'Não foi possível localizar este atleta nos elencos atuais da ESPN para identificar a franquia e consultar o feed alternativo.' : 'Informe o nome do atleta ou a franquia para consultar o feed alternativo.'});
     const today = saoPauloDate(new Date().toISOString());
     const seasonStart = season.slice(0,4) + '-07-01';
     const games = await cached('shot-cdn-games:'+season+':'+team, () => nbaCdnGames(seasonStart, today), 5 * 60 * 1000);
