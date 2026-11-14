@@ -618,11 +618,12 @@ app.get('/api/averages', async (req, res) => {
       LastNGames: String(requested), MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 3 * 60 * 1000))[0] || [];
+    const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
     const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION },
-      gamesPlayed: Number(r.GP), pts: Number(r.PTS || 0), reb: Number(r.REB || 0), ast: Number(r.AST || 0),
-      stl: Number(r.STL || 0), blk: Number(r.BLK || 0), turnover: Number(r.TOV || 0),
+      gamesPlayed: numberOrNull(r.GP), pts: numberOrNull(r.PTS), reb: numberOrNull(r.REB), ast: numberOrNull(r.AST),
+      stl: numberOrNull(r.STL), blk: numberOrNull(r.BLK), turnover: numberOrNull(r.TOV),
       fgm: r.FGM == null ? null : Number(r.FGM), fga: r.FGA == null ? null : Number(r.FGA),
       fg3m: r.FG3M == null ? null : Number(r.FG3M), fg3a: r.FG3A == null ? null : Number(r.FG3A),
       ftm: r.FTM == null ? null : Number(r.FTM), fta: r.FTA == null ? null : Number(r.FTA),
