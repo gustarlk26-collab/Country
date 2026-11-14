@@ -1,5 +1,8 @@
 import React,{useCallback,useEffect,useMemo,useState} from 'react';
 import {translateText} from './translations';
+const textTranslationCache = new Map();
+const originalTextNodes = new WeakMap();
+const translatedTextNodes = new WeakMap();
 import {createClient} from '@supabase/supabase-js';
 import {Activity,CalendarDays,Users,Trophy,Shield,Star,Settings,LogOut,RefreshCw,Search,ChevronDown,ChevronLeft,ChevronRight,Globe,Lock,Mail,KeyRound,BarChart3,Heart,AlertCircle,CheckCircle2,Clock3,Menu,X,ExternalLink,LoaderCircle,Crosshair,Radio,GitBranch,Medal,History,ShieldAlert,PieChart,TrendingUp,Swords,Award,Newspaper,CalendarClock,Database,Zap,Sparkles} from 'lucide-react';
 
@@ -38,11 +41,36 @@ export default function App(){
  },[lang,featureNews]);
  useEffect(()=>{
   if(typeof document==='undefined'||!document.body)return;
-  const translateNode=node=>{
-   if(node?.nodeType===Node.TEXT_NODE){
-    const next=translateText(node.nodeValue,lang);
-    if(next!==node.nodeValue)node.nodeValue=next;
+  let active=true,requests=0;
+  const excluded='.player-cell,.leader-row,.leader-name,.team-feature-card,.collectible-info,.team-leader,.team-hero,.userline,.brand,.news-card,tbody';
+  const remoteTranslate=async(node,original)=>{
+   const trimmed=String(original||'').trim();
+   if(!trimmed||trimmed.length<6||trimmed.length>450||/^[A-Z0-9%+./: ·–—-]+$/.test(trimmed)||/^[\d\s.,:%+–—-]+$/.test(trimmed)||node.parentElement?.closest(excluded)||requests>=60)return;
+   const cacheKey=lang+'|'+trimmed;
+   if(textTranslationCache.has(cacheKey)){
+    const cached=textTranslationCache.get(cacheKey);
+    const lead=String(original).match(/^\s*/)?.[0]||'',tail=String(original).match(/\s*$/)?.[0]||'';
+    const output=lead+cached+tail;translatedTextNodes.set(node,output);if(active&&node.isConnected&&node.nodeValue!==output)node.nodeValue=output;return;
    }
+   requests++;
+   try{
+    const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+lang+'&dt=t&q='+encodeURIComponent(trimmed);
+    const response=await fetch(url);if(!response.ok)throw new Error('Translation unavailable');
+    const data=await response.json();const result=Array.isArray(data?.[0])?data[0].map(part=>part?.[0]||'').join(''):trimmed;
+    textTranslationCache.set(cacheKey,result);
+    if(!active||!node.isConnected)return;
+    const lead=String(original).match(/^\s*/)?.[0]||'',tail=String(original).match(/\s*$/)?.[0]||'';
+    const output=lead+result+tail;translatedTextNodes.set(node,output);if(node.nodeValue!==output)node.nodeValue=output;
+   }catch{}
+  };
+  const translateNode=node=>{
+   if(node?.nodeType!==Node.TEXT_NODE)return;
+   if(translatedTextNodes.get(node)!==node.nodeValue)originalTextNodes.set(node,node.nodeValue);
+   const original=originalTextNodes.get(node)||node.nodeValue;
+   const next=translateText(original,lang);
+   if(next!==original){translatedTextNodes.set(node,next);if(node.nodeValue!==next)node.nodeValue=next;}
+   else if(lang!=='pt')void remoteTranslate(node,original);
+   else {translatedTextNodes.set(node,original);if(node.nodeValue!==original)node.nodeValue=original;}
   };
   const scan=root=>{
    if(!root)return;
@@ -69,9 +97,8 @@ export default function App(){
    }
   });
   observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
-  return()=>observer.disconnect();
+  return()=>{active=false;observer.disconnect();};
  },[lang]);
-
  const featureKeys=['shotmap','livecenter','playoffs','records','history','fantasy','injuries','quarters','power','evolution','headtohead','awards','news','customcalendar','historicstats','gamegrade','teamhub','playercards','alerts','teamanalytics'];
  const featureNames={shotmap:'Mapa de arremessos',livecenter:'Central de jogos ao vivo',playoffs:'Playoffs e chaveamento',records:'Recordes da NBA',history:'Comparação histórica',fantasy:'Fantasy NBA',injuries:'Lesões e desfalques',quarters:'Estatísticas por quarto',power:'Power Rankings',evolution:'Evolução na temporada',headtohead:'Histórico de confrontos',awards:'Central de prêmios',news:'Notícias NBA',customcalendar:'Calendário personalizado',historicstats:'Estatísticas históricas',gamegrade:'Notas por partida',teamhub:'Central dos times',playercards:'Cards de jogadores',alerts:'Alertas ao vivo',teamanalytics:'Análise dos times'};
  const featureDescriptions={shotmap:'Explore os arremessos oficiais por atleta na plataforma de estatísticas da NBA.',livecenter:'Acompanhe placares, jogos em andamento e box scores atualizados automaticamente.',playoffs:'Consulte classificação, calendário de pós-temporada e chave oficial da NBA.',records:'Líderes e recordes publicados pela NBA, com links para as tabelas oficiais.',history:'Compare temporadas, jogadores e resultados usando bases oficiais.',fantasy:'Monte seu elenco com atletas reais e pontuação calculada a partir das médias carregadas.',injuries:'Relatórios de lesões publicados pela ESPN. A disponibilidade varia por equipe e atualização.',quarters:'Veja placares por período quando a fonte oficial disponibilizar os parciais.',power:'Ranking de força baseado na classificação oficial e desempenho da temporada.',evolution:'Compare médias dos últimos 5, 10, 20 jogos e temporada completa.',headtohead:'Confrontos da temporada atual entre duas franquias, conforme os jogos retornados pela fonte.',awards:'Acompanhe candidatos estatísticos às principais premiações, sem confundir com votação oficial.',news:'Manchetes recentes da cobertura NBA pela ESPN.',customcalendar:'Filtre jogos por intervalo e acompanhe partidas passadas e futuras.',historicstats:'Acesse rankings históricos e bases oficiais de estatísticas da NBA.',gamegrade:'Notas calculadas a partir do box score real; índice próprio, não oficial da NBA.',teamhub:'Explore as 30 franquias com escudos, campanha e conferência.',playercards:'Cards com fotos oficiais e médias reais dos atletas.',alerts:'Acompanhe partidas em andamento e marcos estatísticos publicados no box score.',teamanalytics:'Compare campanhas e líderes disponíveis de cada franquia.'};
