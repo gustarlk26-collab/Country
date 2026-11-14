@@ -159,3 +159,5 @@ input:focus,select:focus{box-shadow:0 0 0 3px rgba(39,137,239,.12)}
 .bet-match-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
 .bet-match-grid .metric-guide{margin:0}
 @media(max-width:760px){.bet-match-grid{grid-template-columns:1fr}}
+
+.bet-player-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}.bet-player-grid .metric-guide{margin:0}@media(max-width:560px){.bet-player-grid{grid-template-columns:1fr}}
