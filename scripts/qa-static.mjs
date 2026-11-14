@@ -16,7 +16,7 @@ assert.ok(features.length >= 30, 'A lista de funcionalidades parece incompleta.'
 assert.equal(new Set(features).size, features.length, 'Há funcionalidades duplicadas.');
 
 const navSource = app.slice(0, app.indexOf('const featureKeys='));
-const navKeys = [...navSource.matchAll(/\['([A-Za-z][A-Za-z0-9]*)',[A-Za-z]+\]/g)].map(match => match[1]);
+const navKeys = [...navSource.matchAll(/\['([A-Za-z][A-Za-z0-9]*)',[A-Za-z][A-Za-z0-9]*\]/g)].map(match => match[1]);
 assert.ok(navKeys.length >= 45, 'A navegação parece incompleta.');
 assert.equal(new Set(navKeys).size, navKeys.length, 'Há itens duplicados na navegação.');
 for (const key of features) assert.ok(navKeys.includes(key), 'Funcionalidade fora da navegação: ' + key);
