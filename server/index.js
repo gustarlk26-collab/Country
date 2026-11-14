@@ -508,6 +508,25 @@ app.get('/api/averages', async (req, res) => {
     res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats', season, lastGames: requested, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa', totalPlayers: data.length });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
+app.get('/api/headtohead', async (req, res) => {
+  try {
+    const team = Object.entries(TEAM_META).find(([,meta])=>meta[0]===String(req.query.team||'').toUpperCase());
+    const opponent = Object.entries(TEAM_META).find(([,meta])=>meta[0]===String(req.query.opponent||'').toUpperCase());
+    if (!team || !opponent || team[0]===opponent[0]) return res.status(400).json({error:'Escolha duas franquias diferentes.'});
+    const season=seasonFor();
+    const rows=(await cached('headtohead:'+team[0]+':'+opponent[0]+':'+season,()=>nba('leaguegamefinder',{
+      PlayerOrTeam:'T',TeamID:team[0],VsTeamID:opponent[0],LeagueID:'00',
+      Season:season,SeasonType:'Regular Season',PerMode:'Totals',Outcome:''
+    }),5*60*1000))[0]||[];
+    const data=rows.map(r=>({
+      game_id:String(r.GAME_ID||''),date:r.GAME_DATE||'N/D',matchup:r.MATCHUP||'',
+      winner:r.WL==='W'?String(r.TEAM_ABBREVIATION||team[1][0]):r.WL==='L'?String(r.OPPONENT_ABBREVIATION||opponent[1][0]):null,
+      points:r.PTS==null?null:Number(r.PTS),plus_minus:r.PLUS_MINUS==null?null:Number(r.PLUS_MINUS)
+    })).filter(r=>r.game_id);
+    res.json({data,season,source:'NBA Stats leaguegamefinder',updatedAt:new Date().toISOString()});
+  } catch(e) { res.status(e.status||503).json({error:'Histórico de confrontos indisponível: '+e.message}); }
+});
+
 app.get('/api/players/:id/shots', async (req, res) => {
   try {
     const playerId = String(req.params.id);
