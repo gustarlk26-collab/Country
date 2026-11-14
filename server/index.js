@@ -243,6 +243,8 @@ async function nbaCdnGames(start, end) {
       datetime: g.gameTimeUTC || today,
       status: g.gameStatusText || (statusCode === 3 ? 'Final' : statusCode === 2 ? 'Em andamento' : 'Agendado'),
       status_state: statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled',
+      period: Number(g.period) || null, period_label: Number(g.period) ? (Number(g.period) <= 4 ? 'Q' + Number(g.period) : 'OT' + (Number(g.period) - 4)) : null,
+      display_clock: g.gameClock || null,
       home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: home.teamName || home.teamCity || '' },
       visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: away.teamName || away.teamCity || '' },
       home_team_score: home.score === '' || home.score == null ? null : Number(home.score),
@@ -296,9 +298,14 @@ async function espnGames(start, end) {
     const datetime = event.date || competition.date || '';
     const localDate = saoPauloDate(datetime);
     if (!localDate || localDate < start || localDate > end) return [];
-    const state = competition.status?.type?.state || event.status?.type?.state || 'pre';
-    const status = competition.status?.type?.shortDetail || competition.status?.type?.description || event.status?.type?.shortDetail || 'Agendado';
+    const statusInfo = competition.status || event.status || {};
+    const statusType = statusInfo.type || {};
+    const state = statusType.state || 'pre';
+    const status = statusType.shortDetail || statusType.description || 'Agendado';
+    const period = Number(statusInfo.period) || null;
     return [{ id: String(event.id), date: localDate, datetime, status, status_state: state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled',
+      period, period_label: period ? (period <= 4 ? 'Q' + period : 'OT' + (period - 4)) : null,
+      display_clock: statusInfo.displayClock || null,
       home_team: { id: Number(home.team?.id), abbreviation: canonicalTeamAbbr(home.team?.abbreviation || ''), full_name: home.team?.displayName || home.team?.name || '' },
       visitor_team: { id: Number(away.team?.id), abbreviation: canonicalTeamAbbr(away.team?.abbreviation || ''), full_name: away.team?.displayName || away.team?.name || '' },
       home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
@@ -560,6 +567,91 @@ app.get('/api/games', async (req, res) => {
     }
   } catch (e) {
     return res.status(400).json({ error: e.message || 'Não foi possível carregar os jogos.' });
+  }
+});
+
+async function espnLiveGames() {
+  const today = saoPauloDate(new Date().toISOString());
+  const queryDates = [shiftIsoDate(today, -1), today, shiftIsoDate(today, 1)];
+  const results = await Promise.allSettled(queryDates.map(day => cached(
+    'espn-live-day:' + day,
+    async () => {
+      const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=' + day.replaceAll('-', '') + '&limit=1000');
+      return body.events || [];
+    },
+    8000
+  )));
+  const events = new Map();
+  let succeeded = 0;
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      succeeded++;
+      for (const event of result.value) if (event?.id) events.set(String(event.id), event);
+    }
+  }
+  if (!succeeded) throw new Error('ESPN não respondeu ao placar diário.');
+  return [...events.values()].flatMap(event => {
+    const competition = event.competitions?.[0];
+    const competitors = competition?.competitors || [];
+    const home = competitors.find(team => team.homeAway === 'home');
+    const away = competitors.find(team => team.homeAway === 'away');
+    if (!home?.team?.abbreviation || !away?.team?.abbreviation) return [];
+    const datetime = event.date || competition.date || '';
+    const date = saoPauloDate(datetime);
+    if (date !== today) return [];
+    const statusInfo = competition.status || event.status || {};
+    const statusType = statusInfo.type || {};
+    const state = statusType.state || 'pre';
+    const period = Number(statusInfo.period) || null;
+    return [{
+      id: String(event.id), date, datetime,
+      status: statusType.shortDetail || statusType.description || 'Agendado',
+      status_state: state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled',
+      period, period_label: period ? (period <= 4 ? 'Q' + period : 'OT' + (period - 4)) : null,
+      display_clock: statusInfo.displayClock || null,
+      home_team: { id: Number(home.team.id), abbreviation: canonicalTeamAbbr(home.team.abbreviation), full_name: home.team.displayName || home.team.name || '' },
+      visitor_team: { id: Number(away.team.id), abbreviation: canonicalTeamAbbr(away.team.abbreviation), full_name: away.team.displayName || away.team.name || '' },
+      home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
+      visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score)
+    }];
+  }).sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+}
+
+app.get('/api/games/live', async (_req, res) => {
+  const today = saoPauloDate(new Date().toISOString());
+  try {
+    const data = await cached('espn-live-games:' + today, espnLiveGames, 8000);
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN daily scoreboard' });
+  } catch (espnError) {
+    try {
+      const response = await fetch('https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json', {
+        headers: NBA_HEADERS, signal: AbortSignal.timeout(12000)
+      });
+      if (!response.ok) throw new Error('NBA Live CDN HTTP ' + response.status);
+      const body = await response.json();
+      const data = (body?.scoreboard?.games || []).map(game => {
+        const home = game.homeTeam || {}, away = game.awayTeam || {};
+        const state = Number(game.gameStatus);
+        const period = Number(game.period) || null;
+        const datetime = game.gameTimeUTC || '';
+        return {
+          id: String(game.gameId), date: saoPauloDate(datetime) || today, datetime,
+          status: game.gameStatusText || (state === 3 ? 'Final' : state === 2 ? 'Em andamento' : 'Agendado'),
+          status_state: state === 3 ? 'final' : state === 2 ? 'in_progress' : 'scheduled',
+          period, period_label: period ? (period <= 4 ? 'Q' + period : 'OT' + (period - 4)) : null,
+          display_clock: game.gameClock || null,
+          home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: home.teamName || home.teamCity || '' },
+          visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: away.teamName || away.teamCity || '' },
+          home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
+          visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score)
+        };
+      });
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Live CDN scoreboard', fallback: true });
+    } catch (cdnError) {
+      return res.status(503).json({ error: 'Placar ao vivo indisponível. ESPN: ' + espnError.message + ' NBA CDN: ' + cdnError.message });
+    }
   }
 });
 
