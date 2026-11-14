@@ -22,7 +22,37 @@ export default function App(){
  const loadFavorites=useCallback(async()=>{if(!supabase||!session?.user)return;const {data,error:e}=await supabase.from('favorites').select('*').order('created_at',{ascending:false});if(e)throw e;setFavorites(data||[]);},[session]);
  const loadCore=useCallback(async()=>{setBusy(true);setError('');try{const [tm,gm]=await Promise.all([api('/api/teams'),api(`/api/games?start=${from}&end=${to}`)]);setTeams(tm.data||[]);setGames(gm.data||[]);}catch(e){setError(e.message);}finally{setBusy(false);}},[api,from,to]);
  useEffect(()=>{if(session){loadSettings();loadFavorites().catch(e=>setError(e.message));loadCore();}},[session,loadSettings,loadFavorites,loadCore]);
- useEffect(()=>{if(!session)return;const timer=window.setInterval(()=>{loadCore();},60000);return()=>window.clearInterval(timer);},[session,loadCore]);
+ useEffect(()=>{
+  if(!session)return;
+  let running=false;
+  const refreshLive=async()=>{
+    if(running)return; running=true;
+    try {
+      const gamesResult=await api(`/api/games?start=${from}&end=${to}`);
+      setGames(gamesResult.data||[]);
+      if(page==='boxscore'&&boxGame?.id&&boxGame.status_state==='in_progress'){
+        const score=await api(`/api/games/${boxGame.id}/stats`);
+        setBoxStats(score.data||[]);
+        const updated=(gamesResult.data||[]).find(g=>String(g.id)===String(boxGame.id));
+        if(updated)setBoxGame(updated);
+      }
+    } catch(e) { /* Mantém os últimos dados válidos durante falhas transitórias. */ }
+    finally { running=false; }
+  };
+  const timer=window.setInterval(refreshLive,20000);
+  return()=>window.clearInterval(timer);
+},[session,api,from,to,page,boxGame]);
+useEffect(()=>{
+  if(!session)return;
+  const timer=window.setInterval(async()=>{
+    try {
+      if(page==='rankings'){const r=await api('/api/rankings/recent');setRanking(r.data||[]);}
+      if(page==='teams'){const r=await api('/api/standings');setStandings(r.data||[]);}
+      if(page==='mvp'){const r=await api('/api/mvp');setMvp(r);}
+    } catch(e) { /* Mantém a última resposta válida. */ }
+  },120000);
+  return()=>window.clearInterval(timer);
+},[session,api,page]);
  const loadPlayers=async(reset=false)=>{setBusy(true);setError('');try{const qs=new URLSearchParams();qs.set('search',playerSearch);if(!reset&&playerCursor)qs.set('cursor',playerCursor);const result=await api(`/api/players?${qs}`);setPlayers(old=>reset?result.data||[]:[...old,...(result.data||[])]);setPlayerCursor(result.meta?.next_cursor||null);}catch(e){setError(e.message);}finally{setBusy(false);}};
  const loadRankings=async()=>{setBusy(true);setError('');try{const r=await api('/api/rankings/recent?days=45');setRanking(r.data||[]);}catch(e){setError(e.message);}finally{setBusy(false);}};
  const loadMvp=async()=>{setBusy(true);setError('');try{const r=await api('/api/mvp');setMvp(r);}catch(e){setError(e.message);setMvp(null);}finally{setBusy(false);}};
