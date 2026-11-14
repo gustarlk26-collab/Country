@@ -72,7 +72,7 @@ async function nbaLiveBoxscore(gameId) {
   const game = body?.game;
   if (!game) throw new Error('A NBA ainda não publicou o box score desta partida.');
   const teams = [game.homeTeam, game.awayTeam];
-  return teams.flatMap(team => (team.players || []).filter(p => p.status !== 'INACTIVE').map(p => ({
+  return teams.flatMap(team => (team.players || []).map(p => ({
     id: p.personId, player: { id: p.personId, first_name: p.name?.split(' ').slice(0,-1).join(' ') || p.name, last_name: p.name?.split(' ').slice(-1)[0] || '', position: p.position },
     team: { id: team.teamId, abbreviation: team.teamTricode, full_name: team.teamName },
     min: p.statistics?.minutes || '0', pts: p.statistics?.points ?? 0, reb: p.statistics?.reboundsTotal ?? 0,
@@ -115,7 +115,7 @@ app.get('/api/teams', async (_req, res) => {
 app.get('/api/players', async (req, res) => {
   try {
     const search = String(req.query.search || '').trim().toLowerCase();
-    const page = Math.max(1, Number(req.query.page) || 1);
+    const page = Math.max(1, Number(req.query.page || req.query.cursor) || 1);
     const rows = (await cached(`players:${seasonFor()}`, () => nba('commonallplayers', {
       LeagueID: '00', Season: seasonFor(), IsOnlyCurrentSeason: '0'
     }), 12 * 60 * 60 * 1000))[0] || [];
@@ -142,9 +142,8 @@ app.get('/api/games', async (req, res) => {
       for (let i = 0; i < days.length; i += 4) {
         const batch = await Promise.all(days.slice(i, i + 4).map(async day => {
           const sets = await nba('scoreboardv2', { LeagueID: '00', GameDate: day, DayOffset: 0 });
-          const headers = sets;
-          const games = headers.find(rows => rows[0]?.GAME_ID)?.map(r => r) || [];
-          const lines = (await nba('scoreboardv2', { LeagueID: '00', GameDate: day, DayOffset: 0 })).flat();
+          const games = sets.find(rows => rows[0]?.GAME_ID) || [];
+          const lines = sets.flat();
           return games.map(g => {
             const teams = lines.filter(x => x.TEAM_ID && String(x.GAME_ID) === String(g.GAME_ID));
             const home = teams.find(x => x.TEAM_ID === g.HOME_TEAM_ID), away = teams.find(x => x.TEAM_ID === g.VISITOR_TEAM_ID);
@@ -152,7 +151,7 @@ app.get('/api/games', async (req, res) => {
             const status = Number(g.GAME_STATUS_ID) === 3 ? 'Final' : Number(g.GAME_STATUS_ID) === 2 ? 'Em andamento' : 'Agendado';
             return { id: g.GAME_ID, date: g.GAME_DATE_EST || day, datetime: g.GAME_DATE_EST || day, status, status_state: status === 'Final' ? 'final' : status === 'Em andamento' ? 'in_progress' : 'scheduled',
               home_team: team(home, g.HOME_TEAM_ID), visitor_team: team(away, g.VISITOR_TEAM_ID),
-              home_team_score: home?.PTS ?? 0, visitor_team_score: away?.PTS ?? 0 };
+              home_team_score: Number(g.GAME_STATUS_ID) === 1 ? null : (home?.PTS ?? null), visitor_team_score: Number(g.GAME_STATUS_ID) === 1 ? null : (away?.PTS ?? null) };
           });
         }));
         all.push(...batch.flat());
