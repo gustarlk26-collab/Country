@@ -119,19 +119,11 @@ async function requireFamily(req, res, next) {
 app.get('/api/health', (_req, res) => res.json({ ok: true, dataSource: 'NBA Stats + NBA Live CDN', supabaseConfigured: Boolean(SUPABASE_URL && SUPABASE_KEY), familyAllowlistEnabled: FAMILY_EMAILS.length > 0 }));
 app.use('/api', requireFamily);
 
-app.get('/api/teams', async (_req, res) => {
-  try {
-    const rows = (await cached('teams', () => nba('leaguedashteamstats', {
-      LeagueID: '00', Season: seasonFor(), SeasonType: 'Regular Season', PerMode: 'PerGame',
-      MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N'
-    }), 6 * 60 * 60 * 1000))[0] || [];
-    const byId = new Map(rows.map(r => [Number(r.TEAM_ID), r]));
-    const data = Object.entries(TEAM_META).map(([id, meta]) => {
-      const row = byId.get(Number(id));
-      return { id: Number(id), abbreviation: meta[0], full_name: row?.TEAM_NAME || meta[1], conference: meta[2], division: meta[3] };
-    });
-    res.json({ data });
-  } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
+app.get('/api/teams', (_req, res) => {
+  const data = Object.entries(TEAM_META).map(([id, meta]) => ({
+    id: Number(id), abbreviation: meta[0], full_name: meta[1], conference: meta[2], division: meta[3]
+  }));
+  res.json({ data, source: 'NBA team directory' });
 });
 
 app.get('/api/players', async (req, res) => {
