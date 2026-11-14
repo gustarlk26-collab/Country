@@ -307,26 +307,39 @@ async function espnBoxscore(gameId) {
   const groups = body.boxscore?.players || [];
   const rows = groups.flatMap(group => {
     const statBlock = (group.statistics || []).find(x => x.athletes) || group.statistics?.[0] || {};
-    const keys = statBlock.keys || [];
+    const rawKeys = statBlock.keys || statBlock.names || statBlock.labels || statBlock.displayNames || [];
+    const keys = rawKeys.map(key => typeof key === 'string' ? key.toUpperCase() : String(key?.abbreviation||key?.name||key?.displayName||'').toUpperCase());
     return (statBlock.athletes || []).map(entry => {
-      const values = Object.fromEntries(keys.map((key,i) => [String(key).toUpperCase(), entry.stats?.[i]]));
-      const fg = madeAttempt(values.FG), three = madeAttempt(values['3PT'] || values['3P']);
+      const rawStats = entry.stats ?? entry.statistics ?? [];
+      let values = Array.isArray(rawStats)
+        ? (rawStats.length && typeof rawStats[0] === 'object'
+          ? Object.fromEntries(rawStats.map(item=>[String(item.abbreviation||item.name||item.displayName||'').toUpperCase(),item.displayValue??item.value??item.display??null]))
+          : Object.fromEntries(keys.map((key,i) => [key, rawStats[i] ?? null])))
+        : rawStats && typeof rawStats === 'object' ? Object.fromEntries(Object.entries(rawStats).map(([key,value])=>[key.toUpperCase(),value])) : {};
+      const pick = (...names) => {
+        for (const name of names) {
+          const found = Object.keys(values).find(key=>key.replace(/[^A-Z0-9]/g,'')===name.replace(/[^A-Z0-9]/g,'').toUpperCase());
+          if(found && values[found]!=null && values[found]!=='')return values[found];
+        }
+        return null;
+      };
+      const fg = madeAttempt(pick('FG','FIELD GOALS')), three = madeAttempt(pick('3PT','3P','THREE POINTERS'));
       const athlete = entry.athlete || {};
       const fullName = athlete.displayName || athlete.fullName || athlete.shortName || '';
       const parts = fullName.split(' ');
-      const min = formatMinutes(values.MIN);
+      const min = formatMinutes(pick('MIN','MINUTES'));
       if (minutesAsNumber(min) <= 0) return null;
       const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
-      const ft = madeAttempt(values.FT);
+      const ft = madeAttempt(pick('FT','FREE THROWS'));
       const row = {
-        id: Number(athlete.id), player: { id: Number(athlete.id), first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot || null },
+        id: Number(athlete.id), player: { id: Number(athlete.id), first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot?.href||athlete.headshot||null },
         team: { id: Number(group.team?.id), abbreviation: group.team?.abbreviation || '', full_name: group.team?.displayName || group.team?.name || '' },
-        min, pts: numberOrNull(values.PTS), reb: numberOrNull(values.REB), ast: numberOrNull(values.AST),
-        stl: numberOrNull(values.STL), blk: numberOrNull(values.BLK), fgm:fg.made, fga:fg.attempted, ftm:ft.made, fta:ft.attempted,
-        oreb:numberOrNull(values.OREB), dreb:numberOrNull(values.DREB), pf:numberOrNull(values.PF),
+        min, pts: numberOrNull(pick('PTS','POINTS')), reb: numberOrNull(pick('REB','REBOUNDS')), ast: numberOrNull(pick('AST','ASSISTS')),
+        stl: numberOrNull(pick('STL','STEALS')), blk: numberOrNull(pick('BLK','BLOCKS')), fgm:fg.made, fga:fg.attempted, ftm:ft.made, fta:ft.attempted,
+        oreb:numberOrNull(pick('OREB','OFFENSIVE REBOUNDS')), dreb:numberOrNull(pick('DREB','DEFENSIVE REBOUNDS')), pf:numberOrNull(pick('PF','FOULS')),
         fg_pct: fg.attempted ? fg.made / fg.attempted : null,
         fg3_pct: three.attempted ? three.made / three.attempted : null,
-        turnover: numberOrNull(values.TO)
+        turnover: numberOrNull(pick('TO','TOV','TURNOVERS'))
       };
       row.game_score = gameScore(row);
       return row;
