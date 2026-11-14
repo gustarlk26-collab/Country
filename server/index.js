@@ -330,7 +330,7 @@ app.get('/api/rankings/recent', async (_req, res) => {
       ...playerDashFilters(), LeagueID: '00', Season: seasonFor(), SeasonType: 'Regular Season', PerMode: 'PerGame',
       LastNGames: '5', MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
-    }), 10 * 60 * 1000))[0] || [];
+    }), 2 * 60 * 1000))[0] || [];
     const data = rows.map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { abbreviation: r.TEAM_ABBREVIATION },
@@ -348,7 +348,7 @@ app.get('/api/mvp', async (_req, res) => {
       ...playerDashFilters(), LeagueID: '00', Season: season, SeasonType: 'Regular Season', PerMode: 'PerGame',
       MeasureType: 'Base', LastNGames: '0', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
-    }), 15 * 60 * 1000))[0] || [];
+    }), 5 * 60 * 1000))[0] || [];
     const data = rows.map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { abbreviation: r.TEAM_ABBREVIATION },
@@ -362,7 +362,7 @@ app.get('/api/standings', async (_req, res) => {
   try {
     const rows = (await cached(`standings:${seasonFor()}`, () => nba('leaguestandings', {
       LeagueID: '00', Season: seasonFor(), SeasonType: 'Regular Season'
-    }), 10 * 60 * 1000))[0] || [];
+    }), 2 * 60 * 1000))[0] || [];
     const data = rows.map(r => ({
       team: { id: r.TeamID, full_name: r.TeamName, name: r.TeamName, abbreviation: TEAM_META[Number(r.TeamID)]?.[0] || r.TeamAbbreviation, conference: r.Conference || TEAM_META[Number(r.TeamID)]?.[2] },
       wins: r.WINS, losses: r.LOSSES, win_pct: r.WIN_PCT
