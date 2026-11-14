@@ -523,6 +523,34 @@ app.get('/api/mvp', async (_req, res) => {
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
 
+
+app.get('/api/news', async (_req, res) => {
+  try {
+    const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news');
+    const data = (body.articles || []).slice(0,30).map(item => ({
+      id: item.id || item.dataSourceIdentifier || item.headline,
+      title: item.headline || item.title || 'Notícia NBA',
+      description: item.description || item.summary || '',
+      published: item.published || item.lastModified || '',
+      url: item.links?.web?.href || item.links?.api?.news?.href || 'https://www.espn.com/nba/'
+    }));
+    res.json({ data, source: 'ESPN NBA News', updatedAt: new Date().toISOString() });
+  } catch (e) { res.status(503).json({ error: 'Notícias indisponíveis no momento: ' + e.message }); }
+});
+app.get('/api/injuries', async (_req, res) => {
+  try {
+    const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries');
+    const teams = body.injuries || body.teams || [];
+    const data = teams.flatMap(group => (group.injuries || group.items || []).map(item => ({
+      name: item.athlete?.displayName || item.athlete?.fullName || item.name || 'Jogador',
+      team: group.displayName || group.team?.displayName || group.team?.abbreviation || '',
+      status: item.status || item.type?.description || item.details?.type || 'Status não informado',
+      detail: item.shortComment || item.longComment || item.details?.detail || ''
+    })));
+    res.json({ data, source: 'ESPN injuries', updatedAt: new Date().toISOString() });
+  } catch (e) { res.status(503).json({ error: 'Relatórios de lesões indisponíveis: ' + e.message }); }
+});
+
 app.get('/api/standings', async (_req, res) => {
   try {
     const rows = (await cached(`standings:${seasonFor()}`, () => nba('leaguestandings', {
