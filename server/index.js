@@ -198,27 +198,58 @@ async function nbaCdnGames(start, end) {
   }
   return games.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
 }
+function shiftIsoDate(value, days) {
+  const date = new Date(String(value) + 'T12:00:00Z');
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+function saoPauloDate(value) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+  const get = type => parts.find(part => part.type === type)?.value || '';
+  return get('year') + '-' + get('month') + '-' + get('day');
+}
 async function espnGames(start, end) {
-  const dates = `${start.replaceAll('-','')}-${end.replaceAll('-','')}`;
-  const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dates}`);
-  return (body.events || []).flatMap(event => {
+  // O ESPN Site API deixou de aceitar intervalos dates=INICIO-FIM em 2026.
+  // Consulta cada dia e combina os eventos por ID para não perder jogos futuros.
+  const queryStart = shiftIsoDate(start, -1);
+  const queryEnd = shiftIsoDate(end, 1);
+  const dates = [];
+  for (let day = queryStart; day <= queryEnd; day = shiftIsoDate(day, 1)) dates.push(day);
+  const events = new Map();
+  const failures = [];
+  for (let i = 0; i < dates.length; i += 8) {
+    const batch = dates.slice(i, i + 8);
+    const results = await Promise.allSettled(batch.map(async day => {
+      const ymd = day.replaceAll('-', '');
+      const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=' + ymd + '&limit=1000');
+      return body.events || [];
+    }));
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') failures.push(batch[index] + ': ' + (result.reason?.message || 'falha ESPN'));
+      else result.value.forEach(event => { if (event?.id) events.set(String(event.id), event); });
+    });
+  }
+  if (failures.length) throw new Error('ESPN falhou em ' + failures.length + ' dia(s): ' + failures.slice(0, 3).join('; '));
+  return [...events.values()].flatMap(event => {
     const competition = event.competitions?.[0];
     if (!competition) return [];
     const competitors = competition.competitors || [];
     const home = competitors.find(c => c.homeAway === 'home');
     const away = competitors.find(c => c.homeAway === 'away');
-    if (!home || !away) return [];
+    if (!home || !away || !home.team?.abbreviation || !away.team?.abbreviation) return [];
+    const datetime = event.date || competition.date || '';
+    const localDate = saoPauloDate(datetime);
+    if (!localDate || localDate < start || localDate > end) return [];
     const state = competition.status?.type?.state || event.status?.type?.state || 'pre';
     const status = competition.status?.type?.shortDetail || competition.status?.type?.description || event.status?.type?.shortDetail || 'Agendado';
-    return [{
-      id: String(event.id), date: String(event.date || '').slice(0,10), datetime: event.date || '',
-      status, status_state: state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled',
+    return [{ id: String(event.id), date: localDate, datetime, status, status_state: state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled',
       home_team: { id: Number(home.team?.id), abbreviation: home.team?.abbreviation || '', full_name: home.team?.displayName || home.team?.name || '' },
       visitor_team: { id: Number(away.team?.id), abbreviation: away.team?.abbreviation || '', full_name: away.team?.displayName || away.team?.name || '' },
       home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
-      visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score)
-    }];
-  });
+      visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score) }];
+  }).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
 }
 function formatMinutes(value) {
   const raw = String(value ?? '').trim();
