@@ -91,7 +91,7 @@ export default function App(){
     });
   return()=>{active=false;window.clearTimeout(timeout);subscription.unsubscribe();};
 },[]);
- const api=useCallback(async(path,opts={})=>{if(!session?.access_token)throw new Error('Faça login novamente.');const method=String(opts.method||'GET').toUpperCase();const key=session.access_token.slice(-12)+'|'+path;const {cache:cacheGet=true,...fetchOptions}=opts;const shouldCache=method==='GET'&&cacheGet;if(shouldCache){const cached=apiResponseCache.get(key);if(cached&&Date.now()-cached.at<25000)return cached.body;if(apiInflight.has(key))return apiInflight.get(key);}const request=(async()=>{const r=await fetch(path,{...fetchOptions,headers:{...(opts.headers||{}),Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'}});const body=await r.json().catch(()=>({}));if(!r.ok)throw new Error(body.error||`Erro ${r.status}`);if(shouldCache){apiResponseCache.set(key,{at:Date.now(),body});if(apiResponseCache.size>120){const oldest=apiResponseCache.keys().next().value;apiResponseCache.delete(oldest);}}return body;})();if(shouldCache)apiInflight.set(key,request);try{return await request;}finally{if(shouldCache)apiInflight.delete(key);}},[session]);
+ const api=useCallback(async(path,opts={})=>{if(!session?.access_token)throw new Error('Faça login novamente.');const method=String(opts.method||'GET').toUpperCase();const key=session.access_token.slice(-12)+'|'+path;const {cache:cacheGet=true,...fetchOptions}=opts;const shouldCache=method==='GET'&&cacheGet;if(shouldCache){const cached=apiResponseCache.get(key);if(cached&&Date.now()-cached.at<25000)return cached.body;if(apiInflight.has(key))return apiInflight.get(key);}const request=(async()=>{const r=await fetch(path,{...fetchOptions,cache:cacheGet?fetchOptions.cache:'no-store',headers:{...(opts.headers||{}),Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'}});const body=await r.json().catch(()=>({}));if(!r.ok)throw new Error(body.error||`Erro ${r.status}`);if(shouldCache){apiResponseCache.set(key,{at:Date.now(),body});if(apiResponseCache.size>120){const oldest=apiResponseCache.keys().next().value;apiResponseCache.delete(oldest);}}return body;})();if(shouldCache)apiInflight.set(key,request);try{return await request;}finally{if(shouldCache)apiInflight.delete(key);}},[session]);
  const flash=(s)=>{setToast(s);setTimeout(()=>setToast(''),2600)};
  const loadSettings=useCallback(async()=>{if(!supabase||!session?.user)return;const {data,error:e}=await supabase.from('user_settings').select('*').eq('user_id',session.user.id).maybeSingle();if(!e&&data){setLang(data.language||'pt');setTheme(data.theme||'dark');}setSettingsLoaded(true);},[session]);
  const loadFavorites=useCallback(async()=>{if(!supabase||!session?.user)return;const {data,error:e}=await supabase.from('favorites').select('*').order('created_at',{ascending:false});if(e)throw e;setFavorites(data||[]);},[session]);
@@ -101,22 +101,32 @@ export default function App(){
   if(!session||!['overview','games','livecenter','customcalendar','boxscore'].includes(page))return;
   let running=false;
   const refreshLive=async()=>{
-    if(running)return; running=true;
+    if(running||document.visibilityState!=='visible')return;
+    running=true;
     try {
-      const gamesResult=await api(`/api/games?start=${from}&end=${to}`);
-      setGames(gamesResult.data||[]); setLastSync(new Date());
+      const gamesResult=await api('/api/games/live',{cache:false});
+      const updates=gamesResult.data||[];
+      if(updates.length)setGames(current=>{
+        const byId=new Map(current.map(game=>[String(game.id),game]));
+        updates.forEach(game=>byId.set(String(game.id),{...(byId.get(String(game.id))||{}),...game}));
+        return [...byId.values()].sort((x,y)=>new Date(x.datetime||x.date)-new Date(y.datetime||y.date));
+      });
+      setLastSync(new Date());
       if(page==='boxscore'&&boxGame?.id&&(boxGame.status_state==='in_progress'||boxGame.status_state==='final')){
-        const score=await api(`/api/games/${boxGame.id}/stats`);
+        const score=await api('/api/games/'+encodeURIComponent(boxGame.id)+'/stats',{cache:false});
         setBoxStats(score.data||[]);
-        const updated=(gamesResult.data||[]).find(g=>String(g.id)===String(boxGame.id));
-        if(updated)setBoxGame(updated);
+        const updated=updates.find(g=>String(g.id)===String(boxGame.id));
+        if(updated)setBoxGame(current=>({...current,...updated}));
       }
     } catch(e) { /* Mantém os últimos dados válidos durante falhas transitórias. */ }
     finally { running=false; }
   };
-  const onVisible=()=>{if(document.visibilityState==='visible')refreshLive();};document.addEventListener('visibilitychange',onVisible);const timer=window.setInterval(refreshLive,60000);
+  const onVisible=()=>{if(document.visibilityState==='visible')refreshLive();};
+  document.addEventListener('visibilitychange',onVisible);
+  refreshLive();
+  const timer=window.setInterval(refreshLive,15000);
   return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);};
-},[session,api,from,to,page,boxGame]);
+},[session,api,page,boxGame]);
 useEffect(()=>{
   if(!session)return;
   const timer=window.setInterval(async()=>{
@@ -308,15 +318,23 @@ function formatGameDateTime(game,lang='pt'){
  const timeText=new Intl.DateTimeFormat(locale,{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hour12:false}).format(date);
  return dateText+' · '+timeText+' (Brasília)';
 }
+function formatGameClock(value){
+ const raw=String(value??'').trim();
+ const match=raw.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/i);
+ if(!match)return raw;
+ const seconds=Math.round(Number(match[1]||0)*3600+Number(match[2]||0)*60+Number(match[3]||0));
+ return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+}
 function GameList({games,onOpen,t,lang='pt'}){
  const labels={pt:{live:'● AO VIVO',scheduled:'Agendado',away:'Visitante',home:'Mandante',awaiting:'Aguardando jogo',time:'Horário não informado'},en:{live:'● LIVE',scheduled:'Scheduled',away:'Away',home:'Home',awaiting:'Awaiting game',time:'Time not announced'},es:{live:'● EN VIVO',scheduled:'Programado',away:'Visitante',home:'Local',awaiting:'Esperando el partido',time:'Horario no anunciado'}};
  const copy=labels[lang]||labels.pt;
  return games?.length?<div className="games-list">{games.map(g=>{
   const live=g.status_state==='in_progress',final=g.status_state==='final',hasScore=g.visitor_team_score!=null&&g.home_team_score!=null,canOpen=live||final;
   const status=live?copy.live:final?'FINAL':g.status||copy.scheduled;
+  const clock=live&&g.display_clock?' · '+(g.period_label?g.period_label+' ':'')+formatGameClock(g.display_clock):'';
   return <article className={'game-row '+(live?'game-live':'')} key={g.id}>
    <div className="game-matchup"><b>{g.visitor_team?.abbreviation||'N/D'} <span>@</span> {g.home_team?.abbreviation||'N/D'}</b><small>{g.visitor_team?.full_name||copy.away} vs {g.home_team?.full_name||copy.home}</small></div>
-   <div className="game-score"><b>{hasScore?g.visitor_team_score+' : '+g.home_team_score:live?(lang==='en'?'LIVE':lang==='es'?'EN VIVO':'Ao vivo'):'N/D'}</b><small className={live?'status-live':final?'status-final':'status-scheduled'}>{status}</small></div>
+   <div className="game-score"><b>{hasScore?g.visitor_team_score+' : '+g.home_team_score:live?(lang==='en'?'LIVE':lang==='es'?'EN VIVO':'Ao vivo'):'N/D'}</b><small className={live?'status-live':final?'status-final':'status-scheduled'}>{status}{clock}</small></div>
    <div className="game-meta"><small>{formatGameDateTime(g,lang)||copy.time}</small><button className="text-btn" disabled={!canOpen} title={canOpen?t.details:copy.awaiting} onClick={()=>onOpen(g)}>{canOpen?t.details:copy.awaiting} →</button></div>
   </article>;
  })}</div>:<p className="muted">{t.noData}</p>;
