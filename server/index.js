@@ -14,6 +14,7 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_
 const FAMILY_EMAILS = (process.env.FAMILY_EMAILS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
 const CACHE_MS = Number(process.env.API_CACHE_MS) || 90000;
 const cache = new Map();
+const pending = new Map();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, '../dist');
 const NBA_STATS = 'https://stats.nba.com/stats';
@@ -52,14 +53,17 @@ app.use('/api/', rateLimit({ windowMs: 60_000, limit: 90, standardHeaders: 'draf
 function cached(key, fn, ttl = CACHE_MS) {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < ttl) return Promise.resolve(hit.value);
-  return fn().then(value => {
+  if (pending.has(key)) return pending.get(key);
+  const request = Promise.resolve().then(fn).then(value => {
     cache.set(key, { at: Date.now(), value });
     if (cache.size > 500) {
       const oldest = [...cache.entries()].sort((a,b) => a[1].at - b[1].at).slice(0,100);
       oldest.forEach(([k]) => cache.delete(k));
     }
     return value;
-  });
+  }).finally(() => pending.delete(key));
+  pending.set(key, request);
+  return request;
 }
 function seasonFor(date = new Date()) {
   const year = date.getUTCFullYear();
@@ -76,7 +80,7 @@ function playerDashFilters() {
 async function nba(endpoint, params = {}) {
   const url = new URL(`${NBA_STATS}/${endpoint}`);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, String(value));
-  const response = await fetch(url, { headers: NBA_HEADERS, signal: AbortSignal.timeout(25000) });
+  const response = await fetch(url, { headers: NBA_HEADERS, signal: AbortSignal.timeout(9000) });
   if (!response.ok) {
     const error = new Error(`NBA Stats indisponível (HTTP ${response.status}). Tente novamente em alguns instantes.`);
     error.status = response.status === 429 ? 503 : response.status;
@@ -259,22 +263,36 @@ async function espnBoxscore(gameId) {
   return rows;
 }
 async function espnPlayers() {
-  const abbreviations = Object.values(TEAM_META).map(meta => meta[0]);
-  const rosters = await Promise.all(abbreviations.map(async abbreviation => {
-    const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${abbreviation.toLowerCase()}/roster`);
+  const ids = {
+    ATL:1,BOS:2,NOP:3,CHI:4,CLE:5,DAL:6,DEN:7,DET:8,GSW:9,HOU:10,
+    IND:11,LAC:12,LAL:13,MIA:14,MIL:15,MIN:16,BKN:17,NYK:18,ORL:19,
+    PHI:20,PHX:21,POR:22,SAC:23,SAS:24,OKC:25,UTA:26,WAS:27,TOR:28,MEM:29,CHA:30
+  };
+  const teams = Object.values(TEAM_META).map(meta => meta[0]);
+  const results = await Promise.allSettled(teams.map(async abbreviation => {
+    const teamId = ids[abbreviation];
+    const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${teamId}/roster`);
     const groups = body.athletes || [];
     const athletes = groups.flatMap(group => Array.isArray(group.items) ? group.items : [group]);
-    return athletes.filter(p => p && (p.id || p.uid)).map(p => ({
-      id: Number(p.id || String(p.uid).split(':').pop()),
-      first_name: p.firstName || String(p.fullName || p.displayName || '').split(' ').slice(0,-1).join(' '),
-      last_name: p.lastName || String(p.fullName || p.displayName || '').split(' ').slice(-1)[0],
-      position: p.position?.abbreviation || p.position?.name || '',
-      team: { abbreviation, full_name: TEAM_META[Object.keys(TEAM_META).find(id => TEAM_META[id][0] === abbreviation)]?.[1] || abbreviation },
-      is_active: true, headshot: p.headshot?.href || null
-    }));
+    const fullTeam = Object.values(TEAM_META).find(meta => meta[0] === abbreviation)?.[1] || abbreviation;
+    return athletes.filter(p => p && (p.id || p.uid)).map(p => {
+      const fullName = p.fullName || p.displayName || '';
+      const parts = fullName.split(' ');
+      return {
+        id: Number(p.id || String(p.uid).split(':').pop()),
+        first_name: p.firstName || parts.slice(0,-1).join(' '),
+        last_name: p.lastName || parts.slice(-1)[0] || '',
+        position: p.position?.abbreviation || p.position?.name || '',
+        team: { abbreviation, full_name: fullTeam },
+        is_active: true, headshot: p.headshot?.href || null
+      };
+    });
   }));
   const unique = new Map();
-  rosters.flat().forEach(p => { if (p.id) unique.set(p.id, p); });
+  results.forEach(result => {
+    if (result.status === 'fulfilled') result.value.forEach(player => { if (player.id) unique.set(player.id, player); });
+  });
+  if (!unique.size) throw new Error('ESPN não retornou os elencos; a fonte externa está indisponível.');
   return [...unique.values()].sort((a,b) => a.last_name.localeCompare(b.last_name));
 }
 async function espnStandings() {
@@ -321,28 +339,36 @@ app.get('/api/teams', (_req, res) => {
 });
 
 app.get('/api/players', async (req, res) => {
+  const search = String(req.query.search || '').trim().toLowerCase();
+  const page = Math.max(1, Number(req.query.page || req.query.cursor) || 1);
   try {
-    const search = String(req.query.search || '').trim().toLowerCase();
-    const page = Math.max(1, Number(req.query.page || req.query.cursor) || 1);
-    const rows = (await cached(`players:${seasonFor()}`, () => nba('commonallplayers', {
-      LeagueID: '00', Season: seasonFor(), IsOnlyCurrentSeason: '0'
-    }), 12 * 60 * 60 * 1000))[0] || [];
-    const filtered = rows.filter(p => !search || String(p.DISPLAY_FIRST_LAST || p.DISPLAY_LAST_COMMA_FIRST || '').toLowerCase().includes(search));
-    const data = filtered.slice((page - 1) * 100, page * 100).map(p => ({
-      id: p.PERSON_ID, first_name: String(p.DISPLAY_FIRST_LAST || '').split(' ').slice(0,-1).join(' '),
-      last_name: String(p.DISPLAY_FIRST_LAST || '').split(' ').slice(-1)[0], position: p.ROSTERSTATUS === 1 ? 'Ativo' : '—',
-      team: { abbreviation: p.TEAM_ABBREVIATION || '—' }, is_active: p.ROSTERSTATUS === 1
-    }));
-    res.json({ data, meta: { next_cursor: (page * 100 < filtered.length) ? String(page + 1) : null, total_count: filtered.length } });
-  } catch (e) {
+    // A lista ESPN é carregada uma vez e mantida em cache por 30 minutos.
+    const all = await cached('espn:active-players', espnPlayers, 30 * 60 * 1000);
+    const filtered = all.filter(p => !search || `${p.first_name} ${p.last_name}`.toLowerCase().includes(search));
+    res.set('Cache-Control', 'private, max-age=60');
+    res.json({
+      data: filtered.slice((page - 1) * 100, page * 100),
+      meta: { next_cursor: page * 100 < filtered.length ? String(page + 1) : null, total_count: filtered.length },
+      source: 'ESPN rosters'
+    });
+  } catch (espnError) {
     try {
-      const all = await cached('espn:active-players', espnPlayers, 30 * 60 * 1000);
-      const filtered = all.filter(p => !search || `${p.first_name} ${p.last_name}`.toLowerCase().includes(search));
-      res.json({ data: filtered.slice((page - 1) * 100, page * 100), meta: { next_cursor: page * 100 < filtered.length ? String(page + 1) : null, total_count: filtered.length }, source: 'ESPN rosters' });
-    } catch (fallbackError) { res.status(503).json({ error: `Elenco indisponível. NBA Stats: ${e.message} ESPN: ${fallbackError.message}` }); }
+      const rows = (await cached(`players:${seasonFor()}`, () => nba('commonallplayers', {
+        LeagueID: '00', Season: seasonFor(), IsOnlyCurrentSeason: '0'
+      }), 12 * 60 * 60 * 1000))[0] || [];
+      const filtered = rows.filter(p => !search || String(p.DISPLAY_FIRST_LAST || '').toLowerCase().includes(search));
+      const data = filtered.slice((page - 1) * 100, page * 100).map(p => ({
+        id: p.PERSON_ID, first_name: String(p.DISPLAY_FIRST_LAST || '').split(' ').slice(0,-1).join(' '),
+        last_name: String(p.DISPLAY_FIRST_LAST || '').split(' ').slice(-1)[0],
+        position: p.ROSTERSTATUS === 1 ? 'Ativo' : '', team: { abbreviation: p.TEAM_ABBREVIATION || '' },
+        is_active: p.ROSTERSTATUS === 1
+      }));
+      res.json({ data, meta: { next_cursor: page * 100 < filtered.length ? String(page + 1) : null, total_count: filtered.length }, source: 'NBA Stats fallback' });
+    } catch (nbaError) {
+      res.status(503).json({ error: `Elenco temporariamente indisponível. ESPN: ${espnError.message} NBA Stats: ${nbaError.message}` });
+    }
   }
 });
-
 app.get('/api/games', async (req, res) => {
   const parseDate = value => {
     const text = String(value || '').trim();
