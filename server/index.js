@@ -496,6 +496,12 @@ app.get('/api/averages', async (req, res) => {
       team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION },
       gamesPlayed: Number(r.GP), pts: Number(r.PTS || 0), reb: Number(r.REB || 0), ast: Number(r.AST || 0),
       stl: Number(r.STL || 0), blk: Number(r.BLK || 0), turnover: Number(r.TOV || 0),
+      fgm: r.FGM == null ? null : Number(r.FGM), fga: r.FGA == null ? null : Number(r.FGA),
+      fg3m: r.FG3M == null ? null : Number(r.FG3M), fg3a: r.FG3A == null ? null : Number(r.FG3A),
+      ftm: r.FTM == null ? null : Number(r.FTM), fta: r.FTA == null ? null : Number(r.FTA),
+      ft_pct: r.FT_PCT == null ? null : Number(r.FT_PCT), oreb: r.OREB == null ? null : Number(r.OREB),
+      dreb: r.DREB == null ? null : Number(r.DREB), pf: r.PF == null ? null : Number(r.PF),
+      plus_minus: r.PLUS_MINUS == null ? null : Number(r.PLUS_MINUS),
       fg_pct: r.FG_PCT == null ? null : Number(r.FG_PCT), fg3_pct: r.FG3_PCT == null ? null : Number(r.FG3_PCT),
       min: r.MIN == null ? null : Number(r.MIN)
     })).sort((a,b) => b.pts - a.pts);
@@ -512,14 +518,18 @@ app.get('/api/advanced', async (req, res) => {
       LastNGames: String(requested), MeasureType: 'Advanced', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 3 * 60 * 1000))[0] || [];
+    const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
     const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION }, gamesPlayed: Number(r.GP),
-      pie: r.PIE == null ? null : Number(r.PIE), ts_pct: r.TS_PCT == null ? null : Number(r.TS_PCT),
-      usg_pct: r.USG_PCT == null ? null : Number(r.USG_PCT), off_rating: r.OFF_RATING == null ? null : Number(r.OFF_RATING),
-      def_rating: r.DEF_RATING == null ? null : Number(r.DEF_RATING), net_rating: r.NET_RATING == null ? null : Number(r.NET_RATING),
-      ast_pct: r.AST_PCT == null ? null : Number(r.AST_PCT), tov_pct: r.TOV_PCT == null ? null : Number(r.TOV_PCT)
-    })).sort((a,b) => Number(b.pie || 0) - Number(a.pie || 0));
+      min: numberOrNull(r.MIN),
+      pie: numberOrNull(r.PIE), ts_pct: numberOrNull(r.TS_PCT), usg_pct: numberOrNull(r.USG_PCT),
+      off_rating: numberOrNull(r.OFF_RATING), def_rating: numberOrNull(r.DEF_RATING), net_rating: numberOrNull(r.NET_RATING),
+      ast_pct: numberOrNull(r.AST_PCT), tov_pct: numberOrNull(r.TOV_PCT), efg_pct: numberOrNull(r.EFG_PCT),
+      ast_to: numberOrNull(r.AST_TO), ast_ratio: numberOrNull(r.AST_RATIO), pace: numberOrNull(r.PACE),
+      oreb_pct: numberOrNull(r.OREB_PCT), dreb_pct: numberOrNull(r.DREB_PCT), reb_pct: numberOrNull(r.REB_PCT),
+      poss: numberOrNull(r.POSS)
+    })).sort((a,b) => (b.pie ?? -Infinity) - (a.pie ?? -Infinity));
     res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats Advanced', season, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa' });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
