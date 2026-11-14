@@ -66,6 +66,7 @@ function cached(key, fn, ttl = CACHE_MS) {
   pending.set(key, request);
   return request;
 }
+function canonicalTeamAbbr(value) { const code=String(value||'').toUpperCase(); return ({NY:'NYK',NO:'NOP',GS:'GSW',SA:'SAS',PHO:'PHX',WSH:'WAS'})[code]||code; }
 function seasonFor(date = new Date()) {
   const year = date.getUTCFullYear();
   return date.getUTCMonth() >= 9 ? `${year}-${String(year + 1).slice(-2)}` : `${year - 1}-${String(year).slice(-2)}`;
@@ -157,8 +158,8 @@ async function nbaGameIdFromEspn(eventId) {
   const body=await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event='+encodeURIComponent(eventId));
   const competition=body.header?.competitions?.[0];
   const competitors=competition?.competitors||[];
-  const home=competitors.find(side=>side.homeAway==='home')?.team?.abbreviation;
-  const away=competitors.find(side=>side.homeAway==='away')?.team?.abbreviation;
+  const home=canonicalTeamAbbr(competitors.find(side=>side.homeAway==='home')?.team?.abbreviation);
+  const away=canonicalTeamAbbr(competitors.find(side=>side.homeAway==='away')?.team?.abbreviation);
   const eventDate=saoPauloDate(body.header?.competitions?.[0]?.date||body.header?.season?.startDate||new Date().toISOString());
   if(!home||!away)throw new Error('Não foi possível identificar as equipes da partida.');
   const schedule=await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json',{headers:NBA_HEADERS,signal:AbortSignal.timeout(9000)});
@@ -425,7 +426,7 @@ async function espnStandings() {
     const meta = Object.values(TEAM_META).find(x => x[0] === team.abbreviation);
     return {
       team: { id: Number(team.id), full_name: team.displayName || team.name || '', name: team.displayName || team.name || '',
-        abbreviation: team.abbreviation || '', conference: group.name || group.abbreviation || meta?.[2] || '' },
+        abbreviation: canonicalTeamAbbr(team.abbreviation || ''), conference: group.name || group.abbreviation || meta?.[2] || '' },
       wins: stats.wins ?? null, losses: stats.losses ?? null,
       win_pct: stats.winPercent ?? stats.win_pct ?? null
     };
@@ -643,7 +644,7 @@ async function espnTeamSchedule(abbreviation, seasonYear) {
     const competitors = competition?.competitors || [];
     if (competitors.length < 2) return [];
     const sides = competitors.map(side => ({
-      abbreviation:side.team?.abbreviation||side.team?.shortDisplayName||'',
+      abbreviation:canonicalTeamAbbr(side.team?.abbreviation||side.team?.shortDisplayName||''),
       name:side.team?.displayName||side.team?.name||'',
       score:side.score==null?null:Number(side.score),
       homeAway:side.homeAway
