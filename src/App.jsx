@@ -298,13 +298,14 @@ function gameLocalDate(game){
 }
 function formatGameDateTime(game,lang='pt'){
  const value=game.datetime||game.date;
- if(!value)return 'Horário não informado';
+ const missingTime=lang==='en'?'Time not announced':lang==='es'?'Horario no anunciado':'Horário não informado';
+ if(!value)return missingTime;
  const hasTime=typeof value==='string'&&value.includes('T');
  const date=new Date(hasTime?value:String(value)+'T12:00:00Z');
  if(!Number.isFinite(date.getTime()))return game.date||'Horário não informado';
  const locale=lang==='en'?'en-US':lang==='es'?'es-ES':'pt-BR';
  const dateText=new Intl.DateTimeFormat(locale,{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'}).format(date);
- if(!hasTime)return dateText+' · horário não informado';
+ if(!hasTime)return dateText+' · '+missingTime;
  const timeText=new Intl.DateTimeFormat(locale,{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hour12:false}).format(date);
  return dateText+' · '+timeText+' (Brasília)';
 }
