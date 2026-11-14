@@ -683,41 +683,86 @@ app.get('/api/headtohead', async (req, res) => {
     res.json({data,season,source:'ESPN team schedules',updatedAt:new Date().toISOString()});
   } catch(e) { res.status(503).json({error:'Confronto direto temporariamente indisponível: '+e.message}); }
 });
+async function nbaLivePlayByPlay(gameId) {
+  const response = await fetch('https://cdn.nba.com/static/json/liveData/playbyplay/playbyplay_' + encodeURIComponent(gameId) + '.json', {
+    headers: NBA_HEADERS, signal: AbortSignal.timeout(12000)
+  });
+  if (!response.ok) throw new Error('NBA Live CDN play-by-play HTTP ' + response.status);
+  const body = await response.json();
+  const actions = body?.game?.actions;
+  if (!Array.isArray(actions)) throw new Error('Feed de jogadas da NBA não retornou ações.');
+  return actions;
+}
+
 app.get('/api/players/:id/shots', async (req, res) => {
   try {
     const playerId = String(req.params.id);
+    const team = canonicalTeamAbbr(req.query.team || '');
     if (!/^\d{1,12}$/.test(playerId)) return res.status(400).json({ error: 'ID de jogador inválido. Selecione um atleta da lista oficial.' });
     const season = seasonFor();
-    const rows = (await cached('shot-chart:'+season+':'+playerId, async () => {
-      const params = {
+    try {
+      const rows = (await cached('shot-chart:'+season+':'+playerId, () => nba('shotchartdetail', {
         LeagueID:'00', Season:season, SeasonType:'Regular Season', PlayerID:playerId,
         TeamID:0, ContextMeasure:'FGA', DateFrom:'', DateTo:'', GameID:'',
         Outcome:'', Location:'', Month:0, SeasonSegment:'', VsConference:'',
         VsDivision:'', Position:'', RookieYear:'', GameSegment:'', Period:0,
         LastNGames:0, ClutchTime:'', AheadBehind:'', PointDiff:'', RangeType:0,
         StartPeriod:0, EndPeriod:0
-      };
-      let lastError;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try { return await nba('shotchartdetail', params); }
-        catch (error) {
-          lastError = error;
-          const transient = !error.status || error.status === 429 || error.status >= 500 || /fetch failed|timeout|network/i.test(error.message || '');
-          if (!transient || attempt === 2) break;
-          await new Promise(resolve => setTimeout(resolve, 600 * (attempt + 1)));
+      }), 3 * 60 * 1000))[0] || [];
+      const data = rows.filter(r => Number.isFinite(Number(r.LOC_X)) && Number.isFinite(Number(r.LOC_Y))).map(r => ({
+        x:Number(r.LOC_X), y:Number(r.LOC_Y), made:Number(r.SHOT_MADE_FLAG)===1,
+        action:r.ACTION_TYPE||r.EVENT_TYPE||'Arremesso',
+        distance:r.SHOT_DISTANCE==null?null:Number(r.SHOT_DISTANCE)
+      }));
+      if (data.length) return res.json({data,season,source:'NBA Stats shotchartdetail',updatedAt:new Date().toISOString()});
+    } catch (statsError) {
+      // Fallback abaixo usa jogadas oficiais da NBA Live CDN, sem depender do NBA Stats.
+    }
+
+    if (!team) return res.status(503).json({error:'NBA Stats está indisponível e não foi possível identificar o time atual do atleta para consultar o feed alternativo.'});
+    const today = saoPauloDate(new Date().toISOString());
+    const seasonStart = season.slice(0,4) + '-07-01';
+    const games = await cached('shot-cdn-games:'+season+':'+team, () => nbaCdnGames(seasonStart, today), 5 * 60 * 1000);
+    const teamGames = games.filter(g => g.status_state === 'final' && (
+      canonicalTeamAbbr(g.home_team?.abbreviation) === team || canonicalTeamAbbr(g.visitor_team?.abbreviation) === team
+    )).sort((a,b) => new Date(b.datetime || b.date) - new Date(a.datetime || a.date)).slice(0,20);
+    if (!teamGames.length) return res.status(503).json({error:'NBA Stats está indisponível e ainda não há partidas finalizadas do time para consultar o feed alternativo.'});
+
+    const collected = [];
+    const failures = [];
+    for (let i = 0; i < teamGames.length; i += 4) {
+      const batch = teamGames.slice(i, i + 4);
+      const results = await Promise.allSettled(batch.map(async game => ({game, actions:await nbaLivePlayByPlay(game.id)})));
+      for (const result of results) {
+        if (result.status === 'rejected') { failures.push(result.reason?.message || 'Falha no play-by-play'); continue; }
+        const {game,actions} = result.value;
+        for (const action of actions) {
+          if (String(action.personId) !== playerId) continue;
+          const type = String(action.actionType || '').toLowerCase();
+          if (!(Number(action.isFieldGoal) === 1 || type === '2pt' || type === '3pt')) continue;
+          const rawX = action.xLegacy ?? action.x;
+          const rawY = action.yLegacy ?? action.y;
+          const x = Number(rawX), y = Number(rawY);
+          if (!Number.isFinite(x) || !Number.isFinite(y) || (x === 0 && y === 0)) continue;
+          const resultText = String(action.shotResult || action.subType || '').toLowerCase();
+          collected.push({
+            x, y,
+            made: resultText.includes('made') || resultText === '2pt' && Number(action.pointsTotal) > 0,
+            action: action.description || action.subType || action.actionType || 'Arremesso',
+            distance: Number.isFinite(Number(action.shotDistance)) && Number(action.shotDistance) > 0 ? Number(action.shotDistance) : null,
+            gameId: game.id, date: game.date
+          });
         }
       }
-      throw new Error(/fetch failed|timeout|network/i.test(lastError?.message || '')
-        ? 'A conexão com a fonte oficial de arremessos da NBA falhou após 3 tentativas. Tente novamente em instantes.'
-        : (lastError?.message || 'Fonte oficial temporariamente indisponível.'));
-    }, 3 * 60 * 1000))[0] || [];
-    const data = rows.filter(r => Number.isFinite(Number(r.LOC_X)) && Number.isFinite(Number(r.LOC_Y))).map(r => ({
-      x:Number(r.LOC_X), y:Number(r.LOC_Y), made:Number(r.SHOT_MADE_FLAG)===1,
-      action:r.ACTION_TYPE||r.EVENT_TYPE||'Arremesso',
-      distance:r.SHOT_DISTANCE==null?null:Number(r.SHOT_DISTANCE)
-    }));
-    res.json({data,season,source:'NBA Stats shotchartdetail',updatedAt:new Date().toISOString()});
-  } catch(e) { res.status(e.status||503).json({error:'Mapa de arremessos indisponível: '+e.message}); }
+    }
+    if (!collected.length) {
+      const suffix = failures.length ? ' Algumas partidas não puderam ser consultadas.' : '';
+      return res.status(503).json({error:'NBA Stats está indisponível e o feed alternativo não retornou coordenadas de arremessos para este atleta nos últimos 20 jogos do time.'+suffix});
+    }
+    res.json({data:collected,season,source:'NBA Live CDN play-by-play',sampleGames:teamGames.length,updatedAt:new Date().toISOString()});
+  } catch(e) {
+    res.status(e.status||503).json({error:'Mapa de arremessos indisponível: '+e.message});
+  }
 });
 
 app.get('/api/advanced', async (req, res) => {
