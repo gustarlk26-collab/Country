@@ -153,14 +153,45 @@ async function nbaHistoricalBoxscore(gameId) {
   if (!data.length) throw new Error('A NBA não retornou atletas com minutos jogados para esta partida.');
   return data;
 }
+async function nbaGameIdFromEspn(eventId) {
+  const body=await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event='+encodeURIComponent(eventId));
+  const competition=body.header?.competitions?.[0];
+  const competitors=competition?.competitors||[];
+  const home=competitors.find(side=>side.homeAway==='home')?.team?.abbreviation;
+  const away=competitors.find(side=>side.homeAway==='away')?.team?.abbreviation;
+  const eventDate=saoPauloDate(body.header?.competitions?.[0]?.date||body.header?.season?.startDate||new Date().toISOString());
+  if(!home||!away)throw new Error('Não foi possível identificar as equipes da partida.');
+  const schedule=await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json',{headers:NBA_HEADERS,signal:AbortSignal.timeout(9000)});
+  if(!schedule.ok)throw new Error('Calendário NBA CDN indisponível.');
+  const data=await schedule.json();
+  const match=(data.leagueSchedule?.gameDates||[]).flatMap(day=>day.games||[]).find(game=>{
+    const date=String(game.gameDateEst||game.gameDateTimeEst||game.gameDate||'').slice(0,10);
+    const h=game.homeTeam?.teamTricode,a=game.awayTeam?.teamTricode;
+    return date===eventDate&&h===home&&a===away;
+  });
+  if(!match?.gameId)throw new Error('ID NBA equivalente não encontrado no calendário.');
+  return String(match.gameId);
+}
 async function getGameBoxscore(gameId) {
-  if (!/^\d{10}$/.test(String(gameId))) return espnBoxscore(gameId);
-  try { return await nbaLiveBoxscore(gameId); }
-  catch (liveError) {
-    try { return await nbaHistoricalBoxscore(gameId); }
-    catch (statsError) {
-      try { return await espnBoxscore(gameId); }
-      catch (espnError) { throw new Error(`Box score indisponível. Live: ${liveError.message} Stats: ${statsError.message} ESPN: ${espnError.message}`); }
+  const id=String(gameId);
+  if (/^\d{10}$/.test(id)) {
+    try { return await nbaLiveBoxscore(id); }
+    catch (liveError) {
+      try { return await nbaHistoricalBoxscore(id); }
+      catch (statsError) {
+        try { return await espnBoxscore(id); }
+        catch (espnError) { throw new Error(`Box score indisponível. Live: ${liveError.message} Stats: ${statsError.message} ESPN: ${espnError.message}`); }
+      }
+    }
+  }
+  try { return await espnBoxscore(id); }
+  catch (espnError) {
+    try {
+      const nbaId=await nbaGameIdFromEspn(id);
+      try{return await nbaLiveBoxscore(nbaId);}
+      catch(liveError){return await nbaHistoricalBoxscore(nbaId);}
+    } catch(fallbackError) {
+      throw new Error(`Box score indisponível. ESPN: ${espnError.message} NBA CDN: ${fallbackError.message}`);
     }
   }
 }
