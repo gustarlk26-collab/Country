@@ -332,15 +332,22 @@ app.get('/api/players', async (req, res) => {
 });
 
 app.get('/api/games', async (req, res) => {
-  const start = String(req.query.start || new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10));
-  const end = String(req.query.end || new Date(Date.now() + 30 * 86400000).toISOString().slice(0,10));
+  const parseDate = value => {
+    const text = String(value || '').trim();
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day ? text : null;
+  };
+  const defaultStart = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  const defaultEnd = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  const start = parseDate(req.query.start || defaultStart);
+  const end = parseDate(req.query.end || defaultEnd);
   try {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) return res.status(400).json({ error: 'Período de datas inválido.' });
-    const span = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
+    if (!start || !end || start > end) return res.status(400).json({ error: 'Período inválido. Escolha datas válidas e confira se “De” não é posterior a “Até”.' });
+    const span = Math.floor((Date.parse(end + 'T00:00:00Z') - Date.parse(start + 'T00:00:00Z')) / 86400000) + 1;
     if (span > 90) return res.status(400).json({ error: 'Consulte no máximo 90 dias por vez.' });
-
-    // ESPN é a fonte primária do calendário: uma única chamada para o período,
-    // evitando dezenas de consultas NBA Stats que frequentemente expiram por timeout.
     try {
       const data = await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 15 * 1000);
       res.set('Cache-Control', 'private, max-age=10');
@@ -351,11 +358,11 @@ app.get('/api/games', async (req, res) => {
         res.set('Cache-Control', 'private, max-age=10');
         return res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA CDN schedule', fallback: true });
       } catch (cdnError) {
-        return res.status(503).json({ error: `Calendário indisponível. ESPN: ${espnError.message} NBA CDN: ${cdnError.message}` });
+        return res.status(503).json({ error: `Calendário temporariamente indisponível. ESPN: ${espnError.message} NBA CDN: ${cdnError.message}` });
       }
     }
   } catch (e) {
-    res.status(400).json({ error: e.message || 'Não foi possível carregar os jogos.' });
+    return res.status(400).json({ error: e.message || 'Não foi possível carregar os jogos.' });
   }
 });
 
