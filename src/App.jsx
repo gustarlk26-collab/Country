@@ -114,7 +114,7 @@ function DataTable({rows,render,t}){return rows?.length?<div className="table-wr
 function gameLocalDate(game){
  const value=game.datetime||game.date;
  if(!value)return '';
- if(!game.datetime&&/^\\d{4}-\\d{2}-\\d{2}$/.test(String(game.date)))return String(game.date);
+ if(!game.datetime&&/^\d{4}-\d{2}-\d{2}$/.test(String(game.date)))return String(game.date);
  const date=new Date(value);
  if(!Number.isFinite(date.getTime()))return String(game.date||'').slice(0,10);
  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);
