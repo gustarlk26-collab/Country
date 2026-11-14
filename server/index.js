@@ -409,8 +409,9 @@ app.get('/api/games', async (req, res) => {
     const parsed = new Date(Date.UTC(year, month - 1, day));
     return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day ? text : null;
   };
-  const defaultStart = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-  const defaultEnd = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  const saoToday = saoPauloDate(new Date().toISOString());
+  const defaultStart = shiftIsoDate(saoToday, -1);
+  const defaultEnd = shiftIsoDate(saoToday, 30);
   const start = parseDate(req.query.start || defaultStart);
   const end = parseDate(req.query.end || defaultEnd);
   try {
@@ -418,13 +419,13 @@ app.get('/api/games', async (req, res) => {
     const span = Math.floor((Date.parse(end + 'T00:00:00Z') - Date.parse(start + 'T00:00:00Z')) / 86400000) + 1;
     if (span > 90) return res.status(400).json({ error: 'Consulte no máximo 90 dias por vez.' });
     try {
-      const data = await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 15 * 1000);
-      res.set('Cache-Control', 'private, max-age=10');
+      const data = await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 2 * 60 * 1000);
+      res.set('Cache-Control', 'private, max-age=60');
       return res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN scoreboard' });
     } catch (espnError) {
       try {
-        const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 15 * 1000);
-        res.set('Cache-Control', 'private, max-age=10');
+        const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 2 * 60 * 1000);
+        res.set('Cache-Control', 'private, max-age=60');
         return res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA CDN schedule', fallback: true });
       } catch (cdnError) {
         return res.status(503).json({ error: `Calendário temporariamente indisponível. ESPN: ${espnError.message} NBA CDN: ${cdnError.message}` });
