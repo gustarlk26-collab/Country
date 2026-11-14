@@ -541,7 +541,7 @@ app.get('/api/games/:id/stats', async (req, res) => {
     const id = String(req.params.id);
     if (!/^\d{8,12}$/.test(id)) return res.status(400).json({ error: 'ID de partida inválido.' });
     const data = await cached(`boxscore:${id}`, () => getGameBoxscore(id), 12 * 1000);
-    res.json({ data, updatedAt: new Date().toISOString() });
+    res.json({ data:data.slice().sort((a,b)=>(b.game_score??-Infinity)-(a.game_score??-Infinity)), updatedAt: new Date().toISOString() });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
 
@@ -765,10 +765,13 @@ app.get('/api/team-stats',async(_req,res)=>{
     const fallback=standingResult.status==='fulfilled'?standingResult.value:[];
     const advById=new Map(advanced.map(row=>[String(row.TEAM_ID),row]));
     const baseById=new Map(base.map(row=>[String(row.TEAM_ID),row]));
-    const ids=new Set([...baseById.keys(),...fallback.map(row=>String(row.team?.id))]);
+    const standingsByAbbr=new Map(fallback.map(row=>[row.team?.abbreviation,row]));
+    const ids=new Set(base.length?baseById.keys():fallback.map(row=>String(row.team?.abbreviation||'')));
     const data=[...ids].map(id=>{
-      const row=baseById.get(id)||{},adv=advById.get(id)||{},standing=fallback.find(x=>String(x.team?.id)===id)||{};
-      const teamId=Number(id),meta=TEAM_META[teamId],abbreviation=row.TEAM_ABBREVIATION||standing.team?.abbreviation||meta?.[0];
+      const row=baseById.get(id)||{},adv=advById.get(id)||{};
+      const abbreviation=row.TEAM_ABBREVIATION||id;
+      const standing=standingsByAbbr.get(abbreviation)||{};
+      const teamId=Number(row.TEAM_ID||standing.team?.id),meta=TEAM_META[teamId];
       const number=value=>value==null||value===''||!Number.isFinite(Number(value))?null:Number(value);
       return {team:{id:teamId,abbreviation,full_name:row.TEAM_NAME||standing.team?.full_name||meta?.[1]||abbreviation,
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
