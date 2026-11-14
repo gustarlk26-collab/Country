@@ -128,11 +128,13 @@ async function nbaHistoricalBoxscore(gameId) {
   }));
 }
 async function getGameBoxscore(gameId) {
+  if (!/^\d{10}$/.test(String(gameId))) return espnBoxscore(gameId);
   try { return await nbaLiveBoxscore(gameId); }
   catch (liveError) {
     try { return await nbaHistoricalBoxscore(gameId); }
     catch (statsError) {
-      throw new Error(`Box score indisponível nas duas fontes NBA. Live: ${liveError.message} Stats: ${statsError.message}`);
+      try { return await espnBoxscore(gameId); }
+      catch (espnError) { throw new Error(`Box score indisponível. Live: ${liveError.message} Stats: ${statsError.message} ESPN: ${espnError.message}`); }
     }
   }
 }
@@ -213,6 +215,36 @@ async function espnGames(start, end) {
       visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score)
     }];
   });
+}
+function madeAttempt(value) {
+  const match = String(value || '').match(/(\d+)\s*[-/]\s*(\d+)/);
+  return match ? { made: Number(match[1]), attempted: Number(match[2]) } : { made: 0, attempted: 0 };
+}
+async function espnBoxscore(gameId) {
+  const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${encodeURIComponent(gameId)}`);
+  const groups = body.boxscore?.players || [];
+  const rows = groups.flatMap(group => {
+    const statBlock = (group.statistics || []).find(x => x.athletes) || group.statistics?.[0] || {};
+    const keys = statBlock.keys || [];
+    return (statBlock.athletes || []).map(entry => {
+      const values = Object.fromEntries(keys.map((key,i) => [String(key).toUpperCase(), entry.stats?.[i]]));
+      const fg = madeAttempt(values.FG), three = madeAttempt(values['3PT'] || values['3P']);
+      const athlete = entry.athlete || {};
+      const fullName = athlete.displayName || athlete.fullName || athlete.shortName || '';
+      const parts = fullName.split(' ');
+      return {
+        id: Number(athlete.id), player: { id: Number(athlete.id), first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot || null },
+        team: { id: Number(group.team?.id), abbreviation: group.team?.abbreviation || '', full_name: group.team?.displayName || group.team?.name || '' },
+        min: values.MIN || '0', pts: Number(values.PTS) || 0, reb: Number(values.REB) || 0,
+        ast: Number(values.AST) || 0, stl: Number(values.STL) || 0, blk: Number(values.BLK) || 0,
+        fg_pct: fg.attempted ? fg.made / fg.attempted : 0,
+        fg3_pct: three.attempted ? three.made / three.attempted : 0,
+        turnover: Number(values.TO) || 0
+      };
+    });
+  });
+  if (!rows.length) throw new Error('ESPN ainda não publicou o box score desta partida.');
+  return rows;
 }
 async function espnPlayers() {
   const abbreviations = Object.values(TEAM_META).map(meta => meta[0]);
@@ -352,7 +384,7 @@ app.get('/api/games', async (req, res) => {
 app.get('/api/games/:id/stats', async (req, res) => {
   try {
     const id = String(req.params.id);
-    if (!/^\d{10}$/.test(id)) return res.status(400).json({ error: 'ID de partida inválido.' });
+    if (!/^\d{8,12}$/.test(id)) return res.status(400).json({ error: 'ID de partida inválido.' });
     const data = await cached(`boxscore:${id}`, () => getGameBoxscore(id), 30 * 1000);
     res.json({ data, updatedAt: new Date().toISOString() });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
