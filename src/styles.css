@@ -378,3 +378,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @keyframes courtside-spin{to{transform:rotate(360deg)}}
 .secondary:disabled{opacity:.55;cursor:wait}
 @media(max-width:650px){.loading-indicator{font-size:10px;max-width:120px;white-space:normal}.top-right{flex-wrap:wrap;justify-content:flex-end}}
+
+.text-btn:disabled{opacity:.45;cursor:not-allowed;color:var(--muted)}
