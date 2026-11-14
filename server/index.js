@@ -299,8 +299,8 @@ async function espnGames(start, end) {
     const state = competition.status?.type?.state || event.status?.type?.state || 'pre';
     const status = competition.status?.type?.shortDetail || competition.status?.type?.description || event.status?.type?.shortDetail || 'Agendado';
     return [{ id: String(event.id), date: localDate, datetime, status, status_state: state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled',
-      home_team: { id: Number(home.team?.id), abbreviation: home.team?.abbreviation || '', full_name: home.team?.displayName || home.team?.name || '' },
-      visitor_team: { id: Number(away.team?.id), abbreviation: away.team?.abbreviation || '', full_name: away.team?.displayName || away.team?.name || '' },
+      home_team: { id: Number(home.team?.id), abbreviation: canonicalTeamAbbr(home.team?.abbreviation || ''), full_name: home.team?.displayName || home.team?.name || '' },
+      visitor_team: { id: Number(away.team?.id), abbreviation: canonicalTeamAbbr(away.team?.abbreviation || ''), full_name: away.team?.displayName || away.team?.name || '' },
       home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
       visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score) }];
   }).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
@@ -365,7 +365,7 @@ async function espnBoxscore(gameId) {
       const ft = madeAttempt(pick('FT','FREE THROWS'));
       const row = {
         id: Number(athlete.id), player: { id: Number(athlete.id), first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot?.href||athlete.headshot||null },
-        team: { id: Number(group.team?.id), abbreviation: group.team?.abbreviation || '', full_name: group.team?.displayName || group.team?.name || '' },
+        team: { id: Number(group.team?.id), abbreviation: canonicalTeamAbbr(group.team?.abbreviation || ''), full_name: group.team?.displayName || group.team?.name || '' },
         min, pts: numberOrNull(pick('PTS','POINTS')), reb: numberOrNull(pick('REB','REBOUNDS')), ast: numberOrNull(pick('AST','ASSISTS')),
         stl: numberOrNull(pick('STL','STEALS')), blk: numberOrNull(pick('BLK','BLOCKS')), fgm:fg.made, fga:fg.attempted, ftm:ft.made, fta:ft.attempted,
         oreb:numberOrNull(pick('OREB','OFFENSIVE REBOUNDS')), dreb:numberOrNull(pick('DREB','DEFENSIVE REBOUNDS')), pf:numberOrNull(pick('PF','FOULS')),
