@@ -132,3 +132,21 @@ input:focus,select:focus{box-shadow:0 0 0 3px rgba(39,137,239,.12)}
 .brand-logo{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.2))}
 @media(max-width:650px){.layout:before{inset:0}.topbar{position:relative}.topbar:after{left:14px;right:14px}.top-right{width:100%;justify-content:space-between;flex-wrap:wrap}.live{font-size:10px}.sidebar{background:linear-gradient(180deg,#0b2038,#08182b);box-shadow:0 8px 26px rgba(0,0,0,.18)}.sidebar nav button.active{box-shadow:inset 0 -2px #3c9cf0}.panel{border-radius:14px}.metric-card{border-radius:13px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Courtside data quality and expanded team/player panels */
+.game-standouts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0 20px}
+.game-standouts .metric-card{min-width:0;padding:14px}
+.game-standouts .metric-card b{font:600 16px 'Space Grotesk';overflow-wrap:anywhere}
+.game-standouts .metric-card strong{font-size:13px;color:#82c6ff}
+.team-roster-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.roster-player{display:flex;align-items:center;gap:11px;min-width:0;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--text);text-align:left;cursor:pointer;transition:transform .2s,border-color .2s}
+.roster-player:hover{transform:translateY(-2px);border-color:#4b9de5}
+.roster-player img{width:58px;height:58px;object-fit:cover;object-position:top center;border-radius:50%;background:var(--panel);flex:0 0 58px}
+.roster-player span{display:grid;gap:4px;min-width:0;flex:1}
+.roster-player b{font-size:12px;overflow-wrap:anywhere}
+.roster-player small{font-size:10px;color:var(--muted)}
+.roster-player strong{font-size:10px;color:#78c1ff;white-space:nowrap}
+.news-card{grid-template-columns:minmax(140px,36%) minmax(0,1fr);min-height:170px}
+.news-card>img{width:100%;height:100%;min-height:170px;max-height:220px;aspect-ratio:16/9;object-fit:cover;object-position:center;background:#102b48}
+@media(max-width:900px){.team-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.game-standouts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.team-roster-grid{grid-template-columns:1fr}.game-standouts{grid-template-columns:repeat(2,minmax(0,1fr))}.news-card{grid-template-columns:112px minmax(0,1fr)}.news-card>img{width:112px;min-height:140px;max-height:none;aspect-ratio:auto}}
