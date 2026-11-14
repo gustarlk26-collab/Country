@@ -4,3 +4,5 @@
 
 .player-cell{display:flex;align-items:center;gap:10px;min-width:170px}.player-headshot{width:42px;height:42px;object-fit:cover;object-position:top center;border-radius:50%;background:var(--panel2);border:1px solid var(--line);flex:0 0 42px}.player-headshot.placeholder{display:grid;place-items:center;color:var(--muted)}.player-cell>div{min-width:0}.player-cell b{display:block;white-space:normal;line-height:1.25}.table-wrap td{vertical-align:middle}
 @media(max-width:650px){.player-cell{min-width:155px;gap:7px}.player-headshot{width:36px;height:36px;flex-basis:36px}}
+
+.game-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.game-tabs button{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:8px;padding:9px 13px;font:600 12px 'DM Sans';cursor:pointer}.game-tabs button.active{background:#1479e8;border-color:#1479e8;color:#fff}.game-tabs button:hover{border-color:#2789ef}
