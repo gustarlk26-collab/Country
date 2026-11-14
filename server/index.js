@@ -579,6 +579,7 @@ app.get('/api/news', async (_req, res) => {
       id: item.id || item.dataSourceIdentifier || item.headline,
       title: item.headline || item.title || 'Notícia NBA',
       description: item.description || item.summary || '',
+      image: item.images?.[0]?.url || item.images?.[0]?.href || null,
       published: item.published || item.lastModified || '',
       url: item.links?.web?.href || item.links?.api?.news?.href || 'https://www.espn.com/nba/'
     }));
