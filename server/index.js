@@ -688,14 +688,29 @@ app.get('/api/players/:id/shots', async (req, res) => {
     const playerId = String(req.params.id);
     if (!/^\d{1,12}$/.test(playerId)) return res.status(400).json({ error: 'ID de jogador inválido. Selecione um atleta da lista oficial.' });
     const season = seasonFor();
-    const rows = (await cached('shot-chart:'+season+':'+playerId, () => nba('shotchartdetail', {
-      LeagueID:'00', Season:season, SeasonType:'Regular Season', PlayerID:playerId,
-      TeamID:0, ContextMeasure:'FGA', DateFrom:'', DateTo:'', GameID:'',
-      Outcome:'', Location:'', Month:0, SeasonSegment:'', VsConference:'',
-      VsDivision:'', Position:'', RookieYear:'', GameSegment:'', Period:0,
-      LastNGames:0, ClutchTime:'', AheadBehind:'', PointDiff:'', RangeType:0,
-      StartPeriod:0, EndPeriod:0
-    }), 3 * 60 * 1000))[0] || [];
+    const rows = (await cached('shot-chart:'+season+':'+playerId, async () => {
+      const params = {
+        LeagueID:'00', Season:season, SeasonType:'Regular Season', PlayerID:playerId,
+        TeamID:0, ContextMeasure:'FGA', DateFrom:'', DateTo:'', GameID:'',
+        Outcome:'', Location:'', Month:0, SeasonSegment:'', VsConference:'',
+        VsDivision:'', Position:'', RookieYear:'', GameSegment:'', Period:0,
+        LastNGames:0, ClutchTime:'', AheadBehind:'', PointDiff:'', RangeType:0,
+        StartPeriod:0, EndPeriod:0
+      };
+      let lastError;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try { return await nba('shotchartdetail', params); }
+        catch (error) {
+          lastError = error;
+          const transient = !error.status || error.status === 429 || error.status >= 500 || /fetch failed|timeout|network/i.test(error.message || '');
+          if (!transient || attempt === 2) break;
+          await new Promise(resolve => setTimeout(resolve, 600 * (attempt + 1)));
+        }
+      }
+      throw new Error(/fetch failed|timeout|network/i.test(lastError?.message || '')
+        ? 'A conexão com a fonte oficial de arremessos da NBA falhou após 3 tentativas. Tente novamente em instantes.'
+        : (lastError?.message || 'Fonte oficial temporariamente indisponível.'));
+    }, 3 * 60 * 1000))[0] || [];
     const data = rows.filter(r => Number.isFinite(Number(r.LOC_X)) && Number.isFinite(Number(r.LOC_Y))).map(r => ({
       x:Number(r.LOC_X), y:Number(r.LOC_Y), made:Number(r.SHOT_MADE_FLAG)===1,
       action:r.ACTION_TYPE||r.EVENT_TYPE||'Arremesso',
