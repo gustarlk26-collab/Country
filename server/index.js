@@ -192,6 +192,28 @@ async function nbaCdnGames(start, end) {
   }
   return games.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
 }
+async function espnGames(start, end) {
+  const dates = `${start.replaceAll('-','')}-${end.replaceAll('-','')}`;
+  const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dates}`);
+  return (body.events || []).flatMap(event => {
+    const competition = event.competitions?.[0];
+    if (!competition) return [];
+    const competitors = competition.competitors || [];
+    const home = competitors.find(c => c.homeAway === 'home');
+    const away = competitors.find(c => c.homeAway === 'away');
+    if (!home || !away) return [];
+    const state = competition.status?.type?.state || event.status?.type?.state || 'pre';
+    const status = competition.status?.type?.shortDetail || competition.status?.type?.description || event.status?.type?.shortDetail || 'Agendado';
+    return [{
+      id: String(event.id), date: String(event.date || '').slice(0,10), datetime: event.date || '',
+      status, status_state: state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled',
+      home_team: { id: Number(home.team?.id), abbreviation: home.team?.abbreviation || '', full_name: home.team?.displayName || home.team?.name || '' },
+      visitor_team: { id: Number(away.team?.id), abbreviation: away.team?.abbreviation || '', full_name: away.team?.displayName || away.team?.name || '' },
+      home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
+      visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score)
+    }];
+  });
+}
 async function espnPlayers() {
   const abbreviations = Object.values(TEAM_META).map(meta => meta[0]);
   const rosters = await Promise.all(abbreviations.map(async abbreviation => {
@@ -309,7 +331,7 @@ app.get('/api/games', async (req, res) => {
     const today = new Date().toISOString().slice(0,10);
     if (start <= today && end >= today) {
       try {
-        const liveToday = await cached(`live-scoreboard:${today}`, () => nbaCdnGames(today, today), 15 * 1000);
+        const liveToday = await cached(`live-scoreboard:${today}`, () => espnGames(today, today), 15 * 1000);
         const byId = new Map(data.map(g => [String(g.id), g]));
         liveToday.forEach(g => byId.set(String(g.id), g));
         data = [...byId.values()].sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
@@ -320,7 +342,10 @@ app.get('/api/games', async (req, res) => {
     try {
       const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 15 * 1000);
       res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA CDN schedule', fallback: true });
-    } catch (fallbackError) { res.status(503).json({ error: `Calendário indisponível. NBA Stats: ${e.message} NBA CDN: ${fallbackError.message}` }); }
+    } catch (fallbackError) {
+      try { const data = await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 15 * 1000); res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN scoreboard', fallback: true }); }
+      catch (espnError) { res.status(503).json({ error: `Calendário indisponível. NBA Stats: ${e.message} NBA CDN: ${fallbackError.message} ESPN: ${espnError.message}` }); }
+    }
   }
 });
 
