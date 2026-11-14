@@ -216,6 +216,18 @@ async function espnGames(start, end) {
     }];
   });
 }
+function formatMinutes(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '0:00';
+  if (raw.startsWith('PT')) {
+    const match = raw.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/i);
+    if (match) {
+      const seconds = Math.round((Number(match[1] || 0) * 3600) + (Number(match[2] || 0) * 60) + Number(match[3] || 0));
+      return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+    }
+  }
+  return raw;
+}
 function madeAttempt(value) {
   const match = String(value || '').match(/(\d+)\s*[-/]\s*(\d+)/);
   return match ? { made: Number(match[1]), attempted: Number(match[2]) } : { made: 0, attempted: 0 };
@@ -235,7 +247,7 @@ async function espnBoxscore(gameId) {
       return {
         id: Number(athlete.id), player: { id: Number(athlete.id), first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot || null },
         team: { id: Number(group.team?.id), abbreviation: group.team?.abbreviation || '', full_name: group.team?.displayName || group.team?.name || '' },
-        min: values.MIN || '0', pts: Number(values.PTS) || 0, reb: Number(values.REB) || 0,
+        min: formatMinutes(values.MIN), pts: Number(values.PTS) || 0, reb: Number(values.REB) || 0,
         ast: Number(values.AST) || 0, stl: Number(values.STL) || 0, blk: Number(values.BLK) || 0,
         fg_pct: fg.attempted ? fg.made / fg.attempted : 0,
         fg3_pct: three.attempted ? three.made / three.attempted : 0,
