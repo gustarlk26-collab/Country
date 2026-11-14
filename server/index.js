@@ -206,7 +206,7 @@ async function nbaCdnGames(start, end) {
   const schedulePromise = fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json', {
     headers: NBA_HEADERS, signal: AbortSignal.timeout(8000)
   }).then(async r => { if (!r.ok) throw new Error(`NBA CDN schedule HTTP ${r.status}`); return r.json(); });
-  const today = new Date().toISOString().slice(0,10);
+  const today = saoPauloDate(new Date().toISOString());
   const [schedule, live] = await Promise.all([
     schedulePromise,
     start <= today && end >= today
@@ -216,17 +216,19 @@ async function nbaCdnGames(start, end) {
       : Promise.resolve(null)
   ]);
   const dates = schedule?.leagueSchedule?.gameDates || [];
-  const games = dates.flatMap(d => d.games || []).filter(g => {
-    const date = String(g.gameDateEst || g.gameDateTimeEst || g.gameDate || '').slice(0, 10);
-    return date >= start && date <= end;
-  }).map(g => {
+  const games = dates.flatMap(d => d.games || []).map(g => {
+    const datetime = g.gameDateTimeUTC || g.gameDateTimeEst || g.gameDateEst || g.gameDate || '';
+    const localDate = g.gameDateTimeUTC ? saoPauloDate(g.gameDateTimeUTC) : String(g.gameDateEst || g.gameDate || datetime).slice(0, 10);
+    return { game: g, datetime, localDate };
+  }).filter(item => item.localDate >= start && item.localDate <= end).map(({ game: g, datetime, localDate }) => {
     const home = g.homeTeam || {}, away = g.awayTeam || {};
     const statusCode = Number(g.gameStatus);
     const status = statusCode === 3 ? 'Final' : statusCode === 2 ? 'Em andamento' : 'Agendado';
-    const date = String(g.gameDateEst || g.gameDateTimeEst || g.gameDate || '').slice(0, 10);
     return {
-      id: String(g.gameId), date, datetime: g.gameDateTimeUTC || g.gameDateTimeEst || date,
+      id: String(g.gameId), date: localDate, datetime: datetime || localDate,
       status, status_state: statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled',
+      period: Number(g.period) || null, period_label: Number(g.period) ? (Number(g.period) <= 4 ? 'Q' + Number(g.period) : 'OT' + (Number(g.period) - 4)) : null,
+      display_clock: g.gameClock || null,
       home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: [home.teamCity, home.teamName].filter(Boolean).join(' ') },
       visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: [away.teamCity, away.teamName].filter(Boolean).join(' ') },
       home_team_score: statusCode === 1 ? null : (g.homeTeamScore ?? null),
@@ -235,12 +237,14 @@ async function nbaCdnGames(start, end) {
   });
   const liveGames = live?.scoreboard?.games || [];
   for (const g of liveGames) {
+    const datetime = g.gameTimeUTC || '';
+    const localDate = saoPauloDate(datetime) || today;
+    if (localDate < start || localDate > end) continue;
     const idx = games.findIndex(x => x.id === String(g.gameId));
     const home = g.homeTeam || {}, away = g.awayTeam || {};
     const statusCode = Number(g.gameStatus);
     const mapped = {
-      id: String(g.gameId), date: String(g.gameTimeUTC || today).slice(0,10),
-      datetime: g.gameTimeUTC || today,
+      id: String(g.gameId), date: localDate, datetime: datetime || localDate,
       status: g.gameStatusText || (statusCode === 3 ? 'Final' : statusCode === 2 ? 'Em andamento' : 'Agendado'),
       status_state: statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled',
       period: Number(g.period) || null, period_label: Number(g.period) ? (Number(g.period) <= 4 ? 'Q' + Number(g.period) : 'OT' + (Number(g.period) - 4)) : null,
