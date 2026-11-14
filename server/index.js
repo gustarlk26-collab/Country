@@ -822,7 +822,7 @@ app.get('/api/team-stats',async(_req,res)=>{
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
         wins:number(row.W),losses:number(row.L),win_pct:number(row.W_PCT??standing.win_pct),
         gp:number(row.GP),pts:number(row.PTS),reb:number(row.REB),ast:number(row.AST),stl:number(row.STL),blk:number(row.BLK),
-        fg_pct:number(row.FG_PCT),fg3_pct:number(row.FG3_PCT),off_rating:number(adv.OFF_RATING),def_rating:number(adv.DEF_RATING),net_rating:number(adv.NET_RATING)};
+        fg_pct:number(row.FG_PCT),fg3_pct:number(row.FG3_PCT),pace:number(adv.PACE),off_rating:number(adv.OFF_RATING),def_rating:number(adv.DEF_RATING),net_rating:number(adv.NET_RATING)};
     });
     if(!data.length)throw new Error(baseResult.status==='rejected'?baseResult.reason.message:'Fontes não retornaram dados de franquias.');
     res.json({data:data.sort((a,b)=>(b.net_rating??b.win_pct??-Infinity)-(a.net_rating??a.win_pct??-Infinity)),season,
