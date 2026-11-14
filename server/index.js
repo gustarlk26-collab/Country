@@ -107,8 +107,8 @@ async function nbaLiveBoxscore(gameId) {
     team: { id: team.teamId, abbreviation: team.teamTricode, full_name: team.teamName },
     min: p.statistics?.minutes || '0', pts: p.statistics?.points ?? 0, reb: p.statistics?.reboundsTotal ?? 0,
     ast: p.statistics?.assists ?? 0, stl: p.statistics?.steals ?? 0, blk: p.statistics?.blocks ?? 0,
-    fg_pct: p.statistics?.fieldGoalsAttempted ? p.statistics.fieldGoalsMade / p.statistics.fieldGoalsAttempted : 0,
-    fg3_pct: p.statistics?.threePointersAttempted ? p.statistics.threePointersMade / p.statistics.threePointersAttempted : 0,
+    fg_pct: p.statistics?.fieldGoalsAttempted ? p.statistics.fieldGoalsMade / p.statistics.fieldGoalsAttempted : null,
+    fg3_pct: p.statistics?.threePointersAttempted ? p.statistics.threePointersMade / p.statistics.threePointersAttempted : null,
     turnover: p.statistics?.turnovers ?? 0
   })));
 }
@@ -128,7 +128,7 @@ async function nbaHistoricalBoxscore(gameId) {
     player: { id: p.PLAYER_ID, first_name: String(p.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(p.PLAYER_NAME || '').split(' ').slice(-1)[0] },
     team: { id: p.TEAM_ID, abbreviation: p.TEAM_ABBREVIATION, full_name: p.TEAM_NAME },
     min: p.MIN || '0', pts: p.PTS ?? 0, reb: p.REB ?? 0, ast: p.AST ?? 0, stl: p.STL ?? 0, blk: p.BLK ?? 0,
-    fg_pct: p.FGA ? p.FGM / p.FGA : 0, fg3_pct: p.FG3A ? p.FG3M / p.FG3A : 0, turnover: p.TOV ?? 0
+    fg_pct: p.FGA ? p.FGM / p.FGA : null, fg3_pct: p.FG3A ? p.FG3M / p.FG3A : null, turnover: p.TOV ?? 0
   }));
 }
 async function getGameBoxscore(gameId) {
@@ -284,8 +284,8 @@ async function espnBoxscore(gameId) {
         team: { id: Number(group.team?.id), abbreviation: group.team?.abbreviation || '', full_name: group.team?.displayName || group.team?.name || '' },
         min: formatMinutes(values.MIN), pts: Number(values.PTS) || 0, reb: Number(values.REB) || 0,
         ast: Number(values.AST) || 0, stl: Number(values.STL) || 0, blk: Number(values.BLK) || 0,
-        fg_pct: fg.attempted ? fg.made / fg.attempted : 0,
-        fg3_pct: three.attempted ? three.made / three.attempted : 0,
+        fg_pct: fg.attempted ? fg.made / fg.attempted : null,
+        fg3_pct: three.attempted ? three.made / three.attempted : null,
         turnover: Number(values.TO) || 0
       };
     });
