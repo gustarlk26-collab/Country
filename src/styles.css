@@ -83,3 +83,5 @@ tbody tr{transition:background .16s}tbody tr:hover{background:rgba(45,124,193,.1
 @media(max-width:1100px){.team-feature-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.player-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.team-feature-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.player-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.news-grid{grid-template-columns:1fr}.team-leaders{grid-template-columns:1fr}}
 @media(max-width:480px){.team-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.team-feature-card img{width:54px;height:54px}.team-hero{padding:14px;gap:13px}.team-hero img{width:76px;height:76px}.team-hero h2{font-size:18px}.collectible-card>img{height:125px}.news-card{grid-template-columns:96px minmax(0,1fr)}.news-card>img{width:96px;min-height:135px}.news-card b{font-size:12px}}
+
+.milestone-tags{display:flex;flex-wrap:wrap;gap:4px;min-width:110px}.milestone-tags span{display:inline-flex;padding:4px 6px;border-radius:6px;background:rgba(36,142,105,.16);border:1px solid rgba(72,190,145,.22);color:#8ee0bd;font-size:9px;font-weight:800;white-space:nowrap}
