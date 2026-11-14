@@ -266,3 +266,48 @@ body{background-color:#050b14;background-image:radial-gradient(ellipse at 50% -1
 .feature-category-head span{color:var(--muted);font-size:10px;white-space:nowrap}
 @media(max-width:650px){.feature-categories{gap:17px}.feature-category-head h3{font-size:13px}.feature-category .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.feature-category .feature-tile{min-height:128px}}
 @media(max-width:380px){.feature-category .feature-grid{grid-template-columns:1fr}}
+
+
+/* Responsive polish across the full app */
+@media(min-width:651px){
+ .sidebar{overflow-y:auto}
+ .sidebar nav{overflow-y:auto;min-height:0;padding-right:3px}
+ .main{min-width:0}
+ .content{width:100%;max-width:1680px;margin:0 auto}
+ .panel{min-width:0}
+}
+@media(max-width:650px){
+ .sidebar{max-height:46vh;overflow-y:auto;overscroll-behavior:contain}
+ .mobile-nav-categories{width:100%;align-items:center}
+ .mobile-nav-categories button{display:inline-flex;align-items:center;gap:6px;min-height:36px}
+ .sidebar nav .nav-group button{min-height:40px}
+ .topbar .live{display:none}
+ .topbar{display:flex;align-items:center;justify-content:space-between}
+ .topbar>div:first-child{min-width:0}
+ .topbar .top-right{margin-left:auto}
+ .content{padding:10px;overflow-x:hidden}
+ .panel{border-radius:13px}
+ .filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+ .filters label,.filters .search-field{min-width:0;width:100%}
+ .filters input,.filters select{width:100%;min-width:0}
+ .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .leader-grid,.team-grid,.form-team-grid,.team-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .game-row{grid-template-columns:1fr auto;gap:8px}
+ .game-row>div:last-child{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}
+ .profile-tabs{display:flex;overflow-x:auto;gap:6px;scrollbar-width:none}
+ .profile-tabs button{flex:0 0 auto;white-space:nowrap}
+ .feature-tile{overflow-wrap:anywhere}
+}
+@media(max-width:390px){
+ .sidebar{max-height:44vh}
+ .sidebar nav .nav-group button{min-height:38px;font-size:10px}
+ .filters{grid-template-columns:1fr}
+ .cards,.leader-grid,.team-grid,.form-team-grid,.team-roster-grid{grid-template-columns:1fr}
+ .game-row{grid-template-columns:1fr}
+ .game-row>div:last-child{grid-column:auto;align-items:flex-start;gap:8px;flex-direction:column}
+}
+.layout.light .sidebar{background:#f7faff;border-color:#d8e1ec}
+.layout.light .sidebar nav button{color:#53677f}
+.layout.light .sidebar nav button.active,.layout.light .sidebar nav button:hover{background:#dcecff;color:#14518a}
+.layout.light .mobile-nav-categories button{background:#edf3fa;color:#52677f;border-color:#d4dfeb}
+.layout.light .mobile-nav-categories button.active{background:#1767a8;color:#fff;border-color:#4da7f1}
