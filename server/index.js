@@ -140,13 +140,13 @@ async function getGameBoxscore(gameId) {
 }
 
 async function espnJson(url) {
-  const response = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': NBA_HEADERS['User-Agent'] }, signal: AbortSignal.timeout(15000) });
+  const response = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': NBA_HEADERS['User-Agent'] }, signal: AbortSignal.timeout(7000) });
   if (!response.ok) throw new Error(`ESPN indisponível (HTTP ${response.status}).`);
   return response.json();
 }
 async function nbaCdnGames(start, end) {
   const schedulePromise = fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json', {
-    headers: NBA_HEADERS, signal: AbortSignal.timeout(20000)
+    headers: NBA_HEADERS, signal: AbortSignal.timeout(8000)
   }).then(async r => { if (!r.ok) throw new Error(`NBA CDN schedule HTTP ${r.status}`); return r.json(); });
   const today = new Date().toISOString().slice(0,10);
   const [schedule, live] = await Promise.all([
