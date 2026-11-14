@@ -257,3 +257,12 @@ body{background-color:#050b14;background-image:radial-gradient(ellipse at 50% -1
  .topbar{padding:12px}
  .content{padding:9px}
 }
+
+/* Homepage shortcuts grouped to make every section scannable */
+.feature-categories{display:grid;gap:22px}
+.feature-category{min-width:0}
+.feature-category-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.feature-category-head h3{margin:0;color:var(--text);font:700 14px 'Space Grotesk'}
+.feature-category-head span{color:var(--muted);font-size:10px;white-space:nowrap}
+@media(max-width:650px){.feature-categories{gap:17px}.feature-category-head h3{font-size:13px}.feature-category .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.feature-category .feature-tile{min-height:128px}}
+@media(max-width:380px){.feature-category .feature-grid{grid-template-columns:1fr}}
