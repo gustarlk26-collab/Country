@@ -307,7 +307,7 @@ async function espnGames(start, end) {
 }
 function minutesAsNumber(value) {
   const formatted = formatMinutes(value);
-  const clock = String(formatted || '').match(/^(\\d+):(\\d{2})$/);
+  const clock = String(formatted || '').match(/^(\d+):(\d{2})$/);
   if (clock) return Number(clock[1]) + Number(clock[2]) / 60;
   const numeric = Number(formatted);
   return Number.isFinite(numeric) ? numeric : 0;
@@ -466,7 +466,7 @@ app.get('/api/teams/:abbr/roster', async (req,res)=>{
 app.get('/api/players/:id/bio',async(req,res)=>{
   try{
     const id=String(req.params.id);
-    if(!/^\\d{1,12}$/.test(id))return res.status(400).json({error:'ID de jogador inválido.'});
+    if(!/^\d{1,12}$/.test(id))return res.status(400).json({error:'ID de jogador inválido.'});
     const requestedName=String(req.query.name||'').trim().toLowerCase().replace(/[^a-z0-9]/g,'');
     const roster=await cached('espn:active-players',espnPlayers,30*60*1000);
     let player=roster.find(item=>String(item.espn_id||item.id)===id);
