@@ -1,6 +1,6 @@
 const apiResponseCache = new Map();
 const apiInflight = new Map();
-import React,{useCallback,useEffect,useMemo,useState} from 'react';
+import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {translateText} from './translations';
 import {createClient} from '@supabase/supabase-js';
 import {Activity,CalendarDays,Users,Trophy,Shield,Star,Settings,LogOut,RefreshCw,Search,ChevronDown,ChevronLeft,ChevronRight,Globe,Lock,Mail,KeyRound,BarChart3,Heart,AlertCircle,CheckCircle2,Clock3,Menu,X,ExternalLink,LoaderCircle,Crosshair,Radio,GitBranch,Medal,History,ShieldAlert,PieChart,TrendingUp,Swords,Award,Newspaper,CalendarClock,Database,Zap,Sparkles,Gauge,Wallet,ClipboardList,Flame,Route,UserRound,ShieldCheck,Scale,Target,Timer,CalendarRange,ChartLine,UsersRound,CircleDollarSign} from 'lucide-react';
@@ -19,6 +19,8 @@ export default function App(){
  const [session,setSession]=useState(null),[authReady,setAuthReady]=useState(false),[authMode,setAuthMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authMsg,setAuthMsg]=useState(''),[authBusy,setAuthBusy]=useState(false);
  const [page,setPage]=useState('overview'),[mobileNavGroup,setMobileNavGroup]=useState('Principal'),[lang,setLang]=useState('pt'),[theme,setTheme]=useState('dark'),[busy,setBusy]=useState(false),[error,setError]=useState(''),[toast,setToast]=useState('');
  const [teams,setTeams]=useState([]),[players,setPlayers]=useState([]),[playerCursor,setPlayerCursor]=useState(null),[playerSearch,setPlayerSearch]=useState(''),[games,setGames]=useState([]),[from,setFrom]=useState(dateNow(-45)),[to,setTo]=useState(dateNow(30)),[gameView,setGameView]=useState('today'),[boxGame,setBoxGame]=useState(null),[boxStats,setBoxStats]=useState([]),[ranking,setRanking]=useState([]),[averages,setAverages]=useState([]),[averagePeriod,setAveragePeriod]=useState('5'),[mvp,setMvp]=useState(null),[standings,setStandings]=useState([]),[favorites,setFavorites]=useState([]),[settingsLoaded,setSettingsLoaded]=useState(false),[lastSync,setLastSync]=useState(null),[selectedProfile,setSelectedProfile]=useState(null),[profileTrend,setProfileTrend]=useState([]),[compareA,setCompareA]=useState(''),[compareB,setCompareB]=useState(''),[advanced,setAdvanced]=useState([]),[profileAdvanced,setProfileAdvanced]=useState(null),[profileLeagueAverages,setProfileLeagueAverages]=useState([]),[shotData,setShotData]=useState([]),[shotBusy,setShotBusy]=useState(false),[shotError,setShotError]=useState(''),[profileTab,setProfileTab]=useState('basic'),[recordLeaders,setRecordLeaders]=useState([]),[featureNews,setFeatureNews]=useState([]),[translatedNews,setTranslatedNews]=useState({}),[featureInjuries,setFeatureInjuries]=useState([]),[fantasyIds,setFantasyIds]=useState(()=>{try{const value=JSON.parse(localStorage.getItem('courtside-fantasy-roster')||'[]');return Array.isArray(value)?value:[]}catch{return []}}),[quarterGameId,setQuarterGameId]=useState(''),[quarterSummary,setQuarterSummary]=useState(null),[teamA,setTeamA]=useState('BOS'),[teamB,setTeamB]=useState('LAL'),[headToHead,setHeadToHead]=useState([]),[headToHeadBusy,setHeadToHeadBusy]=useState(false),[shotPlayer,setShotPlayer]=useState(''),[shotTeam,setShotTeam]=useState(''),[teamStats,setTeamStats]=useState([]),[teamRoster,setTeamRoster]=useState([]),[teamRosterBusy,setTeamRosterBusy]=useState(false),[playerBio,setPlayerBio]=useState(null),[playerBioBusy,setPlayerBioBusy]=useState(false),[headToHeadError,setHeadToHeadError]=useState(''),[betGameId,setBetGameId]=useState(''),[betOdds,setBetOdds]=useState(''),[betProbability,setBetProbability]=useState(''),[betStake,setBetStake]=useState(''),[powerOrder,setPowerOrder]=useState('strength'),[bankrollValue,setBankrollValue]=useState('1000'),[riskPct,setRiskPct]=useState('1'),[propPlayer,setPropPlayer]=useState(''),[propMetric,setPropMetric]=useState('pts'),[statMetric,setStatMetric]=useState('pts'),[propLine,setPropLine]=useState(''),[betJournal,setBetJournal]=useState(()=>{try{const value=JSON.parse(localStorage.getItem('courtside-bet-journal')||'[]');return Array.isArray(value)?value.filter(item=>item&&typeof item==='object'&&typeof item.pick==='string'&&Number.isFinite(Number(item.stake))&&Number(item.stake)>0&&Number.isFinite(Number(item.odds))&&Number(item.odds)>1&&['pending','won','lost','push'].includes(item.result)).map(item=>({...item,stake:Number(item.stake),odds:Number(item.odds)})):[]}catch{return []}}),[journalPick,setJournalPick]=useState(''),[journalStake,setJournalStake]=useState(''),[journalOdds,setJournalOdds]=useState(''),[journalResult,setJournalResult]=useState('pending'),[scenarioExtraWins,setScenarioExtraWins]=useState('5');
+ const boxGameRef=useRef(null);
+ useEffect(()=>{boxGameRef.current=boxGame;},[boxGame]);
  useEffect(()=>{try{localStorage.setItem('courtside-fantasy-roster',JSON.stringify(fantasyIds));}catch{}},[fantasyIds]);
  useEffect(()=>{try{localStorage.setItem('courtside-bet-journal',JSON.stringify(betJournal));}catch{}},[betJournal]);
  useEffect(()=>{const activeGroup=navGroups.find(group=>group.items.some(([key])=>key===page));if(activeGroup)setMobileNavGroup(activeGroup.label)},[page]);
@@ -112,11 +114,13 @@ export default function App(){
         return [...byId.values()].sort((x,y)=>new Date(x.datetime||x.date)-new Date(y.datetime||y.date));
       });
       setLastSync(new Date());
-      if(page==='boxscore'&&boxGame?.id&&(boxGame.status_state==='in_progress'||boxGame.status_state==='final')){
-        const score=await api('/api/games/'+encodeURIComponent(boxGame.id)+'/stats',{cache:false});
+      const selectedGame=boxGameRef.current;
+      const updated=updates.find(game=>String(game.id)===String(selectedGame?.id));
+      if(updated)setBoxGame(current=>current&&String(current.id)===String(updated.id)?({...current,...updated}):current);
+      const activeGame=updated||selectedGame;
+      if(page==='boxscore'&&activeGame?.id&&(activeGame.status_state==='in_progress'||activeGame.status_state==='final')){
+        const score=await api('/api/games/'+encodeURIComponent(activeGame.id)+'/stats',{cache:false});
         setBoxStats(score.data||[]);
-        const updated=updates.find(g=>String(g.id)===String(boxGame.id));
-        if(updated)setBoxGame(current=>({...current,...updated}));
       }
     } catch(e) { /* Mantém os últimos dados válidos durante falhas transitórias. */ }
     finally { running=false; }
@@ -126,7 +130,7 @@ export default function App(){
   refreshLive();
   const timer=window.setInterval(refreshLive,15000);
   return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);};
-},[session,api,page,boxGame]);
+},[session,api,page]);
 useEffect(()=>{
   if(!session)return;
   const timer=window.setInterval(async()=>{
