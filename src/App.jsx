@@ -1,4 +1,5 @@
 import React,{useCallback,useEffect,useMemo,useState} from 'react';
+import {translateText} from './translations';
 import {createClient} from '@supabase/supabase-js';
 import {Activity,CalendarDays,Users,Trophy,Shield,Star,Settings,LogOut,RefreshCw,Search,ChevronDown,ChevronLeft,ChevronRight,Globe,Lock,Mail,KeyRound,BarChart3,Heart,AlertCircle,CheckCircle2,Clock3,Menu,X,ExternalLink,LoaderCircle,Crosshair,Radio,GitBranch,Medal,History,ShieldAlert,PieChart,TrendingUp,Swords,Award,Newspaper,CalendarClock,Database,Zap,Sparkles} from 'lucide-react';
 
@@ -15,9 +16,62 @@ const dateNow=(offset=0)=>{const d=new Date();d.setDate(d.getDate()+offset);cons
 export default function App(){
  const [session,setSession]=useState(null),[authReady,setAuthReady]=useState(false),[authMode,setAuthMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authMsg,setAuthMsg]=useState(''),[authBusy,setAuthBusy]=useState(false);
  const [page,setPage]=useState('overview'),[lang,setLang]=useState('pt'),[theme,setTheme]=useState('dark'),[busy,setBusy]=useState(false),[error,setError]=useState(''),[toast,setToast]=useState('');
- const [teams,setTeams]=useState([]),[players,setPlayers]=useState([]),[playerCursor,setPlayerCursor]=useState(null),[playerSearch,setPlayerSearch]=useState(''),[games,setGames]=useState([]),[from,setFrom]=useState(dateNow(-1)),[to,setTo]=useState(dateNow(30)),[gameView,setGameView]=useState('today'),[boxGame,setBoxGame]=useState(null),[boxStats,setBoxStats]=useState([]),[ranking,setRanking]=useState([]),[averages,setAverages]=useState([]),[averagePeriod,setAveragePeriod]=useState('5'),[mvp,setMvp]=useState(null),[standings,setStandings]=useState([]),[favorites,setFavorites]=useState([]),[settingsLoaded,setSettingsLoaded]=useState(false),[lastSync,setLastSync]=useState(null),[selectedProfile,setSelectedProfile]=useState(null),[profileTrend,setProfileTrend]=useState([]),[compareA,setCompareA]=useState(''),[compareB,setCompareB]=useState(''),[advanced,setAdvanced]=useState([]),[profileAdvanced,setProfileAdvanced]=useState(null),[profileLeagueAverages,setProfileLeagueAverages]=useState([]),[shotData,setShotData]=useState([]),[shotBusy,setShotBusy]=useState(false),[shotError,setShotError]=useState(''),[profileTab,setProfileTab]=useState('basic'),[recordLeaders,setRecordLeaders]=useState([]),[featureNews,setFeatureNews]=useState([]),[featureInjuries,setFeatureInjuries]=useState([]),[fantasyIds,setFantasyIds]=useState(()=>{try{return JSON.parse(localStorage.getItem('courtside-fantasy-roster')||'[]')}catch{return []}}),[quarterGameId,setQuarterGameId]=useState(''),[quarterSummary,setQuarterSummary]=useState(null),[teamA,setTeamA]=useState('BOS'),[teamB,setTeamB]=useState('LAL'),[headToHead,setHeadToHead]=useState([]),[headToHeadBusy,setHeadToHeadBusy]=useState(false),[shotPlayer,setShotPlayer]=useState('');
+ const [teams,setTeams]=useState([]),[players,setPlayers]=useState([]),[playerCursor,setPlayerCursor]=useState(null),[playerSearch,setPlayerSearch]=useState(''),[games,setGames]=useState([]),[from,setFrom]=useState(dateNow(-1)),[to,setTo]=useState(dateNow(30)),[gameView,setGameView]=useState('today'),[boxGame,setBoxGame]=useState(null),[boxStats,setBoxStats]=useState([]),[ranking,setRanking]=useState([]),[averages,setAverages]=useState([]),[averagePeriod,setAveragePeriod]=useState('5'),[mvp,setMvp]=useState(null),[standings,setStandings]=useState([]),[favorites,setFavorites]=useState([]),[settingsLoaded,setSettingsLoaded]=useState(false),[lastSync,setLastSync]=useState(null),[selectedProfile,setSelectedProfile]=useState(null),[profileTrend,setProfileTrend]=useState([]),[compareA,setCompareA]=useState(''),[compareB,setCompareB]=useState(''),[advanced,setAdvanced]=useState([]),[profileAdvanced,setProfileAdvanced]=useState(null),[profileLeagueAverages,setProfileLeagueAverages]=useState([]),[shotData,setShotData]=useState([]),[shotBusy,setShotBusy]=useState(false),[shotError,setShotError]=useState(''),[profileTab,setProfileTab]=useState('basic'),[recordLeaders,setRecordLeaders]=useState([]),[featureNews,setFeatureNews]=useState([]),[translatedNews,setTranslatedNews]=useState({}),[featureInjuries,setFeatureInjuries]=useState([]),[fantasyIds,setFantasyIds]=useState(()=>{try{return JSON.parse(localStorage.getItem('courtside-fantasy-roster')||'[]')}catch{return []}}),[quarterGameId,setQuarterGameId]=useState(''),[quarterSummary,setQuarterSummary]=useState(null),[teamA,setTeamA]=useState('BOS'),[teamB,setTeamB]=useState('LAL'),[headToHead,setHeadToHead]=useState([]),[headToHeadBusy,setHeadToHeadBusy]=useState(false),[shotPlayer,setShotPlayer]=useState('');
  useEffect(()=>{try{localStorage.setItem('courtside-fantasy-roster',JSON.stringify(fantasyIds));}catch{}},[fantasyIds]);
  const t=I18N[lang]||I18N.pt;
+ useEffect(()=>{
+  if(lang==='pt'||!featureNews.length){setTranslatedNews({});return;}
+  let active=true;
+  const translateOne=async(text)=>{
+   if(!text)return text;
+   try{
+    const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+lang+'&dt=t&q='+encodeURIComponent(text);
+    const response=await fetch(url);
+    if(!response.ok)throw new Error('Translation unavailable');
+    const data=await response.json();
+    return Array.isArray(data?.[0])?data[0].map(part=>part?.[0]||'').join(''):text;
+   }catch{return text;}
+  };
+  Promise.all(featureNews.map(async(item)=>({id:item.id,title:await translateOne(item.title),description:await translateOne(item.description)})))
+   .then(items=>{if(active)setTranslatedNews(old=>({...old,[lang]:items}));});
+  return()=>{active=false;};
+ },[lang,featureNews]);
+ useEffect(()=>{
+  if(typeof document==='undefined'||!document.body)return;
+  const translateNode=node=>{
+   if(node?.nodeType===Node.TEXT_NODE){
+    const next=translateText(node.nodeValue,lang);
+    if(next!==node.nodeValue)node.nodeValue=next;
+   }
+  };
+  const scan=root=>{
+   if(!root)return;
+   if(root.nodeType===Node.TEXT_NODE){translateNode(root);return;}
+   if(root.nodeType!==Node.ELEMENT_NODE&&root!==document.body)return;
+   if(root.nodeType===Node.ELEMENT_NODE){
+    for(const attr of ['placeholder','title','aria-label']){
+     const value=root.getAttribute?.(attr);
+     if(value){const next=translateText(value,lang);if(next!==value)root.setAttribute(attr,next);}
+    }
+   }
+   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+   let node;while((node=walker.nextNode()))translateNode(node);
+  };
+  scan(document.body);
+  const observer=new MutationObserver(records=>{
+   for(const record of records){
+    if(record.type==='characterData')translateNode(record.target);
+    else if(record.type==='childList')record.addedNodes.forEach(scan);
+    else if(record.type==='attributes'){
+     const value=record.target.getAttribute(record.attributeName);
+     if(value){const next=translateText(value,lang);if(next!==value)record.target.setAttribute(record.attributeName,next);}
+    }
+   }
+  });
+  observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
+  return()=>observer.disconnect();
+ },[lang]);
+
  const featureKeys=['shotmap','livecenter','playoffs','records','history','fantasy','injuries','quarters','power','evolution','headtohead','awards','news','customcalendar','historicstats','gamegrade','teamhub','playercards','alerts','teamanalytics'];
  const featureNames={shotmap:'Mapa de arremessos',livecenter:'Central de jogos ao vivo',playoffs:'Playoffs e chaveamento',records:'Recordes da NBA',history:'Comparação histórica',fantasy:'Fantasy NBA',injuries:'Lesões e desfalques',quarters:'Estatísticas por quarto',power:'Power Rankings',evolution:'Evolução na temporada',headtohead:'Histórico de confrontos',awards:'Central de prêmios',news:'Notícias NBA',customcalendar:'Calendário personalizado',historicstats:'Estatísticas históricas',gamegrade:'Notas por partida',teamhub:'Central dos times',playercards:'Cards de jogadores',alerts:'Alertas ao vivo',teamanalytics:'Análise dos times'};
  const featureDescriptions={shotmap:'Explore os arremessos oficiais por atleta na plataforma de estatísticas da NBA.',livecenter:'Acompanhe placares, jogos em andamento e box scores atualizados automaticamente.',playoffs:'Consulte classificação, calendário de pós-temporada e chave oficial da NBA.',records:'Líderes e recordes publicados pela NBA, com links para as tabelas oficiais.',history:'Compare temporadas, jogadores e resultados usando bases oficiais.',fantasy:'Monte seu elenco com atletas reais e pontuação calculada a partir das médias carregadas.',injuries:'Relatórios de lesões publicados pela ESPN. A disponibilidade varia por equipe e atualização.',quarters:'Veja placares por período quando a fonte oficial disponibilizar os parciais.',power:'Ranking de força baseado na classificação oficial e desempenho da temporada.',evolution:'Compare médias dos últimos 5, 10, 20 jogos e temporada completa.',headtohead:'Confrontos da temporada atual entre duas franquias, conforme os jogos retornados pela fonte.',awards:'Acompanhe candidatos estatísticos às principais premiações, sem confundir com votação oficial.',news:'Manchetes recentes da cobertura NBA pela ESPN.',customcalendar:'Filtre jogos por intervalo e acompanhe partidas passadas e futuras.',historicstats:'Acesse rankings históricos e bases oficiais de estatísticas da NBA.',gamegrade:'Notas calculadas a partir do box score real; índice próprio, não oficial da NBA.',teamhub:'Explore as 30 franquias com escudos, campanha e conferência.',playercards:'Cards com fotos oficiais e médias reais dos atletas.',alerts:'Acompanhe partidas em andamento e marcos estatísticos publicados no box score.',teamanalytics:'Compare campanhas e líderes disponíveis de cada franquia.'};
@@ -201,7 +255,7 @@ useEffect(()=>{
    {page==='evolution'&&<><div className="filters"><label>Janela<select value={averagePeriod} onChange={e=>loadAverages(e.target.value)}><option value="5">Últimos 5</option><option value="10">Últimos 10</option><option value="20">Últimos 20</option><option value="0">Temporada completa</option></select></label></div><DataTable rows={averages} render={renderPlayer} t={t}/></>}
    {page==='headtohead'&&<><div className="filters"><label>Time A<select value={teamA} onChange={e=>setTeamA(e.target.value)}>{teams.map(x=><option key={x.id} value={x.abbreviation}>{x.full_name}</option>)}</select></label><label>Time B<select value={teamB} onChange={e=>setTeamB(e.target.value)}>{teams.map(x=><option key={x.id} value={x.abbreviation}>{x.full_name}</option>)}</select></label><button className="primary" disabled={headToHeadBusy||teamA===teamB} onClick={loadHeadToHead}>{headToHeadBusy?'Carregando…':'Ver confrontos da temporada'}</button></div>{headToHead.length?<><div className="cards"><div className="metric-card"><span>Partidas encontradas</span><b>{headToHead.length}</b></div><div className="metric-card"><span>Vitórias {teamA}</span><b>{headToHead.filter(g=>g.winner===teamA).length}</b></div><div className="metric-card"><span>Vitórias {teamB}</span><b>{headToHead.filter(g=>g.winner===teamB).length}</b></div></div><div className="table-wrap"><table><thead><tr><th>Data</th><th>Confronto</th><th>Resultado</th><th>Placar</th><th>Saldo</th></tr></thead><tbody>{headToHead.map(g=><tr key={g.game_id}><td>{g.date}</td><td>{g.matchup}</td><td><b>{g.winner||'N/D'}</b></td><td>{g.points??'N/D'}</td><td>{g.plus_minus??'N/D'}</td></tr>)}</tbody></table></div></>:<p className="muted">{teamA===teamB?'Escolha dois times diferentes.':'Clique em “Ver histórico completo” para carregar os confrontos retornados pela NBA Stats.'}</p>}</>}
    {page==='awards'&&<><p className="muted">Referências estatísticas para acompanhar a temporada. Não aplicamos critérios de elegibilidade, minutos como reserva ou votação oficial; os prêmios dependem das regras da NBA.</p><div className="leader-grid">{[{label:'MVP · pontos',key:'pts'},{label:'DPOY · tocos',key:'blk'},{label:'ROY · pontos',key:'pts'},{label:'Sixth Man · pontos',key:'pts'},{label:'Assistências',key:'ast'}].map(c=><div className="leader-card" key={c.label}><b>{c.label}</b>{averages.slice().sort((a,b)=>(b[c.key]||0)-(a[c.key]||0)).slice(0,5).map((p,i)=><p key={p.player.id}>{i+1}. {p.player.first_name} {p.player.last_name} · {fmt(p[c.key])}</p>)}</div>)}</div></>}
-   {page==='news'&&<>{featureNews.length?<div className="news-grid">{featureNews.map((item,i)=><a className="news-card" key={item.id||i} href={item.url} target="_blank" rel="noreferrer">{item.image&&<img src={item.image} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display='none';}}/>}<div><span className="eyebrow">ESPN · NBA</span><b>{item.title}</b><p>{item.description}</p><small>{item.published?new Date(item.published).toLocaleString(lang==='pt'?'pt-BR':lang==='es'?'es-ES':'en-US'):'Data não informada'} · Ler notícia ↗</small></div></a>)}</div>:<p className="muted">{error||'Não foi possível carregar notícias neste momento.'}</p>}</>}
+   {page==='news'&&<>{featureNews.length?<div className="news-grid">{featureNews.map((item,i)=>{const translated=translatedNews[lang]?.find(x=>String(x.id)===String(item.id));return <a className="news-card" key={item.id||i} href={item.url} target="_blank" rel="noreferrer">{item.image&&<img src={item.image} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display='none';}}/>}<div><span className="eyebrow">ESPN · NBA</span><b>{translated?.title||item.title}</b><p>{translated?.description||item.description}</p><small>{item.published?new Date(item.published).toLocaleString(lang==='pt'?'pt-BR':lang==='es'?'es-ES':'en-US'):translateText('Data não informada',lang)} · {translateText('Ler notícia ↗',lang)}</small></div></a>})}</div>:<p className="muted">{error||translateText('Não foi possível carregar notícias neste momento.',lang)}</p>}</>}
    {page==='customcalendar'&&<><p className="muted">Escolha o intervalo para consultar partidas reais da NBA. O calendário principal é atualizado automaticamente.</p><div className="filters"><label>De<input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></label><label>Até<input type="date" value={to} onChange={e=>setTo(e.target.value)}/></label><button className="primary" onClick={loadCore}>Atualizar calendário</button></div><GameList games={sortedGames} onOpen={openBox} t={t}/></>}
    {page==='gamegrade'&&<><div className="mvp-card"><Star size={28}/><div><h2>Nota calculada pelo box score</h2><p>Abra qualquer partida e veja a nota individual. A fórmula é uma avaliação editorial do Courtside, não uma estatística oficial da NBA.</p></div></div><p className="muted">A nota combina pontos, rebotes, assistências, roubos, tocos, erros e aproveitamento. Só aparece quando os dados do box score existem.</p><GameList games={sortedGames.filter(g=>g.status_state==='final').slice(0,20)} onOpen={openBox} t={t}/></>}
    {page==='teamhub'&&<><div className="team-feature-grid">{teams.map(team=>{const standing=standings.find(x=>x.team?.abbreviation===team.abbreviation);return <button className="team-feature-card" key={team.id} onClick={()=>{setTeamA(team.abbreviation);setPage('teamanalytics')}}><img src={`https://a.espncdn.com/i/teamlogos/nba/500/${String(team.abbreviation||'').toLowerCase()}.png`} alt={team.full_name} loading="lazy" onError={e=>{e.currentTarget.style.visibility='hidden';}}/><b>{team.full_name}</b><small>{team.conference||'NBA'} · {team.division||'Divisão'}</small><strong>{standing?`${standing.wins??'N/D'}–${standing.losses??'N/D'}`:'Campanha N/D'}</strong></button>})}</div><p className="muted">Escudos carregados da CDN ESPN. Campanha e classificação dependem da atualização da fonte.</p></>}
