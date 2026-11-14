@@ -85,7 +85,7 @@ async function nba(endpoint, params = {}) {
   const response = await fetch(url, { headers: NBA_HEADERS, signal: AbortSignal.timeout(9000) });
   if (!response.ok) {
     const error = new Error(`NBA Stats indisponível (HTTP ${response.status}). Tente novamente em alguns instantes.`);
-    error.status = response.status === 429 ? 503 : response.status;
+    error.status = response.status === 429 || response.status >= 500 ? 503 : response.status;
     throw error;
   }
   const body = await response.json();
