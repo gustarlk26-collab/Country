@@ -17,6 +17,24 @@ const cache = new Map();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, '../dist');
 const NBA_STATS = 'https://stats.nba.com/stats';
+const TEAM_META = {
+  1610612737:['ATL','Atlanta Hawks','East','Southeast'],1610612738:['BOS','Boston Celtics','East','Atlantic'],
+  1610612751:['BKN','Brooklyn Nets','East','Atlantic'],1610612766:['CHA','Charlotte Hornets','East','Southeast'],
+  1610612741:['CHI','Chicago Bulls','East','Central'],1610612739:['CLE','Cleveland Cavaliers','East','Central'],
+  1610612742:['DAL','Dallas Mavericks','West','Southwest'],1610612743:['DEN','Denver Nuggets','West','Northwest'],
+  1610612765:['DET','Detroit Pistons','East','Central'],1610612744:['GSW','Golden State Warriors','West','Pacific'],
+  1610612745:['HOU','Houston Rockets','West','Southwest'],1610612754:['IND','Indiana Pacers','East','Central'],
+  1610612746:['LAC','LA Clippers','West','Pacific'],1610612747:['LAL','Los Angeles Lakers','West','Pacific'],
+  1610612763:['MEM','Memphis Grizzlies','West','Southwest'],1610612748:['MIA','Miami Heat','East','Southeast'],
+  1610612749:['MIL','Milwaukee Bucks','East','Central'],1610612750:['MIN','Minnesota Timberwolves','West','Northwest'],
+  1610612740:['NOP','New Orleans Pelicans','West','Southwest'],1610612752:['NYK','New York Knicks','East','Atlantic'],
+  1610612760:['OKC','Oklahoma City Thunder','West','Northwest'],1610612753:['ORL','Orlando Magic','East','Southeast'],
+  1610612755:['PHI','Philadelphia 76ers','East','Atlantic'],1610612756:['PHX','Phoenix Suns','West','Pacific'],
+  1610612757:['POR','Portland Trail Blazers','West','Northwest'],1610612758:['SAC','Sacramento Kings','West','Pacific'],
+  1610612759:['SAS','San Antonio Spurs','West','Southwest'],1610612761:['TOR','Toronto Raptors','East','Atlantic'],
+  1610612762:['UTA','Utah Jazz','West','Northwest'],1610612764:['WAS','Washington Wizards','East','Southeast']
+};
+
 const NBA_HEADERS = {
   'Accept': 'application/json, text/plain, */*',
   'Accept-Language': 'en-US,en;q=0.9',
@@ -107,7 +125,11 @@ app.get('/api/teams', async (_req, res) => {
       LeagueID: '00', Season: seasonFor(), SeasonType: 'Regular Season', PerMode: 'PerGame',
       MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N'
     }), 6 * 60 * 60 * 1000))[0] || [];
-    const data = rows.map(r => ({ id: r.TEAM_ID, full_name: r.TEAM_NAME, abbreviation: r.TEAM_ABBREVIATION, conference: r.CONFERENCE, division: r.DIVISION }));
+    const byId = new Map(rows.map(r => [Number(r.TEAM_ID), r]));
+    const data = Object.entries(TEAM_META).map(([id, meta]) => {
+      const row = byId.get(Number(id));
+      return { id: Number(id), abbreviation: meta[0], full_name: row?.TEAM_NAME || meta[1], conference: meta[2], division: meta[3] };
+    });
     res.json({ data });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
@@ -211,7 +233,7 @@ app.get('/api/standings', async (_req, res) => {
       LeagueID: '00', Season: seasonFor(), SeasonType: 'Regular Season'
     }), 10 * 60 * 1000))[0] || [];
     const data = rows.map(r => ({
-      team: { id: r.TeamID, full_name: r.TeamName, name: r.TeamName, abbreviation: r.TeamAbbreviation, conference: r.Conference },
+      team: { id: r.TeamID, full_name: r.TeamName, name: r.TeamName, abbreviation: TEAM_META[Number(r.TeamID)]?.[0] || r.TeamAbbreviation, conference: r.Conference || TEAM_META[Number(r.TeamID)]?.[2] },
       wins: r.WINS, losses: r.LOSSES, win_pct: r.WIN_PCT
     }));
     res.json({ data });
