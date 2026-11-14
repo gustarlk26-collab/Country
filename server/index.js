@@ -686,7 +686,7 @@ app.get('/api/headtohead', async (req, res) => {
 app.get('/api/players/:id/shots', async (req, res) => {
   try {
     const playerId = String(req.params.id);
-    if (!/^\\d{1,12}$/.test(playerId)) return res.status(400).json({ error: 'ID de jogador inválido.' });
+    if (!/^\d{1,12}$/.test(playerId)) return res.status(400).json({ error: 'ID de jogador inválido. Selecione um atleta da lista oficial.' });
     const season = seasonFor();
     const rows = (await cached('shot-chart:'+season+':'+playerId, () => nba('shotchartdetail', {
       LeagueID:'00', Season:season, SeasonType:'Regular Season', PlayerID:playerId,
