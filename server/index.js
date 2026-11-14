@@ -108,6 +108,34 @@ async function nbaLiveBoxscore(gameId) {
     turnover: p.statistics?.turnovers ?? 0
   })));
 }
+async function nbaHistoricalBoxscore(gameId) {
+  const seasonCode = Number(String(gameId).slice(3, 5));
+  const season = Number.isFinite(seasonCode) && seasonCode > 0
+    ? `${2000 + seasonCode}-${String(2001 + seasonCode).slice(-2)}`
+    : seasonFor();
+  const sets = await nba('boxscoretraditionalv2', {
+    GameID: gameId, LeagueID: '00', Season: season, SeasonType: 'Regular Season',
+    StartPeriod: 0, EndPeriod: 10, StartRange: 0, EndRange: 0, RangeType: 0
+  });
+  const rows = sets[0] || [];
+  if (!rows.length) throw new Error('A NBA não retornou estatísticas para esta partida.');
+  return rows.map(p => ({
+    id: p.PLAYER_ID,
+    player: { id: p.PLAYER_ID, first_name: String(p.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(p.PLAYER_NAME || '').split(' ').slice(-1)[0] },
+    team: { id: p.TEAM_ID, abbreviation: p.TEAM_ABBREVIATION, full_name: p.TEAM_NAME },
+    min: p.MIN || '0', pts: p.PTS ?? 0, reb: p.REB ?? 0, ast: p.AST ?? 0, stl: p.STL ?? 0, blk: p.BLK ?? 0,
+    fg_pct: p.FGA ? p.FGM / p.FGA : 0, fg3_pct: p.FG3A ? p.FG3M / p.FG3A : 0, turnover: p.TOV ?? 0
+  }));
+}
+async function getGameBoxscore(gameId) {
+  try { return await nbaLiveBoxscore(gameId); }
+  catch (liveError) {
+    try { return await nbaHistoricalBoxscore(gameId); }
+    catch (statsError) {
+      throw new Error(`Box score indisponível nas duas fontes NBA. Live: ${liveError.message} Stats: ${statsError.message}`);
+    }
+  }
+}
 async function requireFamily(req, res, next) {
   try {
     if (!SUPABASE_URL || !SUPABASE_KEY) return res.status(503).json({ error: 'Configure SUPABASE_URL e SUPABASE_ANON_KEY no Render.' });
@@ -188,7 +216,7 @@ app.get('/api/games/:id/stats', async (req, res) => {
   try {
     const id = String(req.params.id);
     if (!/^\d{10}$/.test(id)) return res.status(400).json({ error: 'ID de partida inválido.' });
-    const data = await cached(`boxscore:${id}`, () => nbaLiveBoxscore(id), 30 * 1000);
+    const data = await cached(`boxscore:${id}`, () => getGameBoxscore(id), 30 * 1000);
     res.json({ data, updatedAt: new Date().toISOString() });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
