@@ -1,8 +1,7 @@
+const apiResponseCache = new Map();
+const apiInflight = new Map();
 import React,{useCallback,useEffect,useMemo,useState} from 'react';
 import {translateText} from './translations';
-const textTranslationCache = new Map();
-const originalTextNodes = new WeakMap();
-const translatedTextNodes = new WeakMap();
 import {createClient} from '@supabase/supabase-js';
 import {Activity,CalendarDays,Users,Trophy,Shield,Star,Settings,LogOut,RefreshCw,Search,ChevronDown,ChevronLeft,ChevronRight,Globe,Lock,Mail,KeyRound,BarChart3,Heart,AlertCircle,CheckCircle2,Clock3,Menu,X,ExternalLink,LoaderCircle,Crosshair,Radio,GitBranch,Medal,History,ShieldAlert,PieChart,TrendingUp,Swords,Award,Newspaper,CalendarClock,Database,Zap,Sparkles,Gauge,Wallet,ClipboardList,Flame,Route,UserRound,ShieldCheck,Scale,Target,Timer,CalendarRange,ChartLine,UsersRound,CircleDollarSign} from 'lucide-react';
 
@@ -39,66 +38,6 @@ export default function App(){
    .then(items=>{if(active)setTranslatedNews(old=>({...old,[lang]:items}));});
   return()=>{active=false;};
  },[lang,featureNews]);
- useEffect(()=>{
-  if(typeof document==='undefined'||!document.body)return;
-  let active=true,requests=0;
-  const excluded='.player-cell,.leader-row,.leader-name,.team-feature-card,.collectible-info,.team-leader,.team-hero,.userline,.brand,.news-card,tbody';
-  const remoteTranslate=async(node,original)=>{
-   const trimmed=String(original||'').trim();
-   if(!trimmed||trimmed.length<6||trimmed.length>450||/^[A-Z0-9%+./: ·–—-]+$/.test(trimmed)||/^[\d\s.,:%+–—-]+$/.test(trimmed)||node.parentElement?.closest(excluded)||requests>=60)return;
-   const cacheKey=lang+'|'+trimmed;
-   if(textTranslationCache.has(cacheKey)){
-    const cached=textTranslationCache.get(cacheKey);
-    const lead=String(original).match(/^\s*/)?.[0]||'',tail=String(original).match(/\s*$/)?.[0]||'';
-    const output=lead+cached+tail;translatedTextNodes.set(node,output);if(active&&node.isConnected&&node.nodeValue!==output)node.nodeValue=output;return;
-   }
-   requests++;
-   try{
-    const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+lang+'&dt=t&q='+encodeURIComponent(trimmed);
-    const response=await fetch(url);if(!response.ok)throw new Error('Translation unavailable');
-    const data=await response.json();const result=Array.isArray(data?.[0])?data[0].map(part=>part?.[0]||'').join(''):trimmed;
-    textTranslationCache.set(cacheKey,result);
-    if(!active||!node.isConnected)return;
-    const lead=String(original).match(/^\s*/)?.[0]||'',tail=String(original).match(/\s*$/)?.[0]||'';
-    const output=lead+result+tail;translatedTextNodes.set(node,output);if(node.nodeValue!==output)node.nodeValue=output;
-   }catch{}
-  };
-  const translateNode=node=>{
-   if(node?.nodeType!==Node.TEXT_NODE)return;
-   if(translatedTextNodes.get(node)!==node.nodeValue)originalTextNodes.set(node,node.nodeValue);
-   const original=originalTextNodes.get(node)||node.nodeValue;
-   const next=translateText(original,lang);
-   if(next!==original){translatedTextNodes.set(node,next);if(node.nodeValue!==next)node.nodeValue=next;}
-   else if(lang!=='pt')void remoteTranslate(node,original);
-   else {translatedTextNodes.set(node,original);if(node.nodeValue!==original)node.nodeValue=original;}
-  };
-  const scan=root=>{
-   if(!root)return;
-   if(root.nodeType===Node.TEXT_NODE){translateNode(root);return;}
-   if(root.nodeType!==Node.ELEMENT_NODE&&root!==document.body)return;
-   if(root.nodeType===Node.ELEMENT_NODE){
-    for(const attr of ['placeholder','title','aria-label']){
-     const value=root.getAttribute?.(attr);
-     if(value){const next=translateText(value,lang);if(next!==value)root.setAttribute(attr,next);}
-    }
-   }
-   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
-   let node;while((node=walker.nextNode()))translateNode(node);
-  };
-  scan(document.body);
-  const observer=new MutationObserver(records=>{
-   for(const record of records){
-    if(record.type==='characterData')translateNode(record.target);
-    else if(record.type==='childList')record.addedNodes.forEach(scan);
-    else if(record.type==='attributes'){
-     const value=record.target.getAttribute(record.attributeName);
-     if(value){const next=translateText(value,lang);if(next!==value)record.target.setAttribute(record.attributeName,next);}
-    }
-   }
-  });
-  observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
-  return()=>{active=false;observer.disconnect();};
- },[lang]);
  const featureKeys=['shotmap','livecenter','playoffs','records','history','fantasy','injuries','quarters','power','evolution','headtohead','awards','news','customcalendar','historicstats','gamegrade','teamhub','playercards','alerts','teamanalytics','matchup','homeaway','form','streaks','rest','schedulestrength','rotation','lineups','playerprops','bankroll','betjournal','pace','defense','statlab','simulator'];
  const featureNames={shotmap:'Mapa de arremessos',livecenter:'Central de jogos ao vivo',playoffs:'Playoffs e chaveamento',records:'Recordes da NBA',history:'Comparação histórica',fantasy:'Fantasy NBA',injuries:'Lesões e desfalques',quarters:'Estatísticas por quarto',power:'Power Rankings',evolution:'Evolução na temporada',headtohead:'Histórico de confrontos',awards:'Central de prêmios',news:'Notícias NBA',customcalendar:'Calendário personalizado',historicstats:'Estatísticas históricas',gamegrade:'Notas por partida',teamhub:'Central dos times',playercards:'Cards de jogadores',alerts:'Alertas ao vivo',teamanalytics:'Análise dos times',matchup:'Comparador de franquias',homeaway:'Desempenho casa e fora',form:'Forma recente dos times',streaks:'Sequências de vitórias',rest:'Descanso e calendário',schedulestrength:'Dificuldade do calendário',rotation:'Minutos e rotação',lineups:'Elencos e titulares',playerprops:'Laboratório de props',bankroll:'Gestão de banca',betjournal:'Diário de apostas',pace:'Ritmo de jogo',defense:'Painel defensivo',statlab:'Laboratório estatístico',simulator:'Simulador de cenários'};
  const featureIcons={shotmap:Crosshair,livecenter:Radio,playoffs:GitBranch,records:Medal,history:History,fantasy:Trophy,injuries:ShieldAlert,quarters:PieChart,power:TrendingUp,evolution:ChartLine,headtohead:Swords,awards:Award,news:Newspaper,customcalendar:CalendarClock,historicstats:Database,gamegrade:Star,teamhub:Shield,playercards:Medal,alerts:Zap,teamanalytics:BarChart3,matchup:Scale,homeaway:Route,form:Flame,streaks:Flame,rest:Timer,schedulestrength:CalendarRange,rotation:Gauge,lineups:UsersRound,playerprops:Target,bankroll:Wallet,betjournal:ClipboardList,pace:Gauge,defense:ShieldCheck,statlab:ChartLine,simulator:CircleDollarSign};
@@ -141,14 +80,14 @@ export default function App(){
     });
   return()=>{active=false;window.clearTimeout(timeout);subscription.unsubscribe();};
 },[]);
- const api=useCallback(async(path,opts={})=>{if(!session?.access_token)throw new Error('Faça login novamente.');const r=await fetch(path,{...opts,headers:{...(opts.headers||{}),Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'}});const body=await r.json().catch(()=>({}));if(!r.ok)throw new Error(body.error||`Erro ${r.status}`);return body;},[session]);
+ const api=useCallback(async(path,opts={})=>{if(!session?.access_token)throw new Error('Faça login novamente.');const method=String(opts.method||'GET').toUpperCase();const key=session.access_token.slice(-12)+'|'+path;if(method==='GET'){const cached=apiResponseCache.get(key);if(cached&&Date.now()-cached.at<25000)return cached.body;if(apiInflight.has(key))return apiInflight.get(key);}const request=(async()=>{const r=await fetch(path,{...opts,headers:{...(opts.headers||{}),Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'}});const body=await r.json().catch(()=>({}));if(!r.ok)throw new Error(body.error||`Erro ${r.status}`);if(method==='GET'){apiResponseCache.set(key,{at:Date.now(),body});if(apiResponseCache.size>120){const oldest=apiResponseCache.keys().next().value;apiResponseCache.delete(oldest);}}return body;})();if(method==='GET')apiInflight.set(key,request);try{return await request;}finally{if(method==='GET')apiInflight.delete(key);}},[session]);
  const flash=(s)=>{setToast(s);setTimeout(()=>setToast(''),2600)};
  const loadSettings=useCallback(async()=>{if(!supabase||!session?.user)return;const {data,error:e}=await supabase.from('user_settings').select('*').eq('user_id',session.user.id).maybeSingle();if(!e&&data){setLang(data.language||'pt');setTheme(data.theme||'dark');}setSettingsLoaded(true);},[session]);
  const loadFavorites=useCallback(async()=>{if(!supabase||!session?.user)return;const {data,error:e}=await supabase.from('favorites').select('*').order('created_at',{ascending:false});if(e)throw e;setFavorites(data||[]);},[session]);
  const loadCore=useCallback(async()=>{setBusy(true);setError('');try{const [tm,gm]=await Promise.all([api('/api/teams'),api(`/api/games?start=${from}&end=${to}`)]);setTeams(tm.data||[]);setGames(gm.data||[]);setLastSync(new Date());}catch(e){setError(e.message);}finally{setBusy(false);}},[api,from,to]);
  useEffect(()=>{if(session){loadSettings();loadFavorites().catch(e=>setError(e.message));loadCore();}},[session,loadSettings,loadFavorites,loadCore]);
  useEffect(()=>{
-  if(!session)return;
+  if(!session||!['overview','games','livecenter','customcalendar','boxscore'].includes(page))return;
   let running=false;
   const refreshLive=async()=>{
     if(running)return; running=true;
@@ -164,7 +103,7 @@ export default function App(){
     } catch(e) { /* Mantém os últimos dados válidos durante falhas transitórias. */ }
     finally { running=false; }
   };
-  const onVisible=()=>{if(document.visibilityState==='visible')refreshLive();};document.addEventListener('visibilitychange',onVisible);const timer=window.setInterval(refreshLive,30000);
+  const onVisible=()=>{if(document.visibilityState==='visible')refreshLive();};document.addEventListener('visibilitychange',onVisible);const timer=window.setInterval(refreshLive,60000);
   return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);};
 },[session,api,from,to,page,boxGame]);
 useEffect(()=>{
