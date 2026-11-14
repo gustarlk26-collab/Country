@@ -335,49 +335,27 @@ app.get('/api/games', async (req, res) => {
   const start = String(req.query.start || new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10));
   const end = String(req.query.end || new Date(Date.now() + 30 * 86400000).toISOString().slice(0,10));
   try {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) return res.status(400).json({ error: 'Período de datas inválido.' });
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(start) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(end) || start > end) return res.status(400).json({ error: 'Período de datas inválido.' });
     const span = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
     if (span > 90) return res.status(400).json({ error: 'Consulte no máximo 90 dias por vez.' });
-    let data = await cached(`games:${start}:${end}`, async () => {
-      const days = Array.from({ length: span }, (_, i) => new Date(new Date(start + 'T12:00:00Z').getTime() + i * 86400000).toISOString().slice(0,10));
-      const all = [];
-      for (let i = 0; i < days.length; i += 4) {
-        const batch = await Promise.all(days.slice(i, i + 4).map(async day => {
-          const sets = await nba('scoreboardv2', { LeagueID: '00', GameDate: day, DayOffset: 0 });
-          const games = sets.find(rows => rows[0]?.GAME_ID) || [];
-          const lines = sets.flat();
-          return games.map(g => {
-            const teams = lines.filter(x => x.TEAM_ID && String(x.GAME_ID) === String(g.GAME_ID));
-            const home = teams.find(x => x.TEAM_ID === g.HOME_TEAM_ID), away = teams.find(x => x.TEAM_ID === g.VISITOR_TEAM_ID);
-            const team = (row, id) => ({ id, abbreviation: row?.TEAM_ABBREVIATION || '—', full_name: row?.TEAM_NAME || row?.TEAM_ABBREVIATION || '—' });
-            const status = Number(g.GAME_STATUS_ID) === 3 ? 'Final' : Number(g.GAME_STATUS_ID) === 2 ? 'Em andamento' : 'Agendado';
-            return { id: g.GAME_ID, date: g.GAME_DATE_EST || day, datetime: g.GAME_DATE_EST || day, status, status_state: status === 'Final' ? 'final' : status === 'Em andamento' ? 'in_progress' : 'scheduled',
-              home_team: team(home, g.HOME_TEAM_ID), visitor_team: team(away, g.VISITOR_TEAM_ID),
-              home_team_score: Number(g.GAME_STATUS_ID) === 1 ? null : (home?.PTS ?? null), visitor_team_score: Number(g.GAME_STATUS_ID) === 1 ? null : (away?.PTS ?? null) };
-          });
-        }));
-        all.push(...batch.flat());
-      }
-      return all.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
-    }, 15 * 1000);
-    const today = new Date().toISOString().slice(0,10);
-    if (start <= today && end >= today) {
-      try {
-        const liveToday = await cached(`live-scoreboard:${today}`, () => espnGames(today, today), 15 * 1000);
-        const byId = new Map(data.map(g => [String(g.id), g]));
-        liveToday.forEach(g => byId.set(String(g.id), g));
-        data = [...byId.values()].sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
-      } catch { /* O placar principal continua disponível se o feed ao vivo falhar. */ }
-    }
-    res.json({ data, updatedAt: new Date().toISOString(), liveUpdatedAt: new Date().toISOString() });
-  } catch (e) {
+
+    // ESPN é a fonte primária do calendário: uma única chamada para o período,
+    // evitando dezenas de consultas NBA Stats que frequentemente expiram por timeout.
     try {
-      const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 15 * 1000);
-      res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA CDN schedule', fallback: true });
-    } catch (fallbackError) {
-      try { const data = await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 15 * 1000); res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN scoreboard', fallback: true }); }
-      catch (espnError) { res.status(503).json({ error: `Calendário indisponível. NBA Stats: ${e.message} NBA CDN: ${fallbackError.message} ESPN: ${espnError.message}` }); }
+      const data = await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 15 * 1000);
+      res.set('Cache-Control', 'private, max-age=10');
+      return res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN scoreboard' });
+    } catch (espnError) {
+      try {
+        const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 15 * 1000);
+        res.set('Cache-Control', 'private, max-age=10');
+        return res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA CDN schedule', fallback: true });
+      } catch (cdnError) {
+        return res.status(503).json({ error: `Calendário indisponível. ESPN: ${espnError.message} NBA CDN: ${cdnError.message}` });
+      }
     }
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Não foi possível carregar os jogos.' });
   }
 });
 
