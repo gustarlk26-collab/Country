@@ -339,7 +339,7 @@ async function espnBoxscore(gameId) {
   const groups = body.boxscore?.players || [];
   const rows = groups.flatMap(group => {
     const statBlock = (group.statistics || []).find(x => x.athletes) || group.statistics?.[0] || {};
-    const rawKeys = statBlock.keys || statBlock.names || statBlock.labels || statBlock.displayNames || [];
+    const rawKeys = (statBlock.keys?.length?statBlock.keys:null) || (statBlock.names?.length?statBlock.names:null) || (statBlock.labels?.length?statBlock.labels:null) || statBlock.displayNames || [];
     const keys = rawKeys.map(key => typeof key === 'string' ? key.toUpperCase() : String(key?.abbreviation||key?.name||key?.displayName||'').toUpperCase());
     return (statBlock.athletes || []).map(entry => {
       const rawStats = entry.stats ?? entry.statistics ?? [];
