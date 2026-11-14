@@ -183,7 +183,7 @@ useEffect(()=>{
       if(page==='advanced'){const r=await api('/api/advanced?last=0');setAdvanced(r.data||[]);}
       if(page==='profile'&&selectedProfile?.player?.id){const [base,adv]=await Promise.all([api('/api/averages?last=0'),api('/api/advanced?last=0').catch(()=>({data:[]}))]);setProfileLeagueAverages(base.data||[]);const current=(base.data||[]).find(x=>String(x.player?.id)===String(selectedProfile.player.id));const advancedCurrent=(adv.data||[]).find(x=>String(x.player?.id)===String(selectedProfile.player.id))||null;if(current)setSelectedProfile({...current,player:selectedProfile.player,advanced:advancedCurrent});setProfileAdvanced(advancedCurrent);}
       if(page==='quarters'&&quarterGameId){const r=await api('/api/games/'+quarterGameId+'/summary');setQuarterSummary(r.data||null);}
-      if(['history','evolution','fantasy','awards','playercards','teamanalytics','betlab'].includes(page)){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
+      if(['history','evolution','fantasy','awards','playercards','teamanalytics','betlab','playerprops','statlab','rotation','lineups'].includes(page)){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
     } catch(e) { /* Mantém a última resposta válida. */ }
   },60000);
   return()=>window.clearInterval(timer);
