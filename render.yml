@@ -20,6 +20,6 @@ services:
       - key: FAMILY_EMAILS
         sync: false
       - key: CORS_ORIGIN
-        value: https://courtside-nba-9pgo.onrender.com
+        value: https://courtside-family.onrender.com
       - key: API_CACHE_MS
         value: "90000"
