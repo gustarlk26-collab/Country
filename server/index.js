@@ -419,12 +419,12 @@ app.get('/api/games', async (req, res) => {
     const span = Math.floor((Date.parse(end + 'T00:00:00Z') - Date.parse(start + 'T00:00:00Z')) / 86400000) + 1;
     if (span > 90) return res.status(400).json({ error: 'Consulte no máximo 90 dias por vez.' });
     try {
-      const data = await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 2 * 60 * 1000);
+      const data = await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 20 * 1000);
       res.set('Cache-Control', 'private, max-age=60');
       return res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN scoreboard' });
     } catch (espnError) {
       try {
-        const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 2 * 60 * 1000);
+        const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 30 * 1000);
         res.set('Cache-Control', 'private, max-age=60');
         return res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA CDN schedule', fallback: true });
       } catch (cdnError) {
@@ -458,7 +458,7 @@ app.get('/api/games/:id/stats', async (req, res) => {
   try {
     const id = String(req.params.id);
     if (!/^\d{8,12}$/.test(id)) return res.status(400).json({ error: 'ID de partida inválido.' });
-    const data = await cached(`boxscore:${id}`, () => getGameBoxscore(id), 30 * 1000);
+    const data = await cached(`boxscore:${id}`, () => getGameBoxscore(id), 12 * 1000);
     res.json({ data, updatedAt: new Date().toISOString() });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
@@ -508,6 +508,28 @@ app.get('/api/averages', async (req, res) => {
     res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats', season, lastGames: requested, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa', totalPlayers: data.length });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
+app.get('/api/players/:id/shots', async (req, res) => {
+  try {
+    const playerId = String(req.params.id);
+    if (!/^\\d{1,12}$/.test(playerId)) return res.status(400).json({ error: 'ID de jogador inválido.' });
+    const season = seasonFor();
+    const rows = (await cached('shot-chart:'+season+':'+playerId, () => nba('shotchartdetail', {
+      LeagueID:'00', Season:season, SeasonType:'Regular Season', PlayerID:playerId,
+      TeamID:0, ContextMeasure:'FGA', DateFrom:'', DateTo:'', GameID:'',
+      Outcome:'', Location:'', Month:0, SeasonSegment:'', VsConference:'',
+      VsDivision:'', Position:'', RookieYear:'', GameSegment:'', Period:0,
+      LastNGames:0, ClutchTime:'', AheadBehind:'', PointDiff:'', RangeType:0,
+      StartPeriod:0, EndPeriod:0
+    }), 3 * 60 * 1000))[0] || [];
+    const data = rows.filter(r => Number.isFinite(Number(r.LOC_X)) && Number.isFinite(Number(r.LOC_Y))).map(r => ({
+      x:Number(r.LOC_X), y:Number(r.LOC_Y), made:Number(r.SHOT_MADE_FLAG)===1,
+      action:r.ACTION_TYPE||r.EVENT_TYPE||'Arremesso',
+      distance:r.SHOT_DISTANCE==null?null:Number(r.SHOT_DISTANCE)
+    }));
+    res.json({data,season,source:'NBA Stats shotchartdetail',updatedAt:new Date().toISOString()});
+  } catch(e) { res.status(e.status||503).json({error:'Mapa de arremessos indisponível: '+e.message}); }
+});
+
 app.get('/api/advanced', async (req, res) => {
   try {
     const requested = Number(req.query.last ?? 0);
