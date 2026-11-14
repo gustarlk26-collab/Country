@@ -1,0 +1,19 @@
+{
+  "name": "Courtside Family",
+  "short_name": "Courtside",
+  "description": "NBA scores, players and real statistics",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#071426",
+  "theme_color": "#081426",
+  "icons": [
+    {
+      "src": "/court-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
