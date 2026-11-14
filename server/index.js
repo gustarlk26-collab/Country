@@ -335,7 +335,7 @@ app.get('/api/games', async (req, res) => {
   const start = String(req.query.start || new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10));
   const end = String(req.query.end || new Date(Date.now() + 30 * 86400000).toISOString().slice(0,10));
   try {
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(start) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(end) || start > end) return res.status(400).json({ error: 'Período de datas inválido.' });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) return res.status(400).json({ error: 'Período de datas inválido.' });
     const span = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
     if (span > 90) return res.status(400).json({ error: 'Consulte no máximo 90 dias por vez.' });
 
