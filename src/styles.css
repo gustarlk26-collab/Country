@@ -150,3 +150,12 @@ input:focus,select:focus{box-shadow:0 0 0 3px rgba(39,137,239,.12)}
 .news-card>img{width:100%;height:100%;min-height:170px;max-height:220px;aspect-ratio:16/9;object-fit:cover;object-position:center;background:#102b48}
 @media(max-width:900px){.team-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.game-standouts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.team-roster-grid{grid-template-columns:1fr}.game-standouts{grid-template-columns:repeat(2,minmax(0,1fr))}.news-card{grid-template-columns:112px minmax(0,1fr)}.news-card>img{width:112px;min-height:140px;max-height:none;aspect-ratio:auto}}
+
+/* Grouped navigation and betting analysis */
+.sidebar nav{flex:1;min-height:0;overflow-y:auto;align-content:start;padding:0 4px 12px 0}
+.nav-group{display:grid;gap:4px;margin:0 0 13px}
+.nav-group-label{padding:8px 12px 3px;color:#6885a3;font-size:9px;letter-spacing:1.5px;font-weight:800}
+.sidebar nav .nav-group button{padding:10px 12px;font-size:12px}
+.bet-match-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.bet-match-grid .metric-guide{margin:0}
+@media(max-width:760px){.bet-match-grid{grid-template-columns:1fr}}
