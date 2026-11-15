@@ -67,6 +67,7 @@ function cached(key, fn, ttl = CACHE_MS) {
   return request;
 }
 function canonicalTeamAbbr(value) { const code=String(value||'').toUpperCase(); return ({NY:'NYK',NO:'NOP',GS:'GSW',SA:'SAS',PHO:'PHX',WSH:'WAS'})[code]||code; }
+function finiteNumberOrNull(value) { return value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value); }
 function seasonFor(date = new Date()) {
   const year = date.getUTCFullYear();
   return date.getUTCMonth() >= 9 ? `${year}-${String(year + 1).slice(-2)}` : `${year - 1}-${String(year).slice(-2)}`;
@@ -328,8 +329,8 @@ async function espnGames(start, end) {
       display_clock: statusInfo.displayClock || null,
       home_team: { id: Number(home.team?.id), abbreviation: canonicalTeamAbbr(home.team?.abbreviation || ''), full_name: home.team?.displayName || home.team?.name || '' },
       visitor_team: { id: Number(away.team?.id), abbreviation: canonicalTeamAbbr(away.team?.abbreviation || ''), full_name: away.team?.displayName || away.team?.name || '' },
-      home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
-      visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score) }];
+      home_team_score: finiteNumberOrNull(home.score),
+      visitor_team_score: finiteNumberOrNull(away.score) }];
   }).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
 }
 function minutesAsNumber(value) {
@@ -696,8 +697,8 @@ async function espnLiveGames() {
       display_clock: statusInfo.displayClock || null,
       home_team: { id: Number(home.team.id), abbreviation: canonicalTeamAbbr(home.team.abbreviation), full_name: home.team.displayName || home.team.name || '' },
       visitor_team: { id: Number(away.team.id), abbreviation: canonicalTeamAbbr(away.team.abbreviation), full_name: away.team.displayName || away.team.name || '' },
-      home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
-      visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score)
+      home_team_score: finiteNumberOrNull(home.score),
+      visitor_team_score: finiteNumberOrNull(away.score)
     }];
   }).sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
 }
