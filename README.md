@@ -52,7 +52,7 @@ Configure no serviço Render:
 
 ## Build e start
 
-- Build Command: `npm install && npm run build`
+- Build Command: `npm install --no-audit --no-fund && npm run build && npm run test:qa && node --check server/index.js`
 - Start Command: `npm start`
 - Node: 20 ou superior
 
