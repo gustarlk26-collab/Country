@@ -50,5 +50,13 @@ assert.ok(worker.includes("url.pathname.startsWith('/api/')"), 'Service worker d
 assert.ok(schema.includes('enable row level security'), 'RLS não está habilitado no esquema.');
 assert.ok(manifest.includes('"display": "standalone"'), 'Manifest PWA inválido ou incompleto.');
 assert.ok(!/onClick=\{\(\)\s*=>\s*\{\s*\}\}/.test(app), 'Há botão com ação vazia.');
+const buttons = [...app.matchAll(/<button\b[^>]*>/g)].map(match => match[0]);
+assert.ok(buttons.length >= 40, 'A interface parece ter perdido seus controles principais.');
+assert.ok(buttons.every(tag => /\bonClick\s*=/.test(tag) || /\btype\s*=\s*["']submit["']/.test(tag) || /\bdisabled(?:\s|=|>)/.test(tag)), 'Existe botão sem ação, sem submit e sem estado desabilitado.');
+const forms = [...app.matchAll(/<form\b[^>]*>/g)].map(match => match[0]);
+assert.ok(forms.every(tag => /\bonSubmit\s*=/.test(tag)), 'Existe formulário sem ação de envio.');
+const anchors = [...app.matchAll(/<a\b[^>]*>/g)].map(match => match[0]);
+assert.ok(anchors.every(tag => /\bhref\s*=/.test(tag)), 'Existe link sem destino.');
+
 
 console.log('Courtside QA estática aprovada: ' + features.length + ' funcionalidades, ' + navKeys.length + ' itens de navegação e ' + routes.length + ' rotas verificadas.');
