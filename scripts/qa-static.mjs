@@ -107,7 +107,7 @@ assert.ok(server.includes('const uniqueData = dedupeGamePlayers(data.filter(row 
 assert.match(server, /!Number\.isSafeInteger\(Number\(stats\[key\]\)\)\s*\|\|\s*Number\(stats\[key\]\)\s*<\s*0/, 'Game Score deve rejeitar componentes negativos ou fracionários.');
 assert.match(server, /s\.fgm\s*>\s*s\.fga\s*\|\|\s*s\.ftm\s*>\s*s\.fta/, 'Game Score deve rejeitar totais de arremessos impossíveis.');
 assert.ok(server.includes('rows.filter(r => Number(r.GP) > 0).map(r => ({'), 'Ranking recente não deve incluir atletas sem jogos na amostra.');
-assert.ok(server.includes('rawValue == null || rawValue ==='), 'Recordes históricos não podem converter valores ausentes em zero.');
+assert.ok(server.includes("rawValue == null || typeof rawValue === 'boolean' || String(rawValue).trim() === ''"), 'Recordes históricos devem rejeitar valores ausentes, booleanos e strings vazias.');
 assert.ok(server.includes('.filter(row => row.value != null && row.player_name).slice(0, 10)'), 'Líderes históricos devem exibir somente valores oficiais com atleta identificado.');
 assert.ok(server.includes("apis/common/v3/sports/basketball/nba/athletes/"), 'Perfil deve ter uma fonte alternativa ESPN para dados de temporada.');
 assert.ok(server.includes("overview.statistics||overview.stats?.statistics"), 'Fallback ESPN deve ler somente o bloco estatístico documentado.');
