@@ -863,22 +863,56 @@ app.get('/api/averages', async (req, res) => {
 async function espnTeamSchedule(abbreviation, seasonYear) {
   const teamId = ESPN_TEAM_IDS[abbreviation];
   if (!teamId) throw new Error('ID ESPN da franquia não encontrado.');
-  const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/' + teamId + '/schedule?season=' + seasonYear);
-  return (body.events || body.schedule?.events || []).flatMap(event => {
-    const competition = event.competitions?.[0];
-    const competitors = competition?.competitors || [];
-    if (competitors.length < 2) return [];
-    const sides = competitors.map(side => ({
-      abbreviation:canonicalTeamAbbr(side.team?.abbreviation||side.team?.shortDisplayName||''),
-      name:side.team?.displayName||side.team?.name||'',
-      score:side.score==null?null:Number(side.score),
-      homeAway:side.homeAway
-    }));
-    return [{id:String(event.id||competition.id||''),date:event.date||competition.date||'',
-      status:competition.status?.type?.description||event.status?.type?.description||'',
-      state:competition.status?.type?.state||event.status?.type?.state||'pre',
-      sides,venue:competition.venue?.fullName||null}];
-  });
+  try {
+    const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/' + teamId + '/schedule?season=' + seasonYear);
+    const events = body.events || body.schedule?.events || [];
+    const parsed = events.flatMap(event => {
+      const competition = event.competitions?.[0];
+      const competitors = competition?.competitors || [];
+      if (competitors.length < 2) return [];
+      const sides = competitors.map(side => ({
+        abbreviation:canonicalTeamAbbr(side.team?.abbreviation||side.team?.shortDisplayName||''),
+        name:side.team?.displayName||side.team?.name||'',
+        score:finiteNumberOrNull(side.score),
+        homeAway:side.homeAway
+      }));
+      return [{id:String(event.id||competition.id||''),date:event.date||competition.date||'',
+        status:competition.status?.type?.description||event.status?.type?.description||'',
+        state:competition.status?.type?.state||event.status?.type?.state||'pre',
+        sides,venue:competition.venue?.fullName||null}];
+    });
+    if (parsed.length) return parsed;
+    throw new Error('ESPN não retornou partidas para esta franquia.');
+  } catch (espnError) {
+    const schedule = await cached('nba:season-schedule', async () => {
+      const response = await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json', {
+        headers: NBA_HEADERS, signal: AbortSignal.timeout(9000)
+      });
+      if (!response.ok) throw new Error('Calendário NBA CDN HTTP ' + response.status);
+      return response.json();
+    }, 30 * 60 * 1000);
+    const games = (schedule?.leagueSchedule?.gameDates || []).flatMap(day => day.games || []);
+    const parsed = games.filter(game => Number(game.gameType) === 2 &&
+      (canonicalTeamAbbr(game.homeTeam?.teamTricode) === abbreviation || canonicalTeamAbbr(game.awayTeam?.teamTricode) === abbreviation)
+    ).map(game => {
+      const home = game.homeTeam || {}, away = game.awayTeam || {};
+      const stateCode = Number(game.gameStatus);
+      const datetime = game.gameDateTimeUTC || '';
+      return {
+        id:String(game.gameId),
+        date:datetime?saoPauloDate(datetime):String(game.gameDateEst||game.gameDate||'').slice(0,10),
+        status:game.gameStatusText||(stateCode===3?'Final':stateCode===2?'Em andamento':'Agendado'),
+        state:stateCode===3?'post':stateCode===2?'in':'pre',
+        sides:[
+          {abbreviation:canonicalTeamAbbr(home.teamTricode||''),name:[home.teamCity,home.teamName].filter(Boolean).join(' '),score:finiteNumberOrNull(game.homeTeamScore),homeAway:'home'},
+          {abbreviation:canonicalTeamAbbr(away.teamTricode||''),name:[away.teamCity,away.teamName].filter(Boolean).join(' '),score:finiteNumberOrNull(game.awayTeamScore),homeAway:'away'}
+        ],
+        venue:game.arenaName||null
+      };
+    });
+    if (!parsed.length) throw new Error('ESPN: '+espnError.message+' NBA CDN: nenhum jogo regular encontrado para '+abbreviation+'.');
+    return parsed;
+  }
 }
 app.get('/api/headtohead', async (req, res) => {
   try {
