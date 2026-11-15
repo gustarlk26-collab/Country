@@ -1196,7 +1196,7 @@ app.get('/api/team-stats',async(_req,res)=>{
     const advById=new Map(advanced.map(row=>[String(row.TEAM_ID),row]));
     const baseById=new Map(base.map(row=>[String(row.TEAM_ID),row]));
     const standingsByAbbr=new Map(fallback.map(row=>[row.team?.abbreviation,row]));
-    const ids=new Set(base.length?baseById.keys():fallback.map(row=>String(row.team?.abbreviation||'')));
+    const ids=new Set([...baseById.keys(),...fallback.map(row=>String(row.team?.abbreviation||'')).filter(Boolean)]);
     const data=[...ids].map(id=>{
       const row=baseById.get(id)||{},adv=advById.get(id)||{};
       const abbreviation=row.TEAM_ABBREVIATION||id;
