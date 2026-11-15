@@ -856,7 +856,15 @@ app.get('/api/averages', async (req, res) => {
       plus_minus: numberOrNull(r.PLUS_MINUS),
       fg_pct: numberOrNull(r.FG_PCT), fg3_pct: numberOrNull(r.FG3_PCT),
       min: numberOrNull(r.MIN)
-    })).sort((a,b) => b.pts - a.pts);
+    })).sort((a,b) => {
+      if (a.pts == null && b.pts != null) return 1;
+      if (b.pts == null && a.pts != null) return -1;
+      const pointsOrder = (b.pts ?? 0) - (a.pts ?? 0);
+      if (pointsOrder) return pointsOrder;
+      const nameA = `${a.player.first_name} ${a.player.last_name}`.trim();
+      const nameB = `${b.player.first_name} ${b.player.last_name}`.trim();
+      return nameA.localeCompare(nameB, 'en');
+    });
     res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats', season, lastGames: requested, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa', totalPlayers: data.length });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
