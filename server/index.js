@@ -598,7 +598,8 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     const id=String(req.params.id);
     if(!/^\d{1,12}$/.test(id))return res.status(400).json({error:'ID de jogador inválido.'});
     const requestedName=String(req.query.name||'').trim().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]/g,'');
-    const requestedTeam=canonicalTeamAbbr(String(req.query.team||'').trim());
+    const requestedTeamCandidate=canonicalTeamAbbr(String(req.query.team||'').trim());
+    const requestedTeam=Object.values(TEAM_META).some(meta=>meta[0]===requestedTeamCandidate)?requestedTeamCandidate:'';
     let roster=[];
     if(requestedTeam&&Object.values(TEAM_META).some(meta=>meta[0]===requestedTeam)){
       try{roster=await espnTeamRoster(requestedTeam);}catch(teamError){console.warn('ESPN roster lookup failed for '+requestedTeam+': '+teamError.message);}
@@ -945,10 +946,10 @@ app.get('/api/averages', async (req, res) => {
     const nonNegative = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0?parsed:null; };
     const percentage = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0&&parsed<=1?parsed:null; };
     const attempts = (made, attempted) => { const m=nonNegative(made), a=nonNegative(attempted); return m!=null&&a!=null&&m>a?{made:null,attempted:null}:{made:m,attempted:a}; };
-    const data = rows.filter(r => Number.isSafeInteger(Number(r.PLAYER_ID)) && Number(r.PLAYER_ID) > 0 && String(r.PLAYER_NAME || '').trim() && Number.isFinite(Number(r.GP)) && Number(r.GP) > 0).map(r => ({
+    const data = rows.filter(r => { const id=Number(r.PLAYER_ID),gp=numberOrNull(r.GP); return Number.isSafeInteger(id)&&id>0&&String(r.PLAYER_NAME||'').trim()&&gp!=null&&gp>0; }).map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION },
-      gamesPlayed: nonNegative(r.GP), pts: nonNegative(r.PTS), reb: nonNegative(r.REB), ast: nonNegative(r.AST),
+      gamesPlayed: positive(r.GP), pts: nonNegative(r.PTS), reb: nonNegative(r.REB), ast: nonNegative(r.AST),
       stl: nonNegative(r.STL), blk: nonNegative(r.BLK), turnover: nonNegative(r.TOV),
       ...(()=>{const pair=attempts(r.FGM,r.FGA);return {fgm:pair.made,fga:pair.attempted};})(),
       ...(()=>{const pair=attempts(r.FG3M,r.FG3A);return {fg3m:pair.made,fg3a:pair.attempted};})(),
