@@ -386,7 +386,9 @@ async function espnBoxscore(gameId) {
         }
         return null;
       };
-      const fg = madeAttempt(pick('FG','FIELD GOALS','FGM-A','FGM/A')), three = madeAttempt(pick('3PT','3P','THREE POINTERS','3PM-A','3PM/A'));
+      const fgParsed = madeAttempt(pick('FG','FIELD GOALS','FGM-A','FGM/A')), threeParsed = madeAttempt(pick('3PT','3P','THREE POINTERS','3PM-A','3PM/A'));
+      const fg = { made:fgParsed.made??finiteNumberOrNull(pick('FGM')), attempted:fgParsed.attempted??finiteNumberOrNull(pick('FGA')) };
+      const three = { made:threeParsed.made??finiteNumberOrNull(pick('3PM','3PTM')), attempted:threeParsed.attempted??finiteNumberOrNull(pick('3PA','3PTA')) };
       const athlete = entry.athlete || {};
       const fullName = athlete.displayName || athlete.fullName || athlete.shortName || '';
       const parts = fullName.split(' ');
@@ -394,7 +396,8 @@ async function espnBoxscore(gameId) {
       const min = formatMinutes(pick('MIN','MINUTES'));
       if (!Number.isSafeInteger(athleteId) || athleteId <= 0 || !fullName.trim() || minutesAsNumber(min) <= 0) return null;
       const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
-      const ft = madeAttempt(pick('FT','FREE THROWS','FTM-A','FTM/A'));
+      const ftParsed = madeAttempt(pick('FT','FREE THROWS','FTM-A','FTM/A'));
+      const ft = { made:ftParsed.made??finiteNumberOrNull(pick('FTM')), attempted:ftParsed.attempted??finiteNumberOrNull(pick('FTA')) };
       const row = {
         id: athleteId, player: { id: athleteId, first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot?.href||athlete.headshot||null },
         team: { id: Number(group.team?.id), abbreviation: canonicalTeamAbbr(group.team?.abbreviation || ''), full_name: group.team?.displayName || group.team?.name || '' },
