@@ -385,6 +385,11 @@ function madeAttempt(value) {
   const made = Number(match[1]), attempted = Number(match[2]);
   return made <= attempted ? { made, attempted } : { made: null, attempted: null };
 }
+function validatedAttemptPair(made, attempted) {
+  const madeValue = finiteNumberOrNull(made), attemptedValue = finiteNumberOrNull(attempted);
+  if ((madeValue != null && (!Number.isInteger(madeValue) || madeValue < 0)) || (attemptedValue != null && (!Number.isInteger(attemptedValue) || attemptedValue < 0)) || (madeValue != null && attemptedValue != null && madeValue > attemptedValue)) return { made: null, attempted: null };
+  return { made: madeValue, attempted: attemptedValue };
+}
 async function espnBoxscore(gameId) {
   const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${encodeURIComponent(gameId)}`);
   const groups = body.boxscore?.players || [];
@@ -408,8 +413,8 @@ async function espnBoxscore(gameId) {
         return null;
       };
       const fgParsed = madeAttempt(pick('FG','FIELD GOALS','FGM-A','FGM/A')), threeParsed = madeAttempt(pick('3PT','3P','THREE POINTERS','3PM-A','3PM/A'));
-      const fg = { made:fgParsed.made??finiteNumberOrNull(pick('FGM')), attempted:fgParsed.attempted??finiteNumberOrNull(pick('FGA')) };
-      const three = { made:threeParsed.made??finiteNumberOrNull(pick('3PM','3PTM')), attempted:threeParsed.attempted??finiteNumberOrNull(pick('3PA','3PTA')) };
+      const fg = validatedAttemptPair(fgParsed.made ?? pick('FGM'), fgParsed.attempted ?? pick('FGA'));
+      const three = validatedAttemptPair(threeParsed.made ?? pick('3PM','3PTM'), threeParsed.attempted ?? pick('3PA','3PTA'));
       const athlete = entry.athlete || {};
       const fullName = athlete.displayName || athlete.fullName || athlete.shortName || '';
       const parts = fullName.split(' ');
@@ -418,7 +423,7 @@ async function espnBoxscore(gameId) {
       if (!Number.isSafeInteger(athleteId) || athleteId <= 0 || !fullName.trim() || minutesAsNumber(min) <= 0) return null;
       const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
       const ftParsed = madeAttempt(pick('FT','FREE THROWS','FTM-A','FTM/A'));
-      const ft = { made:ftParsed.made??finiteNumberOrNull(pick('FTM')), attempted:ftParsed.attempted??finiteNumberOrNull(pick('FTA')) };
+      const ft = validatedAttemptPair(ftParsed.made ?? pick('FTM'), ftParsed.attempted ?? pick('FTA'));
       const row = {
         id: athleteId, player: { id: athleteId, first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot?.href||athlete.headshot||null },
         team: { id: Number(group.team?.id), abbreviation: canonicalTeamAbbr(group.team?.abbreviation || ''), full_name: group.team?.displayName || group.team?.name || '' },
