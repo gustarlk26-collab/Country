@@ -308,7 +308,8 @@ async function espnGames(start, end) {
     if (result?.status === 'rejected') failures.push(dates[index] + ': ' + (result.reason?.message || 'falha ESPN'));
     else if (result?.status === 'fulfilled') result.value.forEach(event => { if (event?.id) events.set(String(event.id), event); });
   });
-  if (!events.size) throw new Error('ESPN não retornou partidas. ' + (failures.length ? failures.slice(0, 3).join('; ') : 'Confira a temporada e o calendário.'));
+  if (failures.length) throw new Error('Calendário ESPN incompleto (' + failures.length + ' dia(s) sem resposta). ' + failures.slice(0, 3).join('; '));
+  if (!events.size) throw new Error('ESPN não retornou partidas. Confira a temporada e o calendário.');
   return [...events.values()].flatMap(event => {
     const competition = event.competitions?.[0];
     if (!competition) return [];
