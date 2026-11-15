@@ -976,12 +976,15 @@ app.get('/api/players/:id/shots', async (req, res) => {
           if (!(Number(action.isFieldGoal) === 1 || type === '2pt' || type === '3pt')) continue;
           const rawX = action.xLegacy ?? action.x;
           const rawY = action.yLegacy ?? action.y;
+          if (rawX == null || rawX === '' || rawY == null || rawY === '') continue;
           const x = Number(rawX), y = Number(rawY);
           if (!Number.isFinite(x) || !Number.isFinite(y) || (x === 0 && y === 0)) continue;
-          const resultText = String(action.shotResult || action.subType || '').toLowerCase();
+          const resultText = String(action.shotResult || '').toLowerCase();
+          const made = resultText.includes('made'), missed = resultText.includes('miss');
+          if (!made && !missed) continue;
           collected.push({
             x, y,
-            made: resultText.includes('made') || resultText === '2pt' && Number(action.pointsTotal) > 0,
+            made,
             action: action.description || action.subType || action.actionType || 'Arremesso',
             distance: Number.isFinite(Number(action.shotDistance)) && Number(action.shotDistance) > 0 ? Number(action.shotDistance) : null,
             gameId: game.id, date: game.date
