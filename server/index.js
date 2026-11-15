@@ -930,19 +930,22 @@ app.get('/api/averages', async (req, res) => {
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 3 * 60 * 1000))[0] || [];
     const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+    const nonNegative = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0?parsed:null; };
+    const percentage = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0&&parsed<=1?parsed:null; };
+    const attempts = (made, attempted) => { const m=nonNegative(made), a=nonNegative(attempted); return m!=null&&a!=null&&m>a?{made:null,attempted:null}:{made:m,attempted:a}; };
     const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION },
-      gamesPlayed: numberOrNull(r.GP), pts: numberOrNull(r.PTS), reb: numberOrNull(r.REB), ast: numberOrNull(r.AST),
-      stl: numberOrNull(r.STL), blk: numberOrNull(r.BLK), turnover: numberOrNull(r.TOV),
-      fgm: numberOrNull(r.FGM), fga: numberOrNull(r.FGA),
-      fg3m: numberOrNull(r.FG3M), fg3a: numberOrNull(r.FG3A),
-      ftm: numberOrNull(r.FTM), fta: numberOrNull(r.FTA),
-      ft_pct: numberOrNull(r.FT_PCT), oreb: numberOrNull(r.OREB),
-      dreb: numberOrNull(r.DREB), pf: numberOrNull(r.PF),
+      gamesPlayed: nonNegative(r.GP), pts: nonNegative(r.PTS), reb: nonNegative(r.REB), ast: nonNegative(r.AST),
+      stl: nonNegative(r.STL), blk: nonNegative(r.BLK), turnover: nonNegative(r.TOV),
+      ...(()=>{const pair=attempts(r.FGM,r.FGA);return {fgm:pair.made,fga:pair.attempted};})(),
+      ...(()=>{const pair=attempts(r.FG3M,r.FG3A);return {fg3m:pair.made,fg3a:pair.attempted};})(),
+      ...(()=>{const pair=attempts(r.FTM,r.FTA);return {ftm:pair.made,fta:pair.attempted};})(),
+      ft_pct: percentage(r.FT_PCT), oreb: nonNegative(r.OREB),
+      dreb: nonNegative(r.DREB), pf: nonNegative(r.PF),
       plus_minus: numberOrNull(r.PLUS_MINUS),
-      fg_pct: numberOrNull(r.FG_PCT), fg3_pct: numberOrNull(r.FG3_PCT),
-      min: numberOrNull(r.MIN)
+      fg_pct: percentage(r.FG_PCT), fg3_pct: percentage(r.FG3_PCT),
+      min: nonNegative(r.MIN)
     })).sort((a,b) => {
       if (a.pts == null && b.pts != null) return 1;
       if (b.pts == null && a.pts != null) return -1;
