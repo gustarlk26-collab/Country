@@ -60,6 +60,7 @@ assert.ok(schema.includes('with check (auth.uid() = user_id)'), 'As gravações 
 assert.ok(server.includes('fgm: numberOrNull(r.FGM)'), 'Médias não devem transformar campos vazios em zero.');
 assert.ok(server.includes('return match ? { made: Number(match[1]), attempted: Number(match[2]) } : { made: null, attempted: null };'), 'Arremessos ausentes no box score ESPN não podem virar zero fictício.');
 assert.ok(server.includes('!Number.isSafeInteger(athleteId) || athleteId <= 0 || !fullName.trim()'), 'Box score ESPN não deve criar linhas com atletas sem ID ou nome válido.');
+assert.ok(server.includes('Number.isSafeInteger(Number(p.personId)) && Number(p.personId) > 0') && server.includes("new Map(rows.map(row => [String(row.id), row]))"), 'Box score NBA Live deve rejeitar atletas inválidos e eliminar linhas duplicadas.');
 assert.ok(server.includes('if (keys.some(key => stats[key] == null || !Number.isFinite(Number(stats[key])))) return null;'), 'Game Score só pode ser calculado quando todos os componentes oficiais existem.');
 assert.ok(server.includes('rows.filter(r => Number(r.GP) > 0).map(r => ({'), 'Ranking recente não deve incluir atletas sem jogos na amostra.');
 assert.ok(server.includes('rawValue == null || rawValue ==='), 'Recordes históricos não podem converter valores ausentes em zero.');
