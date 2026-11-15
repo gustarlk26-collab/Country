@@ -1219,6 +1219,7 @@ app.get('/api/standings', async (_req, res) => {
     const rows = (await cached(`standings:${seasonFor()}`, () => nba('leaguestandings', {
       LeagueID: '00', Season: seasonFor(), SeasonType: 'Regular Season'
     }), 2 * 60 * 1000))[0] || [];
+    if (!rows.length) throw new Error('NBA Stats não retornou dados da classificação.');
     const data = rows.map(r => ({
       team: { id: r.TeamID, full_name: r.TeamName, name: r.TeamName, abbreviation: TEAM_META[Number(r.TeamID)]?.[0] || r.TeamAbbreviation, conference: r.Conference || TEAM_META[Number(r.TeamID)]?.[2] },
       wins: r.WINS, losses: r.LOSSES, win_pct: r.WIN_PCT
