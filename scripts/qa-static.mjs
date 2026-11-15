@@ -42,7 +42,7 @@ assert.ok(server.includes('NBA Live CDN scoreboard'), 'Fonte alternativa do plac
 assert.ok(server.includes('home_team_score: finiteNumberOrNull(home.score)') && server.includes('visitor_team_score: finiteNumberOrNull(away.score)'), 'Placar alternativo deve rejeitar valores numéricos inválidos.');
 assert.ok(server.includes('score: finiteNumberOrNull(team.score)') && server.includes('period?.score)'), 'Resumo por período deve rejeitar pontuações inválidas sem produzir NaN.');
 assert.ok(routes.includes('GET /api/games/:id/stats'), 'Endpoint de box score ausente.');
-assert.ok(server.includes("groups.filter(group => group && Number.isSafeInteger(Number(group.team?.id)) && Number(group.team.id) > 0 && /^[A-Z]{3}$/.test(canonicalTeamAbbr(group.team?.abbreviation || ''))"), 'Box score ESPN deve ignorar grupos sem identificação válida de equipe.');
+assert.ok(server.includes('const expectedTeamIds = new Set((body.header?.competitions?.[0]?.competitors || []).map(side => Number(side.team?.id))') && server.includes('expectedTeamIds.size === 2 && expectedTeamIds.has(Number(group.team?.id))'), 'Box score ESPN deve aceitar somente grupos vinculados às duas equipes oficiais da partida.');
 assert.ok(server.includes('async function nbaGameIdFromEspn(eventId)'), 'Fallback deve converter IDs ESPN em IDs oficiais da NBA quando necessário.');
 assert.ok(server.includes("Number(game.gameType) === 2"), 'Confronto direto deve consultar jogos da temporada regular NBA no fallback CDN.');
 assert.ok(server.includes('(stateCode===2||stateCode===3)?finiteNumberOrNull(game.homeTeamScore):null'), 'Confronto direto não deve interpretar placar pré-jogo como zero real.');
