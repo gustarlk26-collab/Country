@@ -8,6 +8,7 @@ const styles = read('src/styles.css');
 const worker = read('public/sw.js');
 const schema = read('supabase/schema.sql');
 const manifest = read('public/manifest.webmanifest');
+const render = read('render.yml');
 
 const featureBlock = app.match(/const featureKeys=\[([^\]]+)\]/);
 assert.ok(featureBlock, 'Lista de funcionalidades não encontrada.');
@@ -116,6 +117,7 @@ assert.ok(styles.includes('prefers-reduced-motion'), 'Preferência de movimento 
 assert.ok(worker.includes("url.pathname.startsWith('/api/')"), 'Service worker deve deixar respostas da API fora do cache offline.');
 assert.ok(schema.includes('enable row level security'), 'RLS não está habilitado no esquema.');
 assert.ok(manifest.includes('"display": "standalone"'), 'Manifest PWA inválido ou incompleto.');
+assert.ok(render.includes('npm run test:qa') && render.includes('node --check server/index.js'), 'Deploy Render deve executar QA e checagem de sintaxe antes de publicar.');
 assert.ok(!/onClick=\{\(\)\s*=>\s*\{\s*\}\}/.test(app), 'Há botão com ação vazia.');
 const buttons = [...app.matchAll(/<button\b[^>]*>/g)].map(match => match[0]);
 assert.ok(buttons.length >= 40, 'A interface parece ter perdido seus controles principais.');
