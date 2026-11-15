@@ -240,8 +240,8 @@ async function nbaCdnGames(start, end) {
       display_clock: g.gameClock || null,
       home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: [home.teamCity, home.teamName].filter(Boolean).join(' ') },
       visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: [away.teamCity, away.teamName].filter(Boolean).join(' ') },
-      home_team_score: statusCode === 1 ? null : (g.homeTeamScore ?? null),
-      visitor_team_score: statusCode === 1 ? null : (g.awayTeamScore ?? null)
+      home_team_score: statusCode === 1 ? null : finiteNumberOrNull(g.homeTeamScore),
+      visitor_team_score: statusCode === 1 ? null : finiteNumberOrNull(g.awayTeamScore)
     };
   });
   const liveGames = live?.scoreboard?.games || [];
