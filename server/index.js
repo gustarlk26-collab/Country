@@ -106,7 +106,7 @@ async function nbaLiveBoxscore(gameId) {
   const game = body?.game;
   if (!game) throw new Error('A NBA ainda não publicou o box score desta partida.');
   const teams = [game.homeTeam, game.awayTeam];
-  const rows = teams.flatMap(team => (team.players || []).map(p => {
+  const rows = teams.filter(Boolean).flatMap(team => (Array.isArray(team.players) ? team.players : []).filter(p => p && Number.isSafeInteger(Number(p.personId)) && Number(p.personId) > 0 && String(p.name || '').trim()).map(p => {
     const stats = p.statistics || {};
     const min = stats.minutes || '0:00';
     const played = p.played === true || minutesAsNumber(min) > 0;
@@ -126,8 +126,9 @@ async function nbaLiveBoxscore(gameId) {
     row.game_score = gameScore(row);
     return row;
   })).filter(Boolean);
-  if (!rows.length) throw new Error('A fonte não retornou atletas com minutos jogados. O box score pode ainda não estar disponível.');
-  return rows;
+  const uniqueRows = [...new Map(rows.map(row => [String(row.id), row])).values()];
+  if (!uniqueRows.length) throw new Error('A fonte não retornou atletas válidos com minutos jogados. O box score pode ainda não estar disponível.');
+  return uniqueRows;
 }
 async function nbaHistoricalBoxscore(gameId) {
   const seasonCode = Number(String(gameId).slice(3, 5));
