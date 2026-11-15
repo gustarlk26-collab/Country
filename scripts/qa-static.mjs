@@ -126,7 +126,11 @@ assert.ok(server.includes("espn:roster:' + abbreviation"), 'Elencos ESPN devem s
 assert.ok(server.includes('Math.min(6, teams.length)'), 'Consultas de elenco devem limitar concorrência para evitar bloqueios da ESPN.');
 assert.ok(server.includes("IsOnlyCurrentSeason: '1'"), 'Fallback do diretório não deve misturar atletas históricos com elenco atual.');
 assert.ok(server.includes('Number(p.ROSTERSTATUS) === 1'), 'Fallback NBA Stats deve exibir somente atletas no elenco ativo.');
-assert.ok(server.includes('})).filter(item => item.name));'), 'Relatórios de lesões não devem criar linhas genéricas sem atleta identificado.');
+assert.ok(server.includes("Array.isArray(body.injuries) ? body.injuries : Array.isArray(body.teams)"), 'Parser de lesões deve validar o formato do payload antes de percorrer equipes.');
+assert.ok(server.includes("(group.athlete || group.name) ? [group] : []"), 'Parser de lesões deve aceitar também registros diretos, além de grupos por equipe.');
+assert.ok(server.includes("entries.forEach(item => unique.set(item.team + '|' + item.name, item))"), 'Relatórios de lesões devem remover duplicatas por atleta e equipe.');
+assert.ok(server.includes("typeof detail === 'string' ? detail : ''"), 'Relatórios de lesões não podem renderizar objetos como [object Object].');
+assert.ok(app.includes('let refreshing=false;') && app.includes('if(refreshing)return;') && app.includes('finally { refreshing=false; }'), 'Atualização periódica de painéis deve impedir requisições sobrepostas.');
 assert.ok(server.includes('Math.min(8, dates.length)'), 'Calendário ESPN deve limitar concorrência para reduzir bloqueios da fonte externa.');
 assert.ok(server.includes("90 * 1000"), 'Cache diário ESPN deve ter TTL definido.');
 assert.ok(app.includes("scorePending:'Placar em atualização'"), 'Cards de jogos devem explicar placar pendente sem inventar zero.');
