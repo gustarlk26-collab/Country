@@ -939,7 +939,7 @@ app.get('/api/headtohead', async (req, res) => {
           matchup:team+' vs '+opponent,winner,points:a.score,opponent_points:b.score,
           plus_minus:a.score!=null&&b.score!=null?a.score-b.score:null,status:game.status,state:game.state,venue:game.venue};
       }).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-    res.json({data,season,source:'ESPN team schedules',updatedAt:new Date().toISOString()});
+    res.json({data,season,source:'ESPN team schedules + NBA CDN fallback',updatedAt:new Date().toISOString()});
   } catch(e) { res.status(503).json({error:'Confronto direto temporariamente indisponível: '+e.message}); }
 });
 async function nbaLivePlayByPlay(gameId) {
