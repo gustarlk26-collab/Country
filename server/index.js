@@ -671,13 +671,14 @@ async function espnLiveGames() {
     8000
   )));
   const events = new Map();
-  let succeeded = 0;
+  let succeeded = 0, failures = 0;
   for (const result of results) {
     if (result.status === 'fulfilled') {
       succeeded++;
       for (const event of result.value) if (event?.id) events.set(String(event.id), event);
-    }
+    } else failures++;
   }
+  if (failures) throw new Error('ESPN não respondeu a todas as datas do placar diário.');
   if (!succeeded) throw new Error('ESPN não respondeu ao placar diário.');
   return [...events.values()].flatMap(event => {
     const competition = event.competitions?.[0];
