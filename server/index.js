@@ -495,13 +495,15 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     let player=roster.find(item=>String(item.espn_id||item.id)===id);
     if(!player&&requestedName)player=roster.find(item=>(item.first_name+item.last_name).toLowerCase().replace(/[^a-z0-9]/g,'')===requestedName);
     if(!player)return res.status(404).json({error:'Biografia não encontrada no elenco consultado.'});
-    let detail={},overview={};
-    const [detailResult,overviewResult]=await Promise.allSettled([
+    let detail={},overview={},statsPayload={};
+    const [detailResult,overviewResult,statsResult]=await Promise.allSettled([
       cached('espn-athlete:'+player.espn_id,()=>espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/athletes/'+player.espn_id),24*60*60*1000),
-      cached('espn-athlete-overview:'+player.espn_id,()=>espnJson('https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/'+player.espn_id+'/overview'),10*60*1000)
+      cached('espn-athlete-overview:'+player.espn_id,()=>espnJson('https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/'+player.espn_id+'/overview'),10*60*1000),
+      cached('espn-athlete-stats:'+player.espn_id,()=>espnJson('https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/'+player.espn_id+'/stats'),10*60*1000)
     ]);
     if(detailResult.status==='fulfilled')detail=detailResult.value;
     if(overviewResult.status==='fulfilled')overview=overviewResult.value;
+    if(statsResult.status==='fulfilled')statsPayload=statsResult.value;
     const athlete=detail.athlete||detail;
     const statsBlock=overview.statistics||overview.stats?.statistics||{};
     const statLabels=statsBlock.labels||statsBlock.displayNames||[];
@@ -512,12 +514,33 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       const index=statLabels.findIndex((label,i)=>keys.includes(String(label).toUpperCase())||keys.includes(String(statNames[i]||'')));
       return index<0?null:numberOrNull(statValues[index]);
     };
+    const detailedStats={};
+    for(const category of (statsPayload.categories||statsPayload.statCategories||[])){
+      const labels=category.labels||[];
+      const values=category.totals||category.values||[];
+      labels.forEach((label,index)=>{
+        const key=String(label||'').toUpperCase().replace(/[^A-Z0-9%/]/g,'');
+        const value=numberOrNull(values[index]);
+        if(key&&value!=null&&detailedStats[key]==null)detailedStats[key]=value;
+      });
+    }
+    const stat=(...keys)=>{
+      for(const key of keys){
+        const normalized=String(key).toUpperCase().replace(/[^A-Z0-9%/]/g,'');
+        if(detailedStats[normalized]!=null)return detailedStats[normalized];
+      }
+      return overviewStat(...keys);
+    };
     const playerStats={
-      gamesPlayed:overviewStat('GP','gamesPlayed'),min:overviewStat('MIN','minutes','avgMinutes'),
-      pts:overviewStat('PTS','avgPoints'),reb:overviewStat('REB','avgRebounds'),ast:overviewStat('AST','avgAssists'),
-      stl:overviewStat('STL','avgSteals'),blk:overviewStat('BLK','avgBlocks'),turnover:overviewStat('TO','TOV','avgTurnovers'),
-      fg_pct:overviewStat('FG%','fieldGoalPct'),fg3_pct:overviewStat('3P%','threePointFieldGoalPct'),
-      ft_pct:overviewStat('FT%','freeThrowPct')
+      gamesPlayed:stat('GP','gamesPlayed'),min:stat('MIN','minutes','avgMinutes'),
+      pts:stat('PTS','avgPoints'),reb:stat('REB','avgRebounds'),ast:stat('AST','avgAssists'),
+      stl:stat('STL','avgSteals'),blk:stat('BLK','avgBlocks'),turnover:stat('TO','TOV','avgTurnovers'),
+      fg_pct:stat('FG%','fieldGoalPct'),fg3_pct:stat('3P%','threePointFieldGoalPct'),
+      ft_pct:stat('FT%','freeThrowPct'),fgm:stat('FGM'),fga:stat('FGA'),fg3m:stat('3PM','3PTM'),
+      fg3a:stat('3PA','3PTA'),ftm:stat('FTM'),fta:stat('FTA'),oreb:stat('OREB'),dreb:stat('DREB'),pf:stat('PF'),
+      pie:stat('PIE'),ts_pct:stat('TS%'),usg_pct:stat('USG%'),off_rating:stat('OFF RTG','ORTG'),
+      def_rating:stat('DEF RTG','DRTG'),net_rating:stat('NET RTG','NETRTG'),ast_pct:stat('AST%'),
+      tov_pct:stat('TOV%'),efg_pct:stat('EFG%'),ast_to:stat('AST/TO'),ast_ratio:stat('AST RATIO'),pace:stat('PACE')
     };
     const data={
       id:player.espn_id,name:athlete.displayName||athlete.fullName||[player.first_name,player.last_name].join(' '),
@@ -530,7 +553,7 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       family:Array.isArray(athlete.relatives)?athlete.relatives:Array.isArray(athlete.family)?athlete.family:Array.isArray(player.family)?player.family:null,
       biography:athlete.biography||athlete.description||null,
       stats:Object.values(playerStats).some(value=>value!=null)?playerStats:null,
-      source:overview.statistics?'ESPN athlete profile + season overview':'ESPN athlete profile'
+      source:statsPayload.categories?'ESPN athlete profile + season statistics':'ESPN athlete profile + season overview'
     };
     res.json({data,updatedAt:new Date().toISOString()});
   }catch(e){res.status(503).json({error:'Ficha biográfica indisponível: '+e.message});}
