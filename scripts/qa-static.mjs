@@ -99,6 +99,7 @@ assert.ok(app.includes("Sem partidas no período"), 'Ferramentas de forma devem 
 
 assert.ok(app.includes("api('/api/games/live',{cache:false})"), 'Frontend não consulta o placar ao vivo sem cache.');
 assert.ok(app.includes('window.setInterval(refreshLive,15000)'), 'Atualização automática do placar não está configurada para 15 segundos.');
+assert.ok(app.includes('home_team_score:updated.home_team_score??current.home_team_score') && app.includes('visitor_team_score:updated.visitor_team_score??current.visitor_team_score'), 'Box score deve preservar placares válidos durante atualizações parciais.');
 assert.ok(app.includes('setLiveUnavailable(true)'), 'Falhas do feed ao vivo devem ser identificadas na interface.');
 assert.ok(app.includes('live-warning'), 'A interface deve diferenciar visualmente o feed indisponível.');
 assert.ok(app.includes('g.display_clock'), 'Relógio da partida não é exibido no cartão.');
