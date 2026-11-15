@@ -51,6 +51,8 @@ assert.ok(server.includes("Calendário NBA CDN HTTP " ) && server.includes('nenh
 assert.ok(server.includes('game.gameDateTimeUTC?saoPauloDate(game.gameDateTimeUTC)'), 'Conciliação de IDs de partidas deve usar a mesma data local brasileira nas duas fontes.');
 assert.ok(server.includes('async function nbaLivePeriodSummary(gameId)'), 'Parciais por quarto devem ter fallback NBA Live.');
 assert.ok(server.includes("'NBA Live CDN boxscore'"), 'A origem alternativa dos parciais deve ser identificada.');
+assert.ok(server.includes("const summaryStatus = game.gameStatus === 1 ? 'scheduled' : 'in_progress';") && server.includes("const summaryStatus = competition.status?.type?.state === 'pre' ? 'scheduled' : 'in_progress';"), 'Resumo por período deve respeitar partidas agendadas nas fontes NBA Live e ESPN.');
+assert.ok(server.includes('scoreboardScore(team.score, summaryStatus)') && server.includes('scoreboardScore(line.displayValue ?? line.value, summaryStatus)'), 'Placar e parciais de partidas agendadas não podem exibir zeros não publicados.');
 assert.ok(server.includes("app.use('/api', requireFamily)"), 'Proteção das rotas da API ausente.');
 assert.ok(server.indexOf("app.get('/api/health'") < server.indexOf("app.use('/api', requireFamily)"), 'Health check deve continuar acessível ao Render antes da autenticação familiar.');
 const routeKeys = [...server.matchAll(/app\.(get|post|put|delete|patch)\(['"]([^'"]+)/g)].map(match => match[1].toUpperCase() + ' ' + match[2]);
