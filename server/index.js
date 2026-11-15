@@ -68,6 +68,7 @@ function cached(key, fn, ttl = CACHE_MS) {
 }
 function canonicalTeamAbbr(value) { const code=String(value||'').toUpperCase(); return ({NY:'NYK',NO:'NOP',GS:'GSW',SA:'SAS',PHO:'PHX',WSH:'WAS'})[code]||code; }
 function finiteNumberOrNull(value) { return value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value); }
+function shootingPct(made, attempted) { const m=finiteNumberOrNull(made), a=finiteNumberOrNull(attempted); return m != null && a != null && a > 0 ? m / a : null; }
 function seasonFor(date = new Date()) {
   const year = date.getUTCFullYear();
   return date.getUTCMonth() >= 9 ? `${year}-${String(year + 1).slice(-2)}` : `${year - 1}-${String(year).slice(-2)}`;
@@ -119,7 +120,7 @@ async function nbaLiveBoxscore(gameId) {
       ast: stats.assists ?? null, stl: stats.steals ?? null, blk: stats.blocks ?? null,
       fgm: fgMade ?? null, fga: fgAtt ?? null, ftm: stats.freeThrowsMade ?? null, fta: stats.freeThrowsAttempted ?? null,
       oreb: stats.reboundsOffensive ?? null, dreb: stats.reboundsDefensive ?? null, pf: stats.foulsPersonal ?? null,
-      fg_pct: fgAtt ? fgMade / fgAtt : null, fg3_pct: threeAtt ? threeMade / threeAtt : null,
+      fg_pct: shootingPct(fgMade, fgAtt), fg3_pct: shootingPct(threeMade, threeAtt),
       turnover: stats.turnovers ?? null
     };
     row.game_score = gameScore(row);
@@ -147,7 +148,7 @@ async function nbaHistoricalBoxscore(gameId) {
       team: { id: p.TEAM_ID, abbreviation: p.TEAM_ABBREVIATION, full_name: p.TEAM_NAME },
       min: p.MIN, pts: p.PTS ?? null, reb: p.REB ?? null, ast: p.AST ?? null, stl: p.STL ?? null, blk: p.BLK ?? null,
       fgm:p.FGM??null,fga:p.FGA??null,ftm:p.FTM??null,fta:p.FTA??null,oreb:p.OREB??null,dreb:p.DREB??null,pf:p.PF??null,
-      fg_pct: p.FGA ? p.FGM / p.FGA : null, fg3_pct: p.FG3A ? p.FG3M / p.FG3A : null, turnover: p.TOV ?? null
+      fg_pct: shootingPct(p.FGM, p.FGA), fg3_pct: shootingPct(p.FG3M, p.FG3A), turnover: p.TOV ?? null
     };
     row.game_score = gameScore(row);
     return row;
@@ -400,8 +401,8 @@ async function espnBoxscore(gameId) {
         min, pts: numberOrNull(pick('PTS','POINTS')), reb: numberOrNull(pick('REB','REBOUNDS')), ast: numberOrNull(pick('AST','ASSISTS')),
         stl: numberOrNull(pick('STL','STEALS')), blk: numberOrNull(pick('BLK','BLOCKS')), fgm:fg.made, fga:fg.attempted, ftm:ft.made, fta:ft.attempted,
         oreb:numberOrNull(pick('OREB','OFFENSIVE REBOUNDS')), dreb:numberOrNull(pick('DREB','DEFENSIVE REBOUNDS')), pf:numberOrNull(pick('PF','FOULS')),
-        fg_pct: fg.attempted ? fg.made / fg.attempted : null,
-        fg3_pct: three.attempted ? three.made / three.attempted : null,
+        fg_pct: shootingPct(fg.made, fg.attempted),
+        fg3_pct: shootingPct(three.made, three.attempted),
         turnover: numberOrNull(pick('TO','TOV','TURNOVERS'))
       };
       row.game_score = gameScore(row);
