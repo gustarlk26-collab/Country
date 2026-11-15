@@ -1201,7 +1201,7 @@ app.get('/api/team-stats',async(_req,res)=>{
       const row=baseById.get(id)||{},adv=advById.get(id)||{};
       const abbreviation=row.TEAM_ABBREVIATION||id;
       const standing=standingsByAbbr.get(abbreviation)||{};
-      const teamId=Number(row.TEAM_ID||standing.team?.id),meta=TEAM_META[teamId];
+      const teamId=Number(row.TEAM_ID)||Number(Object.keys(TEAM_META).find(key=>TEAM_META[key][0]===abbreviation)),meta=TEAM_META[teamId];
       const number=value=>value==null||value===''||!Number.isFinite(Number(value))?null:Number(value);
       return {team:{id:teamId,abbreviation,full_name:row.TEAM_NAME||standing.team?.full_name||meta?.[1]||abbreviation,
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
