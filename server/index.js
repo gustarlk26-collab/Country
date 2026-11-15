@@ -363,8 +363,9 @@ function minutesAsNumber(value) {
 }
 function gameScore(stats) {
   const keys = ['pts','fgm','fga','ftm','fta','oreb','dreb','stl','ast','blk','pf','turnover'];
-  if (keys.some(key => stats[key] == null || !Number.isFinite(Number(stats[key])))) return null;
+  if (keys.some(key => stats[key] == null || !Number.isSafeInteger(Number(stats[key])) || Number(stats[key]) < 0)) return null;
   const s = Object.fromEntries(keys.map(key => [key, Number(stats[key])]));
+  if (s.fgm > s.fga || s.ftm > s.fta) return null;
   return Number((s.pts + .4*s.fgm - .7*s.fga - .4*(s.fta-s.ftm) + .7*s.oreb + .3*s.dreb + s.stl + .7*s.ast + .7*s.blk - .4*s.pf - s.turnover).toFixed(2));
 }
 function formatMinutes(value) {
