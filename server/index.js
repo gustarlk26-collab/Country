@@ -731,7 +731,7 @@ app.get('/api/rankings/recent', async (_req, res) => {
       LastNGames: '5', MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 2 * 60 * 1000))[0] || [];
-    const data = rows.map(r => ({
+    const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { abbreviation: r.TEAM_ABBREVIATION },
       gamesPlayed: r.GP, pts: r.PTS, reb: r.REB, ast: r.AST, stl: r.STL, blk: r.BLK,
