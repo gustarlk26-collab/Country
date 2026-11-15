@@ -452,7 +452,7 @@ async function espnBoxscore(gameId) {
       const athleteId = Number(athlete.id);
       const min = formatMinutes(pick('MIN','MINUTES'));
       if (!Number.isSafeInteger(athleteId) || athleteId <= 0 || !fullName.trim() || minutesAsNumber(min) <= 0) return null;
-      const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+      const numberOrNull = value => value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
       const ftParsed = madeAttempt(pick('FT','FREE THROWS','FTM-A','FTM/A'));
       const ft = validatedAttemptPair(ftParsed.made ?? pick('FTM'), ftParsed.attempted ?? pick('FTA'));
       const row = {
