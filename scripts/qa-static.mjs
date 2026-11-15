@@ -96,6 +96,8 @@ assert.ok(server.includes('30 * 60 * 1000'), 'Cache do calendário alternativo d
 assert.ok(server.includes("espn-scoreboard-day:"), 'Consultas diárias ESPN devem usar cache para reduzir chamadas repetidas.');
 assert.ok(server.includes("espn:roster:' + abbreviation"), 'Elencos ESPN devem ser armazenados em cache por franquia.');
 assert.ok(server.includes('Math.min(6, teams.length)'), 'Consultas de elenco devem limitar concorrência para evitar bloqueios da ESPN.');
+assert.ok(server.includes("IsOnlyCurrentSeason: '1'"), 'Fallback do diretório não deve misturar atletas históricos com elenco atual.');
+assert.ok(server.includes('Number(p.ROSTERSTATUS) === 1'), 'Fallback NBA Stats deve exibir somente atletas no elenco ativo.');
 assert.ok(server.includes('Math.min(8, dates.length)'), 'Calendário ESPN deve limitar concorrência para reduzir bloqueios da fonte externa.');
 assert.ok(server.includes("90 * 1000"), 'Cache diário ESPN deve ter TTL definido.');
 assert.ok(app.includes("scorePending:'Placar em atualização'"), 'Cards de jogos devem explicar placar pendente sem inventar zero.');
