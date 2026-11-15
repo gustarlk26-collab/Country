@@ -101,6 +101,9 @@ assert.ok(server.includes('function finiteNumberOrNull(value)'), 'Placar não po
 assert.ok(server.includes('function shootingPct(made, attempted)'), 'Percentuais de arremesso devem exigir conversões e tentativas oficiais válidas.');
 assert.ok(server.includes("r.LOC_X != null && r.LOC_X !== '' && r.LOC_Y != null && r.LOC_Y !== ''"), 'Mapa de arremessos não pode colocar tentativas sem coordenadas em 0,0.');
 assert.ok(server.includes('r.SHOT_MADE_FLAG != null && (Number(r.SHOT_MADE_FLAG) === 0 || Number(r.SHOT_MADE_FLAG) === 1)'), 'Mapa de arremessos deve exigir resultado oficial válido.');
+assert.ok(server.includes("const resultText = String(action.shotResult || '').toLowerCase()"), 'Feed alternativo deve usar o resultado explícito do arremesso, não o placar acumulado do time.');
+assert.ok(server.includes('if (!made && !missed) continue;'), 'Mapa alternativo deve descartar resultados de arremesso não identificados.');
+assert.ok(server.includes("if (rawX == null || rawX === '' || rawY == null || rawY === '') continue;"), 'Feed alternativo não pode converter coordenadas ausentes em zero.');
 assert.equal((server.match(/fg_pct: shootingPct\(/g)||[]).length, 3, 'Todos os feeds de box score devem usar o cálculo seguro de aproveitamento.');
 assert.ok(server.includes('home_team_score: finiteNumberOrNull(home.score)'), 'Pontuação da casa deve aceitar somente números oficiais válidos.');
 assert.ok(server.includes("if (date !== today && state !== 'in') return []"), 'Partidas ao vivo após meia-noite devem continuar visíveis no horário local.');
