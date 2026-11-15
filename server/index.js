@@ -1070,7 +1070,15 @@ app.get('/api/advanced', async (req, res) => {
       ast_to: numberOrNull(r.AST_TO), ast_ratio: numberOrNull(r.AST_RATIO), pace: numberOrNull(r.PACE),
       oreb_pct: numberOrNull(r.OREB_PCT), dreb_pct: numberOrNull(r.DREB_PCT), reb_pct: numberOrNull(r.REB_PCT),
       poss: numberOrNull(r.POSS)
-    })).sort((a,b) => (b.pie ?? -Infinity) - (a.pie ?? -Infinity));
+    })).sort((a,b) => {
+      if (a.pie == null && b.pie != null) return 1;
+      if (b.pie == null && a.pie != null) return -1;
+      const pieOrder = (b.pie ?? 0) - (a.pie ?? 0);
+      if (pieOrder) return pieOrder;
+      const nameA = `${a.player.first_name} ${a.player.last_name}`.trim();
+      const nameB = `${b.player.first_name} ${b.player.last_name}`.trim();
+      return nameA.localeCompare(nameB, 'en');
+    });
     res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats Advanced', season, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa' });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
