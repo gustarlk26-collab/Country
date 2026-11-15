@@ -228,7 +228,8 @@ async function nbaCdnGames(start, end) {
   }).filter(item => item.localDate >= start && item.localDate <= end).map(({ game: g, datetime, localDate }) => {
     const home = g.homeTeam || {}, away = g.awayTeam || {};
     const statusCode = Number(g.gameStatus);
-    const status = statusCode === 3 ? 'Final' : statusCode === 2 ? 'Em andamento' : 'Agendado';
+    const rawStatus = String(g.gameStatusText || '').toLowerCase();
+    const status = statusCode === 3 ? 'Final' : statusCode === 2 ? 'Em andamento' : rawStatus.includes('postpon') || rawStatus === 'ppd' ? 'Adiado' : rawStatus.includes('cancel') ? 'Cancelado' : 'Agendado';
     return {
       id: String(g.gameId), date: localDate, datetime: datetime || localDate,
       status, status_state: statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled',
