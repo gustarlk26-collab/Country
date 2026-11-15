@@ -36,6 +36,7 @@ assert.ok(routes.includes('GET /api/games/live'), 'Endpoint de placar ao vivo au
 assert.equal(teamAbbrs.length, 30, 'Diretório NBA deve conter as 30 franquias.');
 assert.equal(new Set(teamAbbrs).size, 30, 'Diretório de franquias contém abreviações duplicadas.');
 assert.ok(server.includes("app.get('/api/team-stats'") && server.includes("NBA Stats base") && server.includes("NBA Stats advanced"), 'Comparador de franquias deve consumir estatísticas oficiais da NBA.');
+assert.ok(server.includes("team-stats-gamefinder:") && server.includes("data.length!==30") && server.includes("NBA Stats game finder (médias calculadas dos jogos oficiais)"), 'Comparador deve consolidar dados oficiais e retornar exatamente as 30 franquias, sem duplicações.');
 assert.ok(app.includes("setTeamStatsBusy(true)") && app.includes("setTeamStatsMeta({season:r.season,source:r.source,updatedAt:r.updatedAt})"), 'Comparador deve exibir carregamento e metadados reais da fonte.');
 assert.ok(app.includes("FRANQUIA A") && app.includes("FRANQUIA B") && app.includes("Trocar franquias") && app.includes("Atualizar dados"), 'Comparador de franquias deve permitir selecionar, inverter e atualizar as equipes.');
 assert.ok(app.includes("Rating ofensivo") && app.includes("Rating defensivo") && app.includes("Aproveitamento de 3 pontos") && app.includes("Pontos por jogo"), 'Comparador deve apresentar métricas de produção e eficiência.');
