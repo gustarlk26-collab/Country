@@ -154,6 +154,7 @@ assert.ok(server.includes('Math.min(8, dates.length)'), 'Calendário ESPN deve l
 assert.ok(server.includes("90 * 1000"), 'Cache diário ESPN deve ter TTL definido.');
 assert.ok(app.includes('if(!left||!right)return false') && app.includes('return Boolean(date&&home&&away&&date===String(right.date||\'\')'), 'Comparação de partidas exige dois objetos válidos e data/abreviações completas quando os IDs diferem.');
 assert.ok(app.includes('boxRequest!==boxRequestRef.current||!sameGame(boxGameRef.current,activeGame)'), 'Atualização automática do box score não pode sobrescrever a partida selecionada depois que a requisição começou.');
+assert.ok(app.includes("useEffect(()=>{if(page!=='boxscore')boxRequestRef.current+=1;},[page])"), 'Requisições de box score devem ser invalidadas ao sair da tela.');
 assert.ok(app.includes('const boxRequestRef=useRef(0)') && app.includes('const request=++boxRequestRef.current') && app.includes('if(request!==boxRequestRef.current)return') && app.includes('if(request===boxRequestRef.current)setBusy(false)'), 'Respostas atrasadas de box scores não podem sobrescrever a partida selecionada mais recentemente.');
 assert.ok(app.includes("scorePending:'Placar em atualização'"), 'Cards de jogos devem explicar placar pendente sem inventar zero.');
 assert.ok(app.includes("rawStatus.includes('postpon')?copy.postponed"), 'Partidas adiadas não podem aparecer como agendadas.');
