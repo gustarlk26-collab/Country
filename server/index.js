@@ -164,9 +164,11 @@ async function nbaGameIdFromEspn(eventId) {
   const away=canonicalTeamAbbr(competitors.find(side=>side.homeAway==='away')?.team?.abbreviation);
   const eventDate=saoPauloDate(body.header?.competitions?.[0]?.date||body.header?.season?.startDate||new Date().toISOString());
   if(!home||!away)throw new Error('Não foi possível identificar as equipes da partida.');
-  const schedule=await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json',{headers:NBA_HEADERS,signal:AbortSignal.timeout(9000)});
-  if(!schedule.ok)throw new Error('Calendário NBA CDN indisponível.');
-  const data=await schedule.json();
+  const data=await cached('nba:season-schedule',async()=>{
+    const schedule=await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json',{headers:NBA_HEADERS,signal:AbortSignal.timeout(9000)});
+    if(!schedule.ok)throw new Error('Calendário NBA CDN indisponível.');
+    return schedule.json();
+  },30*60*1000);
   const match=(data.leagueSchedule?.gameDates||[]).flatMap(day=>day.games||[]).find(game=>{
     const date=game.gameDateTimeUTC?saoPauloDate(game.gameDateTimeUTC):String(game.gameDateEst||game.gameDateTimeEst||game.gameDate||'').slice(0,10);
     const h=game.homeTeam?.teamTricode,a=game.awayTeam?.teamTricode;
