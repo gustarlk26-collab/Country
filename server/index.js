@@ -463,6 +463,8 @@ async function espnPlayers() {
     }
   });
   await Promise.all(workers);
+  const failedTeams = results.filter(result => result.status === 'rejected').length;
+  if (failedTeams) throw new Error('ESPN retornou elencos incompletos (' + failedTeams + ' franquias sem resposta).');
   const unique = new Map();
   results.forEach(result => {
     if (result.status === 'fulfilled') result.value.forEach(player => { if (player.id) unique.set(player.id, player); });
