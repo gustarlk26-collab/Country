@@ -40,7 +40,7 @@ assert.ok(server.includes("if (data.length) {"), 'Placar vazio da ESPN deve acio
 assert.ok(server.includes("if (!succeeded) throw new Error('ESPN não respondeu ao placar diário.')"), 'Placar ao vivo deve aproveitar datas ESPN válidas e só falhar quando nenhuma consulta responder.');
 assert.ok(server.includes('NBA Live CDN scoreboard'), 'Fonte alternativa do placar ao vivo deve estar identificada.');
 assert.ok(server.includes('home_team_score: finiteNumberOrNull(home.score)') && server.includes('visitor_team_score: finiteNumberOrNull(away.score)'), 'Placar alternativo deve rejeitar valores numéricos inválidos.');
-assert.ok(server.includes('score: finiteNumberOrNull(team.score)') && server.includes('period?.score)'), 'Resumo por período deve rejeitar pontuações inválidas sem produzir NaN.');
+assert.ok(server.includes("score: scoreboardScore(team.score, 'in_progress')") && server.includes("map(period => scoreboardScore(period?.score, 'in_progress'))") && server.includes("map(line => scoreboardScore(line.displayValue ?? line.value, 'in_progress'))"), 'Resumos por período NBA Live e ESPN devem rejeitar pontuações inválidas sem produzir NaN ou zero fictício.');
 assert.ok(routes.includes('GET /api/games/:id/stats'), 'Endpoint de box score ausente.');
 assert.ok(server.includes('const expectedTeamIds = new Set((body.header?.competitions?.[0]?.competitors || []).map(side => Number(side.team?.id))') && server.includes('expectedTeamIds.size === 2 && expectedTeamIds.has(Number(group.team?.id))'), 'Box score ESPN deve aceitar somente grupos vinculados às duas equipes oficiais da partida.');
 assert.ok(server.includes('async function nbaGameIdFromEspn(eventId)'), 'Fallback deve converter IDs ESPN em IDs oficiais da NBA quando necessário.');
