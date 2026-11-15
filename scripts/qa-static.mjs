@@ -70,6 +70,7 @@ assert.match(server, /Number\.isSafeInteger\(score\) && score >= 0 \? score : nu
 assert.match(server, /function validPeriod\(value\)/, 'Períodos devem ser inteiros positivos.');
 assert.match(server, /function periodLabel\(value\)/, 'Rótulos devem identificar corretamente quartos e prorrogações.');
 assert.match(server, /function validGameClock\(value\)/, 'Relógio deve rejeitar formatos e valores inválidos.');
+assert.ok(server.includes(String.raw`raw.match(/^(\d{1,2}):([0-5]\d)$/)`) && server.includes(String.raw`raw.match(/^PT(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/i)`), 'Relógio deve reconhecer MM:SS e durações ISO 8601 com dígitos reais.');
 assert.match(server, /minutes <= 12 \? minutes \+ ':' \+ String\(seconds\)\.padStart\(2, '0'\) : null/, 'Relógio deve respeitar limite de 12 minutos por período.');
 assert.match(server, /if \(value == null \|\| String\(value\)\.trim\(\) === ''\) return null;/, 'Minutos ausentes não podem ser convertidos em zero.');
 assert.match(server, /Number\.isFinite\(numeric\) && numeric >= 0 \? numeric : null/, 'Minutos inválidos ou negativos devem permanecer indisponíveis.');
