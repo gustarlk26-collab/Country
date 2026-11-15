@@ -189,4 +189,5 @@ const anchors = [...app.matchAll(/<a\b[^>]*>/g)].map(match => match[0]);
 assert.ok(anchors.every(tag => /\bhref\s*=/.test(tag)), 'Existe link sem destino.');
 
 
+assert.ok(server.includes('function dedupeGamePlayers(rows)') && server.includes('else if (previous.team !== team) { byId.delete(id); conflicts.add(id); }') && server.includes('const uniqueRows = dedupeGamePlayers(rows);') && server.includes('const uniqueData = dedupeGamePlayers(data.filter'), 'Box scores devem remover IDs duplicados associados a equipes diferentes, sem escolher uma equipe arbitrariamente.');
 console.log('Courtside QA estática aprovada: ' + features.length + ' funcionalidades, ' + navKeys.length + ' itens de navegação e ' + routes.length + ' rotas verificadas.');
