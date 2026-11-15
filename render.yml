@@ -3,7 +3,7 @@ services:
     name: courtside-family
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --no-audit --no-fund && npm run build && npm run test:qa && node --check server/index.js
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
