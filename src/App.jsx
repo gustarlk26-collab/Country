@@ -140,7 +140,10 @@ export default function App(){
 },[session,api,page]);
 useEffect(()=>{
   if(!session)return;
+  let refreshing=false;
   const timer=window.setInterval(async()=>{
+    if(refreshing)return;
+    refreshing=true;
     try {
       if(page==='rankings'){const r=await api('/api/rankings/recent');setRanking(r.data||[]);}
       if(page==='highlights'||page==='averages'){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
@@ -156,6 +159,7 @@ useEffect(()=>{
       if(page==='quarters'&&quarterGameId){const r=await api('/api/games/'+quarterGameId+'/summary');setQuarterSummary(r.data||null);}
       if(['history','evolution','fantasy','awards','playercards','teamanalytics','betlab','playerprops','statlab','rotation','lineups'].includes(page)){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
     } catch(e) { /* Mantém a última resposta válida. */ }
+    finally { refreshing=false; }
   },60000);
   return()=>window.clearInterval(timer);
 },[session,api,page,averagePeriod,quarterGameId,selectedProfile,teamA]);
