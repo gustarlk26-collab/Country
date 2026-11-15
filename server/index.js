@@ -417,11 +417,7 @@ async function espnBoxscore(gameId) {
   if (!rows.length) throw new Error('ESPN não retornou atletas com minutos jogados para esta partida.');
   return rows;
 }
-const ESPN_TEAM_IDS = {
-  ATL:1,BOS:2,NOP:3,CHI:4,CLE:5,DAL:6,DEN:7,DET:8,GSW:9,HOU:10,
-  IND:11,LAC:12,LAL:13,MIA:14,MIL:15,MIN:16,BKN:17,NYK:18,ORL:19,
-  PHI:20,PHX:21,POR:22,SAC:23,SAS:24,OKC:25,UTA:26,WAS:27,TOR:28,MEM:29,CHA:30
-};
+
 async function espnTeamRoster(abbreviation) {
   const meta = Object.values(TEAM_META).find(item => item[0] === abbreviation);
   const teamId = ESPN_TEAM_IDS[abbreviation];
