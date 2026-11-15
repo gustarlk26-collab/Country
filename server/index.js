@@ -135,8 +135,10 @@ async function nbaHistoricalBoxscore(gameId) {
   const season = Number.isFinite(seasonCode) && seasonCode > 0
     ? `${2000 + seasonCode}-${String(2001 + seasonCode).slice(-2)}`
     : seasonFor();
+  const gameType = String(gameId).slice(0, 3);
+  const seasonType = gameType === '004' ? 'Playoffs' : gameType === '001' ? 'Pre Season' : gameType === '003' ? 'All Star' : 'Regular Season';
   const sets = await nba('boxscoretraditionalv2', {
-    GameID: gameId, LeagueID: '00', Season: season, SeasonType: 'Regular Season',
+    GameID: gameId, LeagueID: '00', Season: season, SeasonType: seasonType,
     StartPeriod: 0, EndPeriod: 10, StartRange: 0, EndRange: 0, RangeType: 0
   });
   const rows = sets[0] || [];
