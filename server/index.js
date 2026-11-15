@@ -745,22 +745,56 @@ app.get('/api/games/live', async (_req, res) => {
   }
 });
 
+async function nbaLivePeriodSummary(gameId) {
+  if (!/^00\d{8}$/.test(gameId)) throw new Error('ID não pertence ao formato de partida NBA Live.');
+  const body = await cached('nba-live-periods:' + gameId, async () => {
+    const response = await fetch('https://cdn.nba.com/static/json/liveData/boxscore/boxscore_' + gameId + '.json', {
+      headers: NBA_HEADERS, signal: AbortSignal.timeout(12000)
+    });
+    if (!response.ok) throw new Error('NBA Live boxscore HTTP ' + response.status);
+    return response.json();
+  }, 15 * 1000);
+  const game = body.game || {};
+  const teams = [
+    { team: game.awayTeam || {}, order: 0 },
+    { team: game.homeTeam || {}, order: 1 }
+  ];
+  const competitors = teams.map(({team}) => ({
+    name: [team.teamCity, team.teamName].filter(Boolean).join(' ') || team.teamTricode || 'Time',
+    abbreviation: team.teamTricode || '',
+    score: team.score == null ? null : Number(team.score),
+    linescores: (team.periods || []).map(period => period.score == null ? null : Number(period.score))
+  }));
+  const periods = competitors.reduce((max, team) => Math.max(max, team.linescores.length), 0);
+  if (!competitors.some(team => team.abbreviation) || !periods) throw new Error('NBA Live não publicou parciais por período para este jogo.');
+  return { competitors, periods: Array.from({length: periods}, (_, index) => index + 1) };
+}
+
 app.get('/api/games/:id/summary', async (req, res) => {
+  const id = String(req.params.id);
+  if (!/^\d{5,12}$/.test(id)) return res.status(400).json({error:'ID de partida inválido.'});
+  let espnError;
   try {
-    const id = String(req.params.id);
-    if (!/^\d{5,12}$/.test(id)) return res.status(400).json({error:'ID de partida inválido.'});
-    const body = await cached('espn-summary:'+id, () => espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event='+encodeURIComponent(id)), 60*1000);
-    const competition = body.header?.competitions?.[0] || body.boxscore?.teams?.[0]?.team || {};
+    const body = await cached('espn-summary:' + id, () => espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=' + encodeURIComponent(id)), 60 * 1000);
+    const competition = body.header?.competitions?.[0] || {};
     const competitors = (competition.competitors || body.header?.competitions?.[0]?.competitors || []).map(team => ({
       name: team.team?.displayName || team.team?.name || team.team?.abbreviation || 'Time',
       abbreviation: team.team?.abbreviation || team.abbreviation || '',
       score: team.score ?? null,
       linescores: (team.linescores || []).map(line => line.displayValue ?? line.value ?? null)
     }));
-    const periods = competitors.reduce((max,team)=>Math.max(max,team.linescores.length),0);
-    if (!competitors.length || !periods) throw new Error('A ESPN não publicou parciais por período para este jogo.');
-    res.json({data:{competitors,periods:Array.from({length:periods},(_,i)=>i+1)},source:'ESPN game summary'});
-  } catch(e) { res.status(503).json({error:e.message || 'Parciais indisponíveis.'}); }
+    const periods = competitors.reduce((max, team) => Math.max(max, team.linescores.length), 0);
+    if (!competitors.length || !periods) throw new Error('ESPN não publicou parciais por período para este jogo.');
+    return res.json({data:{competitors,periods:Array.from({length:periods},(_,index)=>index+1)},source:'ESPN game summary'});
+  } catch (error) {
+    espnError = error;
+  }
+  try {
+    const data = await nbaLivePeriodSummary(id);
+    return res.json({data,source:'NBA Live CDN boxscore',fallback:true});
+  } catch (cdnError) {
+    return res.status(503).json({error:'Parciais indisponíveis. ESPN: ' + espnError.message + ' NBA Live: ' + cdnError.message});
+  }
 });
 
 app.get('/api/games/:id/stats', async (req, res) => {
