@@ -67,6 +67,18 @@ function cached(key, fn, ttl = CACHE_MS) {
   return request;
 }
 function canonicalTeamAbbr(value) { const code=String(value||'').toUpperCase(); return ({NY:'NYK',NO:'NOP',GS:'GSW',SA:'SAS',PHO:'PHX',WSH:'WAS'})[code]||code; }
+function dedupeGamePlayers(rows) {
+  const byId = new Map(), conflicts = new Set();
+  for (const row of rows) {
+    const id = String(row?.id ?? '');
+    if (!id || conflicts.has(id)) continue;
+    const team = String(row?.team?.id || row?.team?.abbreviation || '');
+    const previous = byId.get(id);
+    if (!previous) byId.set(id, { team, row });
+    else if (previous.team !== team) { byId.delete(id); conflicts.add(id); }
+  }
+  return [...byId.values()].map(entry => entry.row);
+}
 function finiteNumberOrNull(value) { return value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value); }
 function shootingPct(made, attempted) { const m=finiteNumberOrNull(made), a=finiteNumberOrNull(attempted); return m != null && a != null && a > 0 ? m / a : null; }
 function seasonFor(date = new Date()) {
@@ -126,7 +138,7 @@ async function nbaLiveBoxscore(gameId) {
     row.game_score = gameScore(row);
     return row;
   })).filter(Boolean);
-  const uniqueRows = [...new Map(rows.map(row => [String(row.id), row])).values()];
+  const uniqueRows = dedupeGamePlayers(rows);
   if (!uniqueRows.length) throw new Error('A fonte não retornou atletas válidos com minutos jogados. O box score pode ainda não estar disponível.');
   return uniqueRows;
 }
@@ -156,7 +168,7 @@ async function nbaHistoricalBoxscore(gameId) {
     row.game_score = gameScore(row);
     return row;
   });
-  const uniqueData = [...new Map(data.filter(row => Number.isSafeInteger(Number(row.id)) && Number(row.id) > 0 && String(row.player?.first_name || row.player?.last_name || '').trim()).map(row => [`${row.team?.abbreviation || row.team?.id || ''}|${row.id}`, row])).values()];
+  const uniqueData = dedupeGamePlayers(data.filter(row => Number.isSafeInteger(Number(row.id)) && Number(row.id) > 0 && String(row.player?.first_name || row.player?.last_name || '').trim()));
   if (!uniqueData.length) throw new Error('A NBA não retornou atletas válidos com minutos jogados para esta partida.');
   return uniqueData;
 }
@@ -418,7 +430,7 @@ async function espnBoxscore(gameId) {
       return row;
     });
   }).filter(Boolean);
-  const uniqueRows = [...new Map(rows.filter(row => Number.isSafeInteger(Number(row.id)) && Number(row.id) > 0 && String(row.player?.first_name || row.player?.last_name || '').trim()).map(row => [`${row.team?.abbreviation || row.team?.id || ''}|${row.id}`, row])).values()];
+  const uniqueRows = dedupeGamePlayers(rows.filter(row => Number.isSafeInteger(Number(row.id)) && Number(row.id) > 0 && String(row.player?.first_name || row.player?.last_name || '').trim()));
   if (!uniqueRows.length) throw new Error('ESPN não retornou atletas válidos com minutos jogados para esta partida.');
   return uniqueRows;
 }
