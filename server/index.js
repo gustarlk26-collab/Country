@@ -1038,7 +1038,8 @@ app.get('/api/headtohead', async (req, res) => {
       .map(game=>{
         const a=game.sides.find(side=>side.abbreviation===team),b=game.sides.find(side=>side.abbreviation===opponent);
         const final=game.state==='post'||/\bfinal\b/i.test(String(game.status||''));
-        const winner=final?(a.score>b.score?team:a.score<b.score?opponent:'Tie'):null;
+        const scoreValid=typeof a.score==='number'&&Number.isFinite(a.score)&&a.score>=0&&typeof b.score==='number'&&Number.isFinite(b.score)&&b.score>=0;
+        const winner=final&&scoreValid?(a.score>b.score?team:a.score<b.score?opponent:'Tie'):null;
         return {game_id:game.id,date:game.date?String(game.date).slice(0,10):'N/D',
           matchup:team+' vs '+opponent,winner,points:a.score,opponent_points:b.score,
           plus_minus:a.score!=null&&b.score!=null?a.score-b.score:null,status:game.status,state:game.state,venue:game.venue};
