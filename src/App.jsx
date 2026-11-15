@@ -128,7 +128,7 @@ export default function App(){
       if(!active)return;
       const updates=gamesResult.data||[];
       setLiveUnavailable(false);
-      const sameGame=(left,right)=>String(left?.id)===String(right?.id)||(left?.date===right?.date&&left?.home_team?.abbreviation===right?.home_team?.abbreviation&&left?.visitor_team?.abbreviation===right?.visitor_team?.abbreviation);
+      const sameGame=(left,right)=>{if(!left||!right)return false;const leftId=left.id==null?'':String(left.id),rightId=right.id==null?'':String(right.id);if(leftId&&rightId&&leftId===rightId)return true;const date=String(left.date||''),home=String(left.home_team?.abbreviation||''),away=String(left.visitor_team?.abbreviation||'');return Boolean(date&&home&&away&&date===String(right.date||'')&&home===String(right.home_team?.abbreviation||'')&&away===String(right.visitor_team?.abbreviation||''));};
       if(updates.length)setGames(current=>{
         const byId=new Map(current.map(game=>[String(game.id),game]));
         updates.forEach(game=>{
