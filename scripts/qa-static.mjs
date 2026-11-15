@@ -37,6 +37,7 @@ assert.equal(new Set(routeKeys).size, routeKeys.length, 'Há rotas HTTP duplicad
 assert.ok(schema.includes('auth.uid() = user_id'), 'As políticas Supabase devem restringir os dados ao usuário autenticado.');
 assert.ok(schema.includes('with check (auth.uid() = user_id)'), 'As gravações Supabase devem validar o proprietário do registro.');
 assert.ok(server.includes('fgm: numberOrNull(r.FGM)'), 'Médias não devem transformar campos vazios em zero.');
+assert.ok(server.includes('rows.filter(r => Number(r.GP) > 0).map(r => ({'), 'Ranking recente não deve incluir atletas sem jogos na amostra.');
 assert.ok(server.includes("apis/common/v3/sports/basketball/nba/athletes/"), 'Perfil deve ter uma fonte alternativa ESPN para dados de temporada.');
 assert.ok(server.includes("overview.statistics||overview.stats?.statistics"), 'Fallback ESPN deve ler somente o bloco estatístico documentado.');
 assert.ok(app.includes("const fallbackStats=bio?.stats||{}"), 'Perfil deve usar a fonte alternativa apenas para campos sem dado primário.');
