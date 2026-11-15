@@ -65,7 +65,7 @@ assert.ok(server.includes('if (!match) return { made: null, attempted: null };')
 assert.ok(server.includes('!Number.isSafeInteger(athleteId) || athleteId <= 0 || !fullName.trim()'), 'Box score ESPN não deve criar linhas com atletas sem ID ou nome válido.');
 assert.ok(server.includes('const min = stats.minutes ?? null;'), 'Box score NBA Live não deve inventar 0:00 quando os minutos não foram publicados.');
 assert.match(server, /function scoreboardScore\(value, statusState\)/, 'Placares devem validar o estado da partida antes de exibir pontuação.');
-assert.match(server, /statusState === 'scheduled' \|\| value == null \|\| value === ''/, 'Partidas agendadas ou sem pontuação não podem exibir zero fictício.');
+assert.match(server, /statusState === 'scheduled' \|\| value == null \|\| \(typeof value === 'string' && value\.trim\(\) === ''\)/, 'Partidas agendadas ou com pontuação ausente, inclusive texto em branco, não podem exibir zero fictício.');
 assert.match(server, /Number\.isSafeInteger\(score\) && score >= 0 \? score : null/, 'Placar deve aceitar apenas inteiros não negativos.');
 assert.match(server, /function validPeriod\(value\)/, 'Períodos devem ser inteiros positivos.');
 assert.match(server, /function periodLabel\(value\)/, 'Rótulos devem identificar corretamente quartos e prorrogações.');
