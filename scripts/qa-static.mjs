@@ -246,3 +246,5 @@ assert.ok(server.includes("const requestedTeam=canonicalTeamAbbr(String(req.quer
 assert.ok(app.includes("&team='+encodeURIComponent(targetTeam)") && app.includes('Biografia do jogador indisponível na ESPN'), 'Perfil deve enviar a franquia e exibir falhas da biografia sem ocultá-las.');
 assert.ok(styles.includes('photo-1560553814-060afcd8904a') && styles.includes('background-attachment:fixed'), 'Layout deve usar fotografia real de arena como fundo.');
 assert.ok(styles.includes('backdrop-filter:blur(14px)') && styles.includes('background-color:rgba(12,13,15,.84)'), 'Painéis devem preservar legibilidade com vidro desfocado sobre a fotografia.');
+
+assert.ok(app.includes("new URL(path,window.location.origin).toString()") && app.includes("const attempts=method==='GET'?3:1") && app.includes("900*(attempt+1)") && app.includes("mode:'same-origin'"), 'Chamadas GET da API devem usar a origem do serviço e tolerar falhas transitórias/cold start com tentativas progressivas.');
