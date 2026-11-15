@@ -29,6 +29,8 @@ assert.ok(routes.includes('GET /api/games/live'), 'Endpoint de placar ao vivo au
 assert.ok(server.includes("if (data.length) {"), 'Placar vazio da ESPN deve acionar a fonte alternativa.');
 assert.ok(server.includes('NBA Live CDN scoreboard'), 'Fonte alternativa do placar ao vivo deve estar identificada.');
 assert.ok(routes.includes('GET /api/games/:id/stats'), 'Endpoint de box score ausente.');
+assert.ok(server.includes('async function nbaLivePeriodSummary(gameId)'), 'Parciais por quarto devem ter fallback NBA Live.');
+assert.ok(server.includes("'NBA Live CDN boxscore'"), 'A origem alternativa dos parciais deve ser identificada.');
 assert.ok(server.includes("app.use('/api', requireFamily)"), 'Proteção das rotas da API ausente.');
 assert.ok(server.indexOf("app.get('/api/health'") < server.indexOf("app.use('/api', requireFamily)"), 'Health check deve continuar acessível ao Render antes da autenticação familiar.');
 const routeKeys = [...server.matchAll(/app\.(get|post|put|delete|patch)\(['"]([^'"]+)/g)].map(match => match[1].toUpperCase() + ' ' + match[2]);
