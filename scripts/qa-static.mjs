@@ -130,7 +130,8 @@ assert.ok(server.includes("if (failures.length) throw new Error('Calendário ESP
 assert.ok(server.includes("espn:roster:' + abbreviation"), 'Elencos ESPN devem ser armazenados em cache por franquia.');
 assert.ok(server.includes('async function espnTeamRoster(abbreviation)') && server.includes('const data=await espnTeamRoster(abbreviation);'), 'A página de elenco deve consultar somente a franquia selecionada, sem carregar os 30 elencos.');
 assert.ok(server.includes('Math.min(6, teams.length)'), 'Consultas de elenco devem limitar concorrência para evitar bloqueios da ESPN.');
-assert.ok(server.includes('new Set([...baseById.keys(),...fallback.map(row=>String(row.team?.abbreviation||\'\')).filter(Boolean)])'), 'Estatísticas dos times devem preservar franquias retornadas por qualquer uma das fontes disponíveis.');
+assert.ok(server.includes('new Set([...baseById.keys(),...advById.keys(),...fallback.map(row=>String(row.team?.abbreviation||\'\')).filter(Boolean)])'), 'Estatísticas dos times devem preservar franquias retornadas por qualquer uma das fontes disponíveis.');
+assert.ok(server.includes('row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||TEAM_META[Number(id)]?.[0]||id') && server.includes('Number(row.TEAM_ID||adv.TEAM_ID)'), 'Times retornados somente pelas estatísticas avançadas devem manter código e ID oficiais.');
 assert.ok(server.includes('Number(row.TEAM_ID)||Number(Object.keys(TEAM_META).find(key=>TEAM_META[key][0]===abbreviation))'), 'Times vindos somente da ESPN devem receber o ID oficial NBA pelo código da franquia.');
 assert.ok(server.includes("if (!rows.length) throw new Error('NBA Stats não retornou dados da classificação.')"), 'Classificação vazia da NBA Stats deve acionar o fallback ESPN.');
 assert.ok(server.includes("IsOnlyCurrentSeason: '1'"), 'Fallback do diretório não deve misturar atletas históricos com elenco atual.');
