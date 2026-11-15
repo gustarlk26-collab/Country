@@ -28,6 +28,14 @@ const routes = [...server.matchAll(/app\.(get|post|put|delete|patch)\(['"]([^'"]
 assert.ok(routes.includes('GET /api/games/live'), 'Endpoint de placar ao vivo ausente.');
 assert.ok(routes.includes('GET /api/games/:id/stats'), 'Endpoint de box score ausente.');
 assert.ok(server.includes("app.use('/api', requireFamily)"), 'Proteção das rotas da API ausente.');
+assert.ok(server.indexOf("app.get('/api/health'") < server.indexOf("app.use('/api', requireFamily)"), 'Health check deve continuar acessível ao Render antes da autenticação familiar.');
+const routeKeys = [...server.matchAll(/app\.(get|post|put|delete|patch)\(['"]([^'"]+)/g)].map(match => match[1].toUpperCase() + ' ' + match[2]);
+assert.ok(routeKeys.length >= 20, 'A API parece ter perdido rotas.');
+assert.equal(new Set(routeKeys).size, routeKeys.length, 'Há rotas HTTP duplicadas.');
+assert.ok(schema.includes('auth.uid() = user_id'), 'As políticas Supabase devem restringir os dados ao usuário autenticado.');
+assert.ok(schema.includes('with check (auth.uid() = user_id)'), 'As gravações Supabase devem validar o proprietário do registro.');
+assert.ok(server.includes('fgm: numberOrNull(r.FGM)'), 'Médias não devem transformar campos vazios em zero.');
+
 assert.ok(app.includes("api('/api/games/live',{cache:false})"), 'Frontend não consulta o placar ao vivo sem cache.');
 assert.ok(app.includes('window.setInterval(refreshLive,15000)'), 'Atualização automática do placar não está configurada para 15 segundos.');
 assert.ok(app.includes('setLiveUnavailable(true)'), 'Falhas do feed ao vivo devem ser identificadas na interface.');
