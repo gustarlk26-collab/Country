@@ -69,7 +69,7 @@ assert.match(server, /statusState === 'scheduled' \|\| value == null \|\| \(type
 assert.match(server, /Number\.isSafeInteger\(score\) && score >= 0 \? score : null/, 'Placar deve aceitar apenas inteiros não negativos.');
 assert.match(server, /function validPeriod\(value\)/, 'Períodos devem ser inteiros positivos.');
 assert.match(server, /function periodLabel\(value\)/, 'Rótulos devem identificar corretamente quartos e prorrogações.');
-assert.match(server, /function validGameClock\(value\)/, 'Relógio deve rejeitar formatos e valores inválidos.');
+assert.match(server, /function validGameClock\(value, period\)/, 'Relógio deve rejeitar formatos e valores inválidos e considerar o período.');
 assert.ok(server.includes(String.raw`raw.match(/^(\d{1,2}):([0-5]\d)$/)`) && server.includes(String.raw`raw.match(/^PT(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/i)`), 'Relógio deve reconhecer MM:SS e durações ISO 8601 com dígitos reais.');
 assert.ok(server.includes('const maxMinutes = Number(period) > 4 ? 5 : 12') && server.includes('minutes < maxMinutes || (minutes === maxMinutes && seconds === 0)'), 'Relógio deve respeitar 12:00 nos quartos e 5:00 nas prorrogações.');
 assert.ok(server.includes('validGameClock(g.gameClock, g.period)') && server.includes('validGameClock(statusInfo.displayClock, period)'), 'Feeds devem informar o período ao validar o relógio.');
