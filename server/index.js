@@ -837,8 +837,8 @@ async function nbaLivePeriodSummary(gameId) {
   const competitors = teams.map(team => ({
     name: [team.teamCity, team.teamName].filter(Boolean).join(' ') || team.teamTricode || 'Time',
     abbreviation: team.teamTricode || '',
-    score: finiteNumberOrNull(team.score),
-    linescores: (Array.isArray(team.periods) ? team.periods : []).map(period => finiteNumberOrNull(period?.score))
+    score: scoreboardScore(team.score, 'in_progress'),
+    linescores: (Array.isArray(team.periods) ? team.periods : []).map(period => scoreboardScore(period?.score, 'in_progress'))
   }));
   const periods = competitors.reduce((max, team) => Math.max(max, team.linescores.length), 0);
   if (!competitors.some(team => team.abbreviation) || !periods) throw new Error('NBA Live não publicou parciais por período para este jogo.');
@@ -855,8 +855,8 @@ app.get('/api/games/:id/summary', async (req, res) => {
     const competitors = (competition.competitors || body.header?.competitions?.[0]?.competitors || []).map(team => ({
       name: team.team?.displayName || team.team?.name || team.team?.abbreviation || 'Time',
       abbreviation: team.team?.abbreviation || team.abbreviation || '',
-      score: team.score ?? null,
-      linescores: (team.linescores || []).map(line => line.displayValue ?? line.value ?? null)
+      score: scoreboardScore(team.score, 'in_progress'),
+      linescores: (team.linescores || []).map(line => scoreboardScore(line.displayValue ?? line.value, 'in_progress'))
     }));
     const periods = competitors.reduce((max, team) => Math.max(max, team.linescores.length), 0);
     if (!competitors.length || !periods) throw new Error('ESPN não publicou parciais por período para este jogo.');
