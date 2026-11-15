@@ -933,7 +933,7 @@ app.get('/api/averages', async (req, res) => {
     const nonNegative = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0?parsed:null; };
     const percentage = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0&&parsed<=1?parsed:null; };
     const attempts = (made, attempted) => { const m=nonNegative(made), a=nonNegative(attempted); return m!=null&&a!=null&&m>a?{made:null,attempted:null}:{made:m,attempted:a}; };
-    const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
+    const data = rows.filter(r => Number.isSafeInteger(Number(r.PLAYER_ID)) && Number(r.PLAYER_ID) > 0 && String(r.PLAYER_NAME || '').trim() && Number.isFinite(Number(r.GP)) && Number(r.GP) > 0).map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION },
       gamesPlayed: nonNegative(r.GP), pts: nonNegative(r.PTS), reb: nonNegative(r.REB), ast: nonNegative(r.AST),
