@@ -283,15 +283,17 @@ async function espnGames(start, end) {
     const batch = dates.slice(i, i + 8);
     const results = await Promise.allSettled(batch.map(async day => {
       const ymd = day.replaceAll('-', '');
-      const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=' + ymd + '&limit=1000');
-      return body.events || [];
+      return cached('espn-scoreboard-day:' + ymd, async () => {
+        const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=' + ymd + '&limit=1000');
+        return body.events || [];
+      }, 90 * 1000);
     }));
     results.forEach((result, index) => {
       if (result.status === 'rejected') failures.push(batch[index] + ': ' + (result.reason?.message || 'falha ESPN'));
       else result.value.forEach(event => { if (event?.id) events.set(String(event.id), event); });
     });
   }
-  if (failures.length) throw new Error('ESPN falhou em ' + failures.length + ' dia(s): ' + failures.slice(0, 3).join('; '));
+  if (!events.size) throw new Error('ESPN não retornou partidas. ' + (failures.length ? failures.slice(0, 3).join('; ') : 'Confira a temporada e o calendário.'));
   return [...events.values()].flatMap(event => {
     const competition = event.competitions?.[0];
     if (!competition) return [];
