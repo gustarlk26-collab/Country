@@ -66,6 +66,8 @@ assert.ok(app.includes("const profileAdvancedRow=advancedRow||advancedKeys.some(
 assert.ok(app.includes("selectedProfile.advanced||null"), 'Atualizações periódicas não podem apagar o fallback do perfil.');
 
 assert.ok(app.includes("raw==null||raw===''||!Number.isFinite(Number(raw))?NaN:Number(raw)"), 'Props não podem interpretar estatística ausente como zero.');
+assert.ok(app.includes("const fantasyScore=p=>{const values=[p?.pts,p?.reb,p?.ast,p?.stl,p?.blk,p?.turnover];if(values.some(value=>value==null||value===''||!Number.isFinite(Number(value))))return null"), 'Fantasy não pode pontuar estatísticas ausentes como zero.');
+assert.ok(app.includes('scores.length===fantasyIds.length&&scores.every(score=>score!=null)'), 'Total fantasy só pode aparecer quando todos os atletas selecionados têm dados completos.');
 assert.ok(app.includes('].filter(column=>rows.some(row=>row[column.key]!=null))'), 'Evolução do jogador deve ocultar colunas sem dados oficiais.');
 assert.ok(app.includes('alphaAverages.filter(p=>p[statMetric]!=null'), 'Rankings estatísticos devem excluir métricas ausentes.');
 assert.ok(app.includes('averages.filter(p=>p[category.key]!=null'), 'Destaques por categoria devem excluir valores ausentes.');
