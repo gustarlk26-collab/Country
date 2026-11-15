@@ -106,7 +106,7 @@ async function nbaLiveBoxscore(gameId) {
   const game = body?.game;
   if (!game) throw new Error('A NBA ainda não publicou o box score desta partida.');
   const teams = [game.homeTeam, game.awayTeam];
-  const rows = teams.filter(Boolean).flatMap(team => (Array.isArray(team.players) ? team.players : []).filter(p => p && Number.isSafeInteger(Number(p.personId)) && Number(p.personId) > 0 && String(p.name || '').trim()).map(p => {
+  const rows = teams.filter(team => team && Number.isSafeInteger(Number(team.teamId)) && Number(team.teamId) > 0 && /^[A-Z]{3}$/.test(String(team.teamTricode || ''))).flatMap(team => (Array.isArray(team.players) ? team.players : []).filter(p => p && Number.isSafeInteger(Number(p.personId)) && Number(p.personId) > 0 && String(p.name || '').trim() && (p.teamId == null || Number(p.teamId) === Number(team.teamId))).map(p => {
     const stats = p.statistics || {};
     const min = stats.minutes ?? null;
     const played = p.played === true || minutesAsNumber(min) > 0;
