@@ -209,7 +209,7 @@ async function nbaCdnGames(start, end) {
     });
     if (!response.ok) throw new Error('NBA CDN schedule HTTP ' + response.status);
     return response.json();
-  }, 6 * 60 * 60 * 1000);
+  }, 30 * 60 * 1000);
   const today = saoPauloDate(new Date().toISOString());
   const [schedule, live] = await Promise.all([
     schedulePromise,
