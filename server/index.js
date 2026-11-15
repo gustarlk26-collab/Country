@@ -108,7 +108,7 @@ async function nbaLiveBoxscore(gameId) {
   const teams = [game.homeTeam, game.awayTeam];
   const rows = teams.filter(Boolean).flatMap(team => (Array.isArray(team.players) ? team.players : []).filter(p => p && Number.isSafeInteger(Number(p.personId)) && Number(p.personId) > 0 && String(p.name || '').trim()).map(p => {
     const stats = p.statistics || {};
-    const min = stats.minutes || '0:00';
+    const min = stats.minutes ?? null;
     const played = p.played === true || minutesAsNumber(min) > 0;
     if (!played) return null;
     const fgMade = stats.fieldGoalsMade, fgAtt = stats.fieldGoalsAttempted;
