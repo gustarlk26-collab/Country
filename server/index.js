@@ -834,10 +834,11 @@ async function nbaLivePeriodSummary(gameId) {
   }, 15 * 1000);
   const game = body.game || {};
   const teams = [game.homeTeam || {}, game.awayTeam || {}];
+  const summaryStatus = game.gameStatus === 1 ? 'scheduled' : 'in_progress';
   const competitors = teams.map(team => ({
     name: [team.teamCity, team.teamName].filter(Boolean).join(' ') || team.teamTricode || 'Time',
     abbreviation: team.teamTricode || '',
-    score: scoreboardScore(team.score, 'in_progress'),
+    score: scoreboardScore(team.score, summaryStatus),
     linescores: (Array.isArray(team.periods) ? team.periods : []).map(period => scoreboardScore(period?.score, 'in_progress'))
   }));
   const periods = competitors.reduce((max, team) => Math.max(max, team.linescores.length), 0);
@@ -852,11 +853,12 @@ app.get('/api/games/:id/summary', async (req, res) => {
   try {
     const body = await cached('espn-summary:' + id, () => espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=' + encodeURIComponent(id)), 60 * 1000);
     const competition = body.header?.competitions?.[0] || {};
-    const competitors = (competition.competitors || body.header?.competitions?.[0]?.competitors || []).map(team => ({
+    const summaryStatus = competition.status?.type?.state === 'pre' ? 'scheduled' : 'in_progress';
+    const competitors = (competition.competitors || []).map(team => ({
       name: team.team?.displayName || team.team?.name || team.team?.abbreviation || 'Time',
       abbreviation: team.team?.abbreviation || team.abbreviation || '',
-      score: scoreboardScore(team.score, 'in_progress'),
-      linescores: (team.linescores || []).map(line => scoreboardScore(line.displayValue ?? line.value, 'in_progress'))
+      score: scoreboardScore(team.score, summaryStatus),
+      linescores: (team.linescores || []).map(line => scoreboardScore(line.displayValue ?? line.value, summaryStatus))
     }));
     const periods = competitors.reduce((max, team) => Math.max(max, team.linescores.length), 0);
     if (!competitors.length || !periods) throw new Error('ESPN não publicou parciais por período para este jogo.');
