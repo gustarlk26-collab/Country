@@ -427,24 +427,26 @@ async function espnTeamRoster(abbreviation) {
     const groups = body.athletes || [];
     const athletes = groups.flatMap(group => Array.isArray(group.items) ? group.items : [group]);
     const roster = athletes.filter(p => p && (p.id || p.uid)).map(p => {
-      const fullName = p.fullName || p.displayName || '';
-      const parts = fullName.split(' ');
+      const fullName = String(p.fullName || p.displayName || '').trim();
+      const parts = fullName.split(/\\s+/).filter(Boolean);
+      const id = Number(p.id || String(p.uid).split(':').pop());
       return {
-        id: Number(p.id || String(p.uid).split(':').pop()),
-        first_name: p.firstName || parts.slice(0,-1).join(' '),
-        last_name: p.lastName || parts.slice(-1)[0] || '',
+        id,
+        first_name: String(p.firstName || (parts.length > 1 ? parts.slice(0,-1).join(' ') : fullName)).trim(),
+        last_name: String(p.lastName || (parts.length > 1 ? parts[parts.length-1] : '')).trim(),
         position: p.position?.abbreviation || p.position?.name || '',
         team: { abbreviation, full_name: meta[1] || abbreviation },
         is_active: true, headshot: p.headshot?.href || p.headshot || null,
-        espn_id:Number(p.id||String(p.uid).split(':').pop()),
+        espn_id:id,
         height:p.displayHeight||p.height||null,weight:p.displayWeight||p.weight||null,
         birth_date:p.dateOfBirth||null,age:p.age??null,birth_place:p.birthPlace||null,
         college:p.college?.name||p.college||null,experience:p.experience?.displayValue||p.experience?.years||null,
         jersey:p.jersey||null,family:p.relatives||p.family||null
       };
-    });
-    if (!roster.length) throw new Error('ESPN retornou elenco vazio para ' + abbreviation);
-    return roster;
+    }).filter(player => Number.isSafeInteger(player.id) && player.id > 0 && Boolean(player.first_name || player.last_name));
+    const uniqueRoster = [...new Map(roster.map(player => [player.id, player])).values()];
+    if (!uniqueRoster.length) throw new Error('ESPN retornou elenco vazio ou sem IDs válidos para ' + abbreviation);
+    return uniqueRoster;
   }, 30 * 60 * 1000);
 }
 async function espnPlayers() {
