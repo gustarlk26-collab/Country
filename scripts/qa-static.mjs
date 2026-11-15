@@ -62,6 +62,9 @@ assert.ok(server.includes('fgm: numberOrNull(r.FGM)'), 'Médias não devem trans
 assert.ok(server.includes('if (!match) return { made: null, attempted: null };') && server.includes('return made <= attempted ? { made, attempted } : { made: null, attempted: null };'), 'Arremessos ausentes ou impossíveis no box score ESPN não podem virar zero fictício.');
 assert.ok(server.includes('!Number.isSafeInteger(athleteId) || athleteId <= 0 || !fullName.trim()'), 'Box score ESPN não deve criar linhas com atletas sem ID ou nome válido.');
 assert.ok(server.includes('const min = stats.minutes ?? null;'), 'Box score NBA Live não deve inventar 0:00 quando os minutos não foram publicados.');
+assert.match(server, /function scoreboardScore\(value, statusState\)/, 'Placares devem validar o estado da partida antes de exibir pontuação.');
+assert.match(server, /statusState === 'scheduled' \|\| value == null \|\| value === ''/, 'Partidas agendadas ou sem pontuação não podem exibir zero fictício.');
+assert.match(server, /Number\.isSafeInteger\(score\) && score >= 0 \? score : null/, 'Placar deve aceitar apenas inteiros não negativos.');
 assert.match(server, /if \(value == null \|\| String\(value\)\.trim\(\) === ''\) return null;/, 'Minutos ausentes não podem ser convertidos em zero.');
 assert.match(server, /Number\.isFinite\(numeric\) && numeric >= 0 \? numeric : null/, 'Minutos inválidos ou negativos devem permanecer indisponíveis.');
 assert.ok(server.includes("teams.filter(team => team && Number.isSafeInteger(Number(team.teamId)) && Number(team.teamId) > 0 && /^[A-Z]{3}$/.test(String(team.teamTricode || '')))") && server.includes('(p.teamId == null || Number(p.teamId) === Number(team.teamId))'), 'Box score NBA Live deve validar a equipe e rejeitar atleta associado a outra equipe.');
