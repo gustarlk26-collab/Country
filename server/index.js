@@ -722,14 +722,14 @@ app.get('/api/averages', async (req, res) => {
       team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION },
       gamesPlayed: numberOrNull(r.GP), pts: numberOrNull(r.PTS), reb: numberOrNull(r.REB), ast: numberOrNull(r.AST),
       stl: numberOrNull(r.STL), blk: numberOrNull(r.BLK), turnover: numberOrNull(r.TOV),
-      fgm: r.FGM == null ? null : Number(r.FGM), fga: r.FGA == null ? null : Number(r.FGA),
-      fg3m: r.FG3M == null ? null : Number(r.FG3M), fg3a: r.FG3A == null ? null : Number(r.FG3A),
-      ftm: r.FTM == null ? null : Number(r.FTM), fta: r.FTA == null ? null : Number(r.FTA),
-      ft_pct: r.FT_PCT == null ? null : Number(r.FT_PCT), oreb: r.OREB == null ? null : Number(r.OREB),
-      dreb: r.DREB == null ? null : Number(r.DREB), pf: r.PF == null ? null : Number(r.PF),
-      plus_minus: r.PLUS_MINUS == null ? null : Number(r.PLUS_MINUS),
-      fg_pct: r.FG_PCT == null ? null : Number(r.FG_PCT), fg3_pct: r.FG3_PCT == null ? null : Number(r.FG3_PCT),
-      min: r.MIN == null ? null : Number(r.MIN)
+      fgm: numberOrNull(r.FGM), fga: numberOrNull(r.FGA),
+      fg3m: numberOrNull(r.FG3M), fg3a: numberOrNull(r.FG3A),
+      ftm: numberOrNull(r.FTM), fta: numberOrNull(r.FTA),
+      ft_pct: numberOrNull(r.FT_PCT), oreb: numberOrNull(r.OREB),
+      dreb: numberOrNull(r.DREB), pf: numberOrNull(r.PF),
+      plus_minus: numberOrNull(r.PLUS_MINUS),
+      fg_pct: numberOrNull(r.FG_PCT), fg3_pct: numberOrNull(r.FG3_PCT),
+      min: numberOrNull(r.MIN)
     })).sort((a,b) => b.pts - a.pts);
     res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats', season, lastGames: requested, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa', totalPlayers: data.length });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
