@@ -548,11 +548,13 @@ async function espnStandings() {
     const team = entry.team || {};
     const stats = Object.fromEntries((entry.stats || []).map(x => [x.name, x.value]));
     const meta = Object.values(TEAM_META).find(x => x[0] === team.abbreviation);
+    const rawWinPct = stats.winPercent ?? stats.win_pct ?? null;
+    const winPct = rawWinPct == null || rawWinPct === '' ? null : Number(rawWinPct);
     return {
       team: { id: Number(team.id), full_name: team.displayName || team.name || '', name: team.displayName || team.name || '',
         abbreviation: canonicalTeamAbbr(team.abbreviation || ''), conference: group.name || group.abbreviation || meta?.[2] || '' },
       wins: stats.wins ?? null, losses: stats.losses ?? null,
-      win_pct: stats.winPercent ?? stats.win_pct ?? null
+      win_pct: Number.isFinite(winPct) && winPct >= 0 && winPct <= 1 ? winPct : null
     };
   }));
   return entries.sort((a,b) => {
