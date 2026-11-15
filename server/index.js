@@ -536,9 +536,11 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       return index<0?null:numberOrNull(statValues[index]);
     };
     const detailedStats={};
-    for(const category of (statsPayload.categories||statsPayload.statCategories||[])){
-      const labels=category.labels||[];
-      const values=category.totals||category.values||[];
+    const rawCategories=statsPayload.categories||statsPayload.statCategories||[];
+    const statCategories=Array.isArray(rawCategories)?rawCategories:Object.values(rawCategories);
+    for(const category of statCategories){
+      const labels=Array.isArray(category.labels)?category.labels:[];
+      const values=Array.isArray(category.totals)?category.totals:Array.isArray(category.values)?category.values:[];
       labels.forEach((label,index)=>{
         const key=String(label||'').toUpperCase().replace(/[^A-Z0-9%/]/g,'');
         const value=numberOrNull(values[index]);
