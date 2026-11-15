@@ -37,7 +37,7 @@ assert.equal(teamAbbrs.length, 30, 'Diretório NBA deve conter as 30 franquias.'
 assert.equal(new Set(teamAbbrs).size, 30, 'Diretório de franquias contém abreviações duplicadas.');
 assert.ok(server.includes("app.get('/api/team-stats'") && server.includes("NBA Stats base") && server.includes("NBA Stats advanced"), 'Comparador de franquias deve consumir estatísticas oficiais da NBA.');
 assert.ok(app.includes("setTeamStatsBusy(true)") && app.includes("setTeamStatsMeta({season:r.season,source:r.source,updatedAt:r.updatedAt})"), 'Comparador deve exibir carregamento e metadados reais da fonte.');
-assert.ok(app.includes("Franquia A") && app.includes("Franquia B") && app.includes("Trocar franquias") && app.includes("Atualizar dados"), 'Comparador de franquias deve permitir selecionar, inverter e atualizar as equipes.');
+assert.ok(app.includes("FRANQUIA A") && app.includes("FRANQUIA B") && app.includes("Trocar franquias") && app.includes("Atualizar dados"), 'Comparador de franquias deve permitir selecionar, inverter e atualizar as equipes.');
 assert.ok(app.includes("Rating ofensivo") && app.includes("Rating defensivo") && app.includes("Aproveitamento de 3 pontos") && app.includes("Pontos por jogo"), 'Comparador deve apresentar métricas de produção e eficiência.');
 assert.ok(app.includes("if(!Array.isArray(r.data)||!r.data.length)throw new Error('A fonte não retornou estatísticas de franquias.')"), 'Comparador não deve tratar resposta vazia como comparação válida.');
 
