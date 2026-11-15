@@ -386,7 +386,8 @@ function madeAttempt(value) {
 async function espnBoxscore(gameId) {
   const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${encodeURIComponent(gameId)}`);
   const groups = body.boxscore?.players || [];
-  const rows = groups.filter(group => group && Number.isSafeInteger(Number(group.team?.id)) && Number(group.team.id) > 0 && /^[A-Z]{3}$/.test(canonicalTeamAbbr(group.team?.abbreviation || ''))).flatMap(group => {
+  const expectedTeamIds = new Set((body.header?.competitions?.[0]?.competitors || []).map(side => Number(side.team?.id)).filter(id => Number.isSafeInteger(id) && id > 0));
+  const rows = groups.filter(group => group && expectedTeamIds.size === 2 && expectedTeamIds.has(Number(group.team?.id)) && Number.isSafeInteger(Number(group.team?.id)) && Number(group.team.id) > 0 && /^[A-Z]{3}$/.test(canonicalTeamAbbr(group.team?.abbreviation || ''))).flatMap(group => {
     const statBlock = (group.statistics || []).find(x => x.athletes) || group.statistics?.[0] || {};
     const rawKeys = (statBlock.keys?.length?statBlock.keys:null) || (statBlock.names?.length?statBlock.names:null) || (statBlock.labels?.length?statBlock.labels:null) || statBlock.displayNames || [];
     const keys = rawKeys.map(key => typeof key === 'string' ? key.toUpperCase() : String(key?.abbreviation||key?.name||key?.displayName||'').toUpperCase());
