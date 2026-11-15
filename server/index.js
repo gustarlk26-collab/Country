@@ -1218,7 +1218,7 @@ app.get('/api/records', async (_req, res) => {
       const rows = sets[0] || [];
       const leaders = rows.map(row => {
         const rawValue = row[category] ?? row.VALUE;
-        const value = rawValue == null || rawValue === '' || !Number.isFinite(Number(rawValue)) ? null : Number(rawValue);
+        const value = rawValue == null || typeof rawValue === 'boolean' || String(rawValue).trim() === '' || !Number.isFinite(Number(rawValue)) ? null : Number(rawValue);
         return { player_id: row.PLAYER_ID, player_name: row.PLAYER || row.PLAYER_NAME || null, value, team: row.TEAM };
       }).filter(row => row.value != null && row.player_name).slice(0, 10);
       return { category, label, leaders };
@@ -1309,7 +1309,7 @@ app.get('/api/team-stats',async(_req,res)=>{
       const teamId=Number(id),meta=TEAM_META[teamId],row=baseById.get(id)||{},adv=advById.get(id)||{},games=gameFallback.get(id)||{};
       const abbreviation=row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||meta?.[0]||'';
       const standing=standingsByAbbr.get(abbreviation)||{};
-      const number=value=>value==null||value===''||!Number.isFinite(Number(value))?null:Number(value);
+      const number=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
       const nonNegative=value=>{const parsed=number(value);return parsed!=null&&parsed>=0?parsed:null;};
       const positive=value=>{const parsed=number(value);return parsed!=null&&parsed>0?parsed:null;};
       const percentage=value=>{const parsed=number(value);return parsed!=null&&parsed>=0&&parsed<=1?parsed:null;};
