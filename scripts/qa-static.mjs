@@ -46,7 +46,7 @@ assert.ok(app.includes("raw==null||raw===''||!Number.isFinite(Number(raw))?NaN:N
 assert.ok(app.includes('].filter(column=>rows.some(row=>row[column.key]!=null))'), 'Evolução do jogador deve ocultar colunas sem dados oficiais.');
 assert.ok(app.includes('alphaAverages.filter(p=>p[statMetric]!=null'), 'Rankings estatísticos devem excluir métricas ausentes.');
 assert.ok(app.includes('averages.filter(p=>p[category.key]!=null'), 'Destaques por categoria devem excluir valores ausentes.');
-assert.ok(app.includes("riskPct!==''&&Number.isFinite(Number(riskPct))"), 'Calculadora de banca deve validar campos vazios e limites de risco.');
+assert.ok(app.includes("riskPct!==''") && app.includes('Number(riskPct)<=100'), 'Calculadora de banca deve validar campos vazios e limites de risco.');
 assert.ok(app.includes("scenarioValid=scenarioExtraWins!==''&&Number.isFinite(extra)&&extra>=0&&extra<=82"), 'Simulador de campanha deve validar o intervalo hipotético.');
 assert.ok(app.includes('metricColumns.some(column=>p[column.key]!=null)'), 'Tabela avançada deve excluir atletas sem métricas oficiais.');
 assert.ok(app.includes('featureKeys.includes(page)&&<section className="panel feature-workspace">'), 'Páginas de ferramentas devem manter o contêiner e cabeçalho compartilhados.');
