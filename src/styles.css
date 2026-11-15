@@ -525,3 +525,82 @@ table td{border-color:rgba(255,174,82,.1)}
 @keyframes fatherText{to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.father-welcome{padding:20px}.father-welcome-orbit{width:205px;height:205px}.father-welcome-copy h2{letter-spacing:-.6px}.father-welcome-kicker{font-size:9px;letter-spacing:2px}.father-welcome-skip{right:14px;bottom:14px}}
 @media(prefers-reduced-motion:reduce){.father-welcome *{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+
+/* COURTSIDE ARENA ATMOSPHERE — layered court geometry, moving light and depth */
+.layout{
+ position:relative;
+ isolation:isolate;
+ overflow-x:clip;
+ background-color:#070809;
+ background-image:
+  radial-gradient(ellipse at 50% -12%,rgba(255,153,72,.17),transparent 46%),
+  radial-gradient(ellipse at 100% 58%,rgba(120,66,32,.11),transparent 34%),
+  radial-gradient(ellipse at 0% 92%,rgba(206,112,49,.09),transparent 38%),
+  linear-gradient(180deg,#08090b 0%,#090a0c 48%,#070809 100%);
+}
+.layout:before{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.34;
+ background-image:
+  radial-gradient(ellipse at 50% 0%,transparent 0 22%,rgba(255,174,82,.09) 22.08% 22.2%,transparent 22.28% 34%,rgba(255,174,82,.055) 34.08% 34.16%,transparent 34.24%),
+  linear-gradient(90deg,transparent calc(50% - .5px),rgba(255,174,82,.055) 50%,transparent calc(50% + .5px)),
+  linear-gradient(0deg,transparent calc(72% - .5px),rgba(255,174,82,.045) 72%,transparent calc(72% + .5px));
+ background-size:min(100vw,1100px) 760px,100% 100%,100% 100%;
+ background-position:center -310px,center,center;
+ background-repeat:no-repeat;
+ mask-image:linear-gradient(180deg,transparent 0%,#000 16%,#000 76%,transparent 100%);
+}
+.layout:after{
+ content:"";position:absolute;z-index:-1;pointer-events:none;top:-35%;left:-45%;width:42%;height:170%;
+ transform:rotate(18deg);opacity:0;
+ background:linear-gradient(90deg,transparent,rgba(255,179,103,.045),rgba(255,222,177,.09),rgba(255,179,103,.035),transparent);
+ filter:blur(18px);animation:arenaLightSweep 24s ease-in-out 3s infinite;
+}
+@keyframes arenaLightSweep{
+ 0%,12%{left:-48%;opacity:0}
+ 20%{opacity:.8}
+ 48%{left:112%;opacity:.35}
+ 56%,100%{left:112%;opacity:0}
+}
+.content > *{
+ animation:courtsideRise .52s cubic-bezier(.2,.75,.25,1) both;
+}
+.content > *:nth-child(2){animation-delay:.045s}
+.content > *:nth-child(3){animation-delay:.09s}
+.content > *:nth-child(4){animation-delay:.135s}
+.content > *:nth-child(5){animation-delay:.18s}
+@keyframes courtsideRise{
+ from{opacity:0;transform:translateY(11px)}
+ to{opacity:1;transform:translateY(0)}
+}
+.panel,.metric-card,.feature-tile,.evolution-card{
+ box-shadow:0 16px 42px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.035);
+}
+.metric-card{position:relative;overflow:hidden}
+.metric-card:after{
+ content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;
+ background:linear-gradient(118deg,transparent 20%,rgba(255,191,125,.055) 48%,transparent 72%);
+ transform:translateX(-120%);transition:transform .75s ease;
+}
+@media(hover:hover){.metric-card:hover:after{transform:translateX(120%)}}
+.game-live{
+ box-shadow:inset 3px 0 rgba(255,145,79,.9),0 0 24px rgba(230,105,56,.07);
+}
+.live i{
+ animation:liveBeacon 1.8s ease-in-out infinite;
+}
+@keyframes liveBeacon{
+ 0%,100%{box-shadow:0 0 0 0 rgba(243,155,66,.5);opacity:1}
+ 50%{box-shadow:0 0 0 6px rgba(243,155,66,0);opacity:.72}
+}
+.feature-hub:before{
+ content:"";position:absolute;z-index:-1;left:-120px;bottom:-190px;width:390px;height:390px;
+ border:1px solid rgba(255,177,105,.08);border-radius:50%;
+ box-shadow:0 0 0 34px rgba(255,177,105,.018),0 0 0 70px rgba(255,177,105,.012);
+ pointer-events:none;
+}
+button,.feature-tile,.sidebar nav button{ -webkit-tap-highlight-color:transparent }
+@media(prefers-reduced-motion:reduce){
+ .layout:after,.content > *,.live i{animation:none!important}
+ .metric-card:after{display:none}
+}
