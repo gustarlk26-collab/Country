@@ -821,12 +821,22 @@ app.get('/api/rankings/recent', async (_req, res) => {
       LastNGames: '5', MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 2 * 60 * 1000))[0] || [];
-    const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
+    const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+    const data = rows.filter(r => numberOrNull(r.GP) > 0).map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { abbreviation: r.TEAM_ABBREVIATION },
-      gamesPlayed: r.GP, pts: r.PTS, reb: r.REB, ast: r.AST, stl: r.STL, blk: r.BLK,
-      fg_pct: r.FG_PCT, fg3_pct: r.FG3_PCT
-    })).sort((a,b) => Number(b.pts || 0) - Number(a.pts || 0));
+      gamesPlayed: numberOrNull(r.GP), pts: numberOrNull(r.PTS), reb: numberOrNull(r.REB), ast: numberOrNull(r.AST),
+      stl: numberOrNull(r.STL), blk: numberOrNull(r.BLK),
+      fg_pct: numberOrNull(r.FG_PCT), fg3_pct: numberOrNull(r.FG3_PCT)
+    })).sort((a,b) => {
+      if (a.pts == null && b.pts != null) return 1;
+      if (b.pts == null && a.pts != null) return -1;
+      const pointsOrder = (b.pts ?? 0) - (a.pts ?? 0);
+      if (pointsOrder) return pointsOrder;
+      const nameA = `${a.player.first_name} ${a.player.last_name}`.trim();
+      const nameB = `${b.player.first_name} ${b.player.last_name}`.trim();
+      return nameA.localeCompare(nameB, 'en');
+    });
     res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats', period: 'Last 5 games' });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
