@@ -335,15 +335,18 @@ function formatGameClock(value){
  return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
 }
 function GameList({games,onOpen,t,lang='pt'}){
- const labels={pt:{live:'● AO VIVO',scheduled:'Agendado',away:'Visitante',home:'Mandante',awaiting:'Aguardando jogo',time:'Horário não informado'},en:{live:'● LIVE',scheduled:'Scheduled',away:'Away',home:'Home',awaiting:'Awaiting game',time:'Time not announced'},es:{live:'● EN VIVO',scheduled:'Programado',away:'Visitante',home:'Local',awaiting:'Esperando el partido',time:'Horario no anunciado'}};
+ const labels={pt:{live:'● AO VIVO',scheduled:'Agendado',away:'Visitante',home:'Mandante',awaiting:'Aguardando jogo',time:'Horário não informado',vs:'VS',scorePending:'Placar em atualização',noScore:'Placar indisponível'},en:{live:'● LIVE',scheduled:'Scheduled',away:'Away',home:'Home',awaiting:'Awaiting game',time:'Time not announced',vs:'VS',scorePending:'Score updating',noScore:'Score unavailable'},es:{live:'● EN VIVO',scheduled:'Programado',away:'Visitante',home:'Local',awaiting:'Esperando el partido',time:'Horario no anunciado',vs:'VS',scorePending:'Actualizando marcador',noScore:'Marcador no disponible'}};
  const copy=labels[lang]||labels.pt;
  return games?.length?<div className="games-list">{games.map(g=>{
-  const live=g.status_state==='in_progress',final=g.status_state==='final',hasScore=g.visitor_team_score!=null&&g.home_team_score!=null,canOpen=live||final;
-  const status=live?copy.live:final?'FINAL':g.status||copy.scheduled;
+  const live=g.status_state==='in_progress',final=g.status_state==='final',hasScore=Number.isFinite(Number(g.visitor_team_score))&&g.visitor_team_score!=null&&Number.isFinite(Number(g.home_team_score))&&g.home_team_score!=null,canOpen=live||final;
+  const status=live?copy.live:final?'FINAL':copy.scheduled;
   const clock=live&&g.display_clock?' · '+(g.period_label?g.period_label+' ':'')+formatGameClock(g.display_clock):'';
+  const visitorAbbr=g.visitor_team?.abbreviation||g.visitor_team?.full_name||copy.away;
+  const homeAbbr=g.home_team?.abbreviation||g.home_team?.full_name||copy.home;
+  const score=hasScore?g.visitor_team_score+' : '+g.home_team_score:live?copy.scorePending:final?copy.noScore:copy.vs;
   return <article className={'game-row '+(live?'game-live':'')} key={g.id}>
-   <div className="game-matchup"><b>{g.visitor_team?.abbreviation||'N/D'} <span>@</span> {g.home_team?.abbreviation||'N/D'}</b><small>{g.visitor_team?.full_name||copy.away} vs {g.home_team?.full_name||copy.home}</small></div>
-   <div className="game-score"><b>{hasScore?g.visitor_team_score+' : '+g.home_team_score:live?(lang==='en'?'LIVE':lang==='es'?'EN VIVO':'Ao vivo'):'N/D'}</b><small className={live?'status-live':final?'status-final':'status-scheduled'}>{status}{clock}</small></div>
+   <div className="game-matchup"><b>{visitorAbbr} <span>@</span> {homeAbbr}</b><small>{g.visitor_team?.full_name||copy.away} vs {g.home_team?.full_name||copy.home}</small></div>
+   <div className="game-score"><b>{score}</b><small className={live?'status-live':final?'status-final':'status-scheduled'}>{status}{clock}</small></div>
    <div className="game-meta"><small>{formatGameDateTime(g,lang)||copy.time}</small><button className="text-btn" disabled={!canOpen} title={canOpen?t.details:copy.awaiting} onClick={()=>onOpen(g)}>{canOpen?t.details:copy.awaiting} →</button></div>
   </article>;
  })}</div>:<p className="muted">{t.noData}</p>;
