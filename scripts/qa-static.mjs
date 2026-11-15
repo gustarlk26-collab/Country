@@ -224,4 +224,13 @@ assert.ok(server.includes('function dedupeGamePlayers(rows)') && server.includes
 assert.ok(server.includes('score: scoreboardScore(team.score, summaryStatus)') && server.includes('map(period => scoreboardScore(period?.score, summaryStatus))'), 'Parciais NBA Live devem rejeitar placares negativos, fracionários ou inválidos sem convertê-los em zero.');
 assert.ok(server.includes('map(line => scoreboardScore(line.displayValue ?? line.value, summaryStatus))'), 'Parciais ESPN devem rejeitar placares negativos, fracionários ou inválidos sem convertê-los em zero.');
 assert.ok(app.includes("p<=4?`Q${p}`:`OT${p-4}`"), 'Tela de parciais deve identificar corretamente todas as prorrogações, inclusive OT3 e posteriores.');
+
+assert.ok(app.includes("trim().toLowerCase()!=='dickalex84@gmail.com'"), 'A homenagem deve ser exclusiva ao e-mail autorizado, sem diferenciar maiúsculas ou espaços.'); 
+assert.ok(app.includes("courtside_father_welcome_seen===true") && app.includes("updateUser({data:{courtside_father_welcome_seen:true}})"), 'A homenagem deve persistir a execução única no metadata da conta.'); 
+assert.ok(app.includes("setFatherWelcome(true)") && app.includes("setFatherWelcome(false)") && app.includes("12500"), 'A homenagem deve abrir após cadastro/login elegível e encerrar automaticamente.'); 
+assert.ok(app.includes('Pai, este projeto também tem um pouco de você.') && app.includes('Obrigado por acreditar em mim'), 'A homenagem deve conter as duas mensagens emocionais aprovadas no fluxo.'); 
+assert.ok(styles.includes('.father-welcome-ball') && styles.includes('@keyframes fatherBall') && styles.includes('@keyframes fatherParticle') && styles.includes('6.4s') && styles.includes('8.8s'), 'A homenagem precisa incluir bola, partículas e revelação de texto em tempos distintos.'); 
+assert.ok(styles.includes('.father-welcome-skip') && styles.includes('prefers-reduced-motion:reduce'), 'A homenagem deve permitir pular a animação e respeitar movimento reduzido.'); 
+assert.ok(styles.includes('COURTSIDE PREMIUM VISUAL SYSTEM') && styles.includes('#ff9b42') && styles.includes('backdrop-filter:blur(14px)'), 'A identidade premium deve incluir paleta quente e superfícies de vidro.'); 
+
 console.log('Courtside QA estática aprovada: ' + features.length + ' funcionalidades, ' + navKeys.length + ' itens de navegação e ' + routes.length + ' rotas verificadas.');
