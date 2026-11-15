@@ -742,8 +742,8 @@ app.get('/api/games/live', async (_req, res) => {
           display_clock: game.gameClock || null,
           home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: home.teamName || home.teamCity || '' },
           visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: away.teamName || away.teamCity || '' },
-          home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
-          visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score)
+          home_team_score: finiteNumberOrNull(home.score),
+          visitor_team_score: finiteNumberOrNull(away.score)
         };
       }).filter(Boolean);
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
