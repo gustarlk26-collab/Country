@@ -808,7 +808,7 @@ app.get('/api/games/live', async (_req, res) => {
           status: game.gameStatusText || (state === 3 ? 'Final' : state === 2 ? 'Em andamento' : 'Agendado'),
           status_state: state === 3 ? 'final' : state === 2 ? 'in_progress' : 'scheduled',
           period, period_label: periodLabel(period),
-          display_clock: game.gameClock || null,
+          display_clock: validGameClock(game.gameClock),
           home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: home.teamName || home.teamCity || '' },
           visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: away.teamName || away.teamCity || '' },
           home_team_score: finiteNumberOrNull(home.score),
