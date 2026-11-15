@@ -1280,9 +1280,10 @@ app.get('/api/team-stats',async(_req,res)=>{
       const standing=standingsByAbbr.get(abbreviation)||{};
       const teamId=Number(row.TEAM_ID||adv.TEAM_ID)||Number(Object.keys(TEAM_META).find(key=>TEAM_META[key][0]===abbreviation)),meta=TEAM_META[teamId];
       const number=value=>value==null||value===''||!Number.isFinite(Number(value))?null:Number(value);
+      const percentage=value=>{const parsed=number(value);return parsed!=null&&parsed>=0&&parsed<=1?parsed:null;};
       return {team:{id:teamId,abbreviation,full_name:row.TEAM_NAME||standing.team?.full_name||meta?.[1]||abbreviation,
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
-        wins:number(row.W),losses:number(row.L),win_pct:number(row.W_PCT??standing.win_pct),
+        wins:number(row.W),losses:number(row.L),win_pct:percentage(row.W_PCT??standing.win_pct),
         gp:number(row.GP),pts:number(row.PTS),reb:number(row.REB),ast:number(row.AST),stl:number(row.STL),blk:number(row.BLK),
         fg_pct:number(row.FG_PCT),fg3_pct:number(row.FG3_PCT),pace:number(adv.PACE),off_rating:number(adv.OFF_RATING),def_rating:number(adv.DEF_RATING),net_rating:number(adv.NET_RATING)};
     });
@@ -1303,7 +1304,8 @@ app.get('/api/standings', async (_req, res) => {
     if (!rows.length) throw new Error('NBA Stats não retornou dados da classificação.');
     const data = rows.map(r => ({
       team: { id: r.TeamID, full_name: r.TeamName, name: r.TeamName, abbreviation: TEAM_META[Number(r.TeamID)]?.[0] || r.TeamAbbreviation, conference: r.Conference || TEAM_META[Number(r.TeamID)]?.[2] },
-      wins: r.WINS, losses: r.LOSSES, win_pct: r.WIN_PCT
+      wins: r.WINS, losses: r.LOSSES,
+      win_pct: r.WIN_PCT == null || r.WIN_PCT === '' || !Number.isFinite(Number(r.WIN_PCT)) || Number(r.WIN_PCT) < 0 || Number(r.WIN_PCT) > 1 ? null : Number(r.WIN_PCT)
     }));
     res.json({ data });
   } catch (e) {
