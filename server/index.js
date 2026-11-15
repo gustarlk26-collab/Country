@@ -495,9 +495,30 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     let player=roster.find(item=>String(item.espn_id||item.id)===id);
     if(!player&&requestedName)player=roster.find(item=>(item.first_name+item.last_name).toLowerCase().replace(/[^a-z0-9]/g,'')===requestedName);
     if(!player)return res.status(404).json({error:'Biografia não encontrada no elenco consultado.'});
-    let detail={};
-    try{detail=await cached('espn-athlete:'+player.espn_id,()=>espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/athletes/'+player.espn_id),24*60*60*1000);}catch{}
+    let detail={},overview={};
+    const [detailResult,overviewResult]=await Promise.allSettled([
+      cached('espn-athlete:'+player.espn_id,()=>espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/athletes/'+player.espn_id),24*60*60*1000),
+      cached('espn-athlete-overview:'+player.espn_id,()=>espnJson('https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/'+player.espn_id+'/overview'),10*60*1000)
+    ]);
+    if(detailResult.status==='fulfilled')detail=detailResult.value;
+    if(overviewResult.status==='fulfilled')overview=overviewResult.value;
     const athlete=detail.athlete||detail;
+    const statsBlock=overview.statistics||overview.stats?.statistics||{};
+    const statLabels=statsBlock.labels||statsBlock.displayNames||[];
+    const statNames=statsBlock.names||[];
+    const statValues=statsBlock.values||statsBlock.displayValues||[];
+    const numberOrNull=value=>value==null||value===''||!Number.isFinite(Number(value))?null:Number(value);
+    const overviewStat=(...keys)=>{
+      const index=statLabels.findIndex((label,i)=>keys.includes(String(label).toUpperCase())||keys.includes(String(statNames[i]||'')));
+      return index<0?null:numberOrNull(statValues[index]);
+    };
+    const playerStats={
+      gamesPlayed:overviewStat('GP','gamesPlayed'),min:overviewStat('MIN','minutes','avgMinutes'),
+      pts:overviewStat('PTS','avgPoints'),reb:overviewStat('REB','avgRebounds'),ast:overviewStat('AST','avgAssists'),
+      stl:overviewStat('STL','avgSteals'),blk:overviewStat('BLK','avgBlocks'),turnover:overviewStat('TO','TOV','avgTurnovers'),
+      fg_pct:overviewStat('FG%','fieldGoalPct'),fg3_pct:overviewStat('3P%','threePointFieldGoalPct'),
+      ft_pct:overviewStat('FT%','freeThrowPct')
+    };
     const data={
       id:player.espn_id,name:athlete.displayName||athlete.fullName||[player.first_name,player.last_name].join(' '),
       height:athlete.displayHeight||player.height||null,weight:athlete.displayWeight||player.weight||null,
@@ -507,7 +528,9 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       jersey:athlete.jersey||player.jersey||null,position:athlete.position?.displayName||player.position||null,
       team:player.team,headshot:athlete.headshot?.href||player.headshot||null,
       family:Array.isArray(athlete.relatives)?athlete.relatives:Array.isArray(athlete.family)?athlete.family:Array.isArray(player.family)?player.family:null,
-      biography:athlete.biography||athlete.description||null,source:'ESPN athlete profile'
+      biography:athlete.biography||athlete.description||null,
+      stats:Object.values(playerStats).some(value=>value!=null)?playerStats:null,
+      source:overview.statistics?'ESPN athlete profile + season overview':'ESPN athlete profile'
     };
     res.json({data,updatedAt:new Date().toISOString()});
   }catch(e){res.status(503).json({error:'Ficha biográfica indisponível: '+e.message});}
