@@ -168,7 +168,7 @@ async function nbaGameIdFromEspn(eventId) {
   if(!schedule.ok)throw new Error('Calendário NBA CDN indisponível.');
   const data=await schedule.json();
   const match=(data.leagueSchedule?.gameDates||[]).flatMap(day=>day.games||[]).find(game=>{
-    const date=String(game.gameDateEst||game.gameDateTimeEst||game.gameDate||'').slice(0,10);
+    const date=game.gameDateTimeUTC?saoPauloDate(game.gameDateTimeUTC):String(game.gameDateEst||game.gameDateTimeEst||game.gameDate||'').slice(0,10);
     const h=game.homeTeam?.teamTricode,a=game.awayTeam?.teamTricode;
     return date===eventDate&&h===home&&a===away;
   });
