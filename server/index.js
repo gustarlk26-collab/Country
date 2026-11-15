@@ -755,11 +755,8 @@ async function nbaLivePeriodSummary(gameId) {
     return response.json();
   }, 15 * 1000);
   const game = body.game || {};
-  const teams = [
-    { team: game.awayTeam || {}, order: 0 },
-    { team: game.homeTeam || {}, order: 1 }
-  ];
-  const competitors = teams.map(({team}) => ({
+  const teams = [game.homeTeam || {}, game.awayTeam || {}];
+  const competitors = teams.map(team => ({
     name: [team.teamCity, team.teamName].filter(Boolean).join(' ') || team.teamTricode || 'Time',
     abbreviation: team.teamTricode || '',
     score: team.score == null ? null : Number(team.score),
