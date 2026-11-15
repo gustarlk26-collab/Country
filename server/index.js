@@ -904,8 +904,8 @@ async function espnTeamSchedule(abbreviation, seasonYear) {
         status:game.gameStatusText||(stateCode===3?'Final':stateCode===2?'Em andamento':'Agendado'),
         state:stateCode===3?'post':stateCode===2?'in':'pre',
         sides:[
-          {abbreviation:canonicalTeamAbbr(home.teamTricode||''),name:[home.teamCity,home.teamName].filter(Boolean).join(' '),score:finiteNumberOrNull(game.homeTeamScore),homeAway:'home'},
-          {abbreviation:canonicalTeamAbbr(away.teamTricode||''),name:[away.teamCity,away.teamName].filter(Boolean).join(' '),score:finiteNumberOrNull(game.awayTeamScore),homeAway:'away'}
+          {abbreviation:canonicalTeamAbbr(home.teamTricode||''),name:[home.teamCity,home.teamName].filter(Boolean).join(' '),score:(stateCode===2||stateCode===3)?finiteNumberOrNull(game.homeTeamScore):null,homeAway:'home'},
+          {abbreviation:canonicalTeamAbbr(away.teamTricode||''),name:[away.teamCity,away.teamName].filter(Boolean).join(' '),score:(stateCode===2||stateCode===3)?finiteNumberOrNull(game.awayTeamScore):null,homeAway:'away'}
         ],
         venue:game.arenaName||null
       };
