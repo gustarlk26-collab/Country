@@ -234,7 +234,7 @@ assert.ok(styles.includes('.father-welcome-skip') && styles.includes('prefers-re
 assert.ok(styles.includes('COURTSIDE PREMIUM VISUAL SYSTEM') && styles.includes('#ff9b42') && styles.includes('backdrop-filter:blur(14px)'), 'A identidade premium deve incluir paleta quente e superfícies de vidro.'); 
 
 assert.ok(server.includes("app.use(cors({ origin: true, credentials: false") && server.includes("allowedHeaders: ['Authorization','Content-Type']"), 'CORS deve aceitar chamadas autenticadas por Bearer sem exigir cookies.');
-assert.ok(app.includes("if(firstError?.name!=='TypeError')") && app.includes("Falha de conexão com a API") && app.includes("setTimeout(resolve,900)"), 'O cliente deve repetir uma falha de rede transitória e apresentar diagnóstico claro.');
+assert.ok(app.includes("const attempts=method==='GET'?3:1") && app.includes("new URL(path,window.location.origin).toString()") && app.includes("Falha de conexão com a API") && app.includes("900*(attempt+1)"), 'O cliente deve repetir falhas de rede transitórias em GET e apresentar diagnóstico claro.');
 console.log('Courtside QA estática aprovada: ' + features.length + ' funcionalidades, ' + navKeys.length + ' itens de navegação e ' + routes.length + ' rotas verificadas.');
 
 assert.ok(styles.includes('COURTSIDE ARENA ATMOSPHERE') && styles.includes('radial-gradient(ellipse at 50% 0%') && styles.includes('arenaLightSweep'), 'Fundo deve incluir geometria sutil de quadra e iluminação de arena em movimento.');
