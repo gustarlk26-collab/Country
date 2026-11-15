@@ -410,29 +410,46 @@ async function espnPlayers() {
     PHI:20,PHX:21,POR:22,SAC:23,SAS:24,OKC:25,UTA:26,WAS:27,TOR:28,MEM:29,CHA:30
   };
   const teams = Object.values(TEAM_META).map(meta => meta[0]);
-  const results = await Promise.allSettled(teams.map(async abbreviation => {
-    const teamId = ids[abbreviation];
-    const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${teamId}/roster`);
-    const groups = body.athletes || [];
-    const athletes = groups.flatMap(group => Array.isArray(group.items) ? group.items : [group]);
-    const fullTeam = Object.values(TEAM_META).find(meta => meta[0] === abbreviation)?.[1] || abbreviation;
-    return athletes.filter(p => p && (p.id || p.uid)).map(p => {
-      const fullName = p.fullName || p.displayName || '';
-      const parts = fullName.split(' ');
-      return {
-        id: Number(p.id || String(p.uid).split(':').pop()),
-        first_name: p.firstName || parts.slice(0,-1).join(' '),
-        last_name: p.lastName || parts.slice(-1)[0] || '',
-        position: p.position?.abbreviation || p.position?.name || '',
-        team: { abbreviation, full_name: fullTeam },
-        is_active: true, headshot: p.headshot?.href || p.headshot || null, espn_id:Number(p.id||String(p.uid).split(':').pop()),
-        height:p.displayHeight||p.height||null,weight:p.displayWeight||p.weight||null,
-        birth_date:p.dateOfBirth||null,age:p.age??null,birth_place:p.birthPlace||null,
-        college:p.college?.name||p.college||null,experience:p.experience?.displayValue||p.experience?.years||null,
-        jersey:p.jersey||null,family:p.relatives||p.family||null
-      };
-    });
-  }));
+  const results = new Array(teams.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(6, teams.length) }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= teams.length) return;
+      const abbreviation = teams[index];
+      const teamId = ids[abbreviation];
+      try {
+        const players = await cached('espn:roster:' + abbreviation, async () => {
+          const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/' + teamId + '/roster');
+          const groups = body.athletes || [];
+          const athletes = groups.flatMap(group => Array.isArray(group.items) ? group.items : [group]);
+          const fullTeam = Object.values(TEAM_META).find(meta => meta[0] === abbreviation)?.[1] || abbreviation;
+          const roster = athletes.filter(p => p && (p.id || p.uid)).map(p => {
+            const fullName = p.fullName || p.displayName || '';
+            const parts = fullName.split(' ');
+            return {
+              id: Number(p.id || String(p.uid).split(':').pop()),
+              first_name: p.firstName || parts.slice(0,-1).join(' '),
+              last_name: p.lastName || parts.slice(-1)[0] || '',
+              position: p.position?.abbreviation || p.position?.name || '',
+              team: { abbreviation, full_name: fullTeam },
+              is_active: true, headshot: p.headshot?.href || p.headshot || null, espn_id:Number(p.id||String(p.uid).split(':').pop()),
+              height:p.displayHeight||p.height||null,weight:p.displayWeight||p.weight||null,
+              birth_date:p.dateOfBirth||null,age:p.age??null,birth_place:p.birthPlace||null,
+              college:p.college?.name||p.college||null,experience:p.experience?.displayValue||p.experience?.years||null,
+              jersey:p.jersey||null,family:p.relatives||p.family||null
+            };
+          });
+          if (!roster.length) throw new Error('ESPN retornou elenco vazio para ' + abbreviation);
+          return roster;
+        }, 30 * 60 * 1000);
+        results[index] = { status: 'fulfilled', value: players };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  });
+  await Promise.all(workers);
   const unique = new Map();
   results.forEach(result => {
     if (result.status === 'fulfilled') result.value.forEach(player => { if (player.id) unique.set(player.id, player); });
