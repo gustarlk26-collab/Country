@@ -115,6 +115,7 @@ assert.ok(server.includes("/athletes/'+player.espn_id+'/stats'"), 'Fallback ESPN
 assert.ok(server.includes('statsPayload.categories||statsPayload.statCategories'), 'Fallback detalhado deve mapear categorias e rótulos reais da ESPN.');
 assert.ok(server.includes("source:Object.keys(detailedStats).length?'ESPN athlete profile + season statistics'"), 'Perfil deve informar a fonte estatística que realmente retornou dados.');
 assert.ok(server.includes('Array.isArray(rawCategories)?rawCategories:Object.values(rawCategories)'), 'Parser ESPN deve tolerar payload de categorias em array ou objeto.');
+assert.ok(app.includes("adv.error)setError('Métricas avançadas do perfil indisponíveis:") && app.includes('As médias básicas foram preservadas.'), 'Falhas ao atualizar métricas avançadas do perfil devem ser comunicadas sem ocultar as médias básicas.');
 assert.ok(app.includes("const fallbackStats=bio?.stats||{}"), 'Perfil deve usar a fonte alternativa apenas para campos sem dado primário.');
 assert.ok(app.includes('const samePlayer=candidate=>String(candidate.player?.id)===String(player.id)'), 'Perfil deve conciliar IDs ESPN e NBA Stats pelo atleta correto.');
 assert.ok(app.includes("normalizePlayerKey(f.player_name)===normalizePlayerKey(name)"), 'Favoritos devem reconhecer o mesmo atleta mesmo com IDs diferentes entre fontes.');
