@@ -943,7 +943,7 @@ app.get('/api/players/:id/shots', async (req, res) => {
         LastNGames:0, ClutchTime:'', AheadBehind:'', PointDiff:'', RangeType:0,
         StartPeriod:0, EndPeriod:0
       }), 3 * 60 * 1000))[0] || [];
-      const data = rows.filter(r => Number.isFinite(Number(r.LOC_X)) && Number.isFinite(Number(r.LOC_Y))).map(r => ({
+      const data = rows.filter(r => r.LOC_X != null && r.LOC_X !== '' && r.LOC_Y != null && r.LOC_Y !== '' && r.SHOT_MADE_FLAG != null && (Number(r.SHOT_MADE_FLAG) === 0 || Number(r.SHOT_MADE_FLAG) === 1) && Number.isFinite(Number(r.LOC_X)) && Number.isFinite(Number(r.LOC_Y))).map(r => ({
         x:Number(r.LOC_X), y:Number(r.LOC_Y), made:Number(r.SHOT_MADE_FLAG)===1,
         action:r.ACTION_TYPE||r.EVENT_TYPE||'Arremesso',
         distance:r.SHOT_DISTANCE==null?null:Number(r.SHOT_DISTANCE)
