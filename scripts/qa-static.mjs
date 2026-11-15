@@ -262,3 +262,5 @@ assert.ok(styles.includes('.layout.light .shot-chart') && styles.includes('.layo
 assert.ok(app.includes('homeRecord:home.length?') && app.includes("x.homeRecord||'Sem dados na amostra'") && app.includes("x.totalRecord||'Sem partidas finalizadas'"), 'Casa e fora não pode transformar ausência de jogos finalizados em campanha 0–0.');
 assert.ok(app.includes("streak:streakKind?(streakCount<0?recent.length:streakCount):null"), 'Sequências sem jogos não podem ser exibidas como sequência numérica zero.');
 assert.ok(app.includes("s?.min==null?'N/D':fmt(s.min)") && app.includes("s?.pts==null?'N/D':fmt(s.pts)"), 'Rotação não pode deixar células vazias quando a estatística individual não foi retornada.');
+
+assert.ok(app.includes("label:'Pontos por jogo',key:'pts'") && app.includes("label:'Rebotes por jogo',key:'reb'") && app.includes("label:'Tocos por jogo',key:'blk'") && app.includes('Estes rankings não representam vencedores de MVP'), 'Central de prêmios não pode apresentar líderes de pontos/tocos como vencedores de prêmios oficiais.');
