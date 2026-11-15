@@ -681,10 +681,10 @@ async function espnLiveGames() {
     if (!home?.team?.abbreviation || !away?.team?.abbreviation) return [];
     const datetime = event.date || competition.date || '';
     const date = saoPauloDate(datetime);
-    if (date !== today) return [];
     const statusInfo = competition.status || event.status || {};
     const statusType = statusInfo.type || {};
     const state = statusType.state || 'pre';
+    if (date !== today && state !== 'in') return [];
     const period = Number(statusInfo.period) || null;
     return [{
       id: String(event.id), date, datetime,
@@ -721,8 +721,10 @@ app.get('/api/games/live', async (_req, res) => {
         const state = Number(game.gameStatus);
         const period = Number(game.period) || null;
         const datetime = game.gameTimeUTC || '';
+        const localDate = saoPauloDate(datetime) || today;
+        if (localDate !== today && state !== 2) return null;
         return {
-          id: String(game.gameId), date: saoPauloDate(datetime) || today, datetime,
+          id: String(game.gameId), date: localDate, datetime,
           status: game.gameStatusText || (state === 3 ? 'Final' : state === 2 ? 'Em andamento' : 'Agendado'),
           status_state: state === 3 ? 'final' : state === 2 ? 'in_progress' : 'scheduled',
           period, period_label: period ? (period <= 4 ? 'Q' + period : 'OT' + (period - 4)) : null,
@@ -732,7 +734,7 @@ app.get('/api/games/live', async (_req, res) => {
           home_team_score: home.score == null || home.score === '' ? null : Number(home.score),
           visitor_team_score: away.score == null || away.score === '' ? null : Number(away.score)
         };
-      });
+      }).filter(Boolean);
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
       return res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Live CDN scoreboard', fallback: true });
     } catch (cdnError) {
