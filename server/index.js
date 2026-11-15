@@ -622,7 +622,7 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     const statLabels=statsBlock.labels||statsBlock.displayNames||[];
     const statNames=statsBlock.names||[];
     const statValues=statsBlock.values||statsBlock.displayValues||[];
-    const numberOrNull=value=>value==null||value===''||!Number.isFinite(Number(value))?null:Number(value);
+    const numberOrNull=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
     const overviewStat=(...keys)=>{
       const index=statLabels.findIndex((label,i)=>keys.includes(String(label).toUpperCase())||keys.includes(String(statNames[i]||'')));
       return index<0?null:numberOrNull(statValues[index]);
@@ -1157,16 +1157,22 @@ app.get('/api/advanced', async (req, res) => {
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 3 * 60 * 1000))[0] || [];
     const numberOrNull = value => value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
-    const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
-      player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
-      team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION }, gamesPlayed: Number(r.GP),
-      min: numberOrNull(r.MIN),
-      pie: numberOrNull(r.PIE), ts_pct: numberOrNull(r.TS_PCT), usg_pct: numberOrNull(r.USG_PCT),
-      off_rating: numberOrNull(r.OFF_RATING), def_rating: numberOrNull(r.DEF_RATING), net_rating: numberOrNull(r.NET_RATING),
-      ast_pct: numberOrNull(r.AST_PCT), tov_pct: numberOrNull(r.TOV_PCT), efg_pct: numberOrNull(r.EFG_PCT),
-      ast_to: numberOrNull(r.AST_TO), ast_ratio: numberOrNull(r.AST_RATIO), pace: numberOrNull(r.PACE),
-      oreb_pct: numberOrNull(r.OREB_PCT), dreb_pct: numberOrNull(r.DREB_PCT), reb_pct: numberOrNull(r.REB_PCT),
-      poss: numberOrNull(r.POSS)
+    const nonNegative = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0?parsed:null; };
+    const positive = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>0?parsed:null; };
+    const ratio = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0&&parsed<=1?parsed:null; };
+    const data = rows.filter(r => {
+      const id=Number(r.PLAYER_ID),gp=numberOrNull(r.GP);
+      return Number.isSafeInteger(id)&&id>0&&String(r.PLAYER_NAME||'').trim()&&gp!=null&&gp>0;
+    }).map(r => ({
+      player: { id: Number(r.PLAYER_ID), first_name: String(r.PLAYER_NAME || '').trim().split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').trim().split(' ').slice(-1)[0] },
+      team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION }, gamesPlayed: positive(r.GP),
+      min: nonNegative(r.MIN),
+      pie: ratio(r.PIE), ts_pct: ratio(r.TS_PCT), usg_pct: ratio(r.USG_PCT),
+      off_rating: positive(r.OFF_RATING), def_rating: positive(r.DEF_RATING), net_rating: numberOrNull(r.NET_RATING),
+      ast_pct: ratio(r.AST_PCT), tov_pct: ratio(r.TOV_PCT), efg_pct: ratio(r.EFG_PCT),
+      ast_to: nonNegative(r.AST_TO), ast_ratio: nonNegative(r.AST_RATIO), pace: positive(r.PACE),
+      oreb_pct: ratio(r.OREB_PCT), dreb_pct: ratio(r.DREB_PCT), reb_pct: ratio(r.REB_PCT),
+      poss: nonNegative(r.POSS)
     })).sort((a,b) => {
       if (a.pie == null && b.pie != null) return 1;
       if (b.pie == null && a.pie != null) return -1;
