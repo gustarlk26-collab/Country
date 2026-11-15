@@ -80,6 +80,11 @@ function dedupeGamePlayers(rows) {
   return [...byId.values()].map(entry => entry.row);
 }
 function finiteNumberOrNull(value) { return value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value); }
+function scoreboardScore(value, statusState) {
+  if (statusState === 'scheduled' || value == null || value === '') return null;
+  const score = Number(value);
+  return Number.isSafeInteger(score) && score >= 0 ? score : null;
+}
 function shootingPct(made, attempted) { const m=finiteNumberOrNull(made), a=finiteNumberOrNull(attempted); return m != null && a != null && Number.isInteger(m) && Number.isInteger(a) && m >= 0 && a > 0 && m <= a ? m / a : null; }
 function seasonFor(date = new Date()) {
   const year = date.getUTCFullYear();
@@ -256,8 +261,8 @@ async function nbaCdnGames(start, end) {
       display_clock: g.gameClock || null,
       home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: [home.teamCity, home.teamName].filter(Boolean).join(' ') },
       visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: [away.teamCity, away.teamName].filter(Boolean).join(' ') },
-      home_team_score: statusCode === 1 ? null : finiteNumberOrNull(g.homeTeamScore),
-      visitor_team_score: statusCode === 1 ? null : finiteNumberOrNull(g.awayTeamScore)
+      home_team_score: scoreboardScore(g.homeTeamScore, statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled'),
+      visitor_team_score: scoreboardScore(g.awayTeamScore, statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled')
     };
   });
   const liveGames = live?.scoreboard?.games || [];
@@ -276,8 +281,8 @@ async function nbaCdnGames(start, end) {
       display_clock: g.gameClock || null,
       home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: home.teamName || home.teamCity || '' },
       visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: away.teamName || away.teamCity || '' },
-      home_team_score: home.score === '' || home.score == null ? null : Number(home.score),
-      visitor_team_score: away.score === '' || away.score == null ? null : Number(away.score)
+      home_team_score: scoreboardScore(home.score, statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled'),
+      visitor_team_score: scoreboardScore(away.score, statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled')
     };
     if (idx >= 0) games[idx] = mapped; else games.push(mapped);
   }
@@ -350,8 +355,8 @@ async function espnGames(start, end) {
       display_clock: statusInfo.displayClock || null,
       home_team: { id: Number(home.team?.id), abbreviation: canonicalTeamAbbr(home.team?.abbreviation || ''), full_name: home.team?.displayName || home.team?.name || '' },
       visitor_team: { id: Number(away.team?.id), abbreviation: canonicalTeamAbbr(away.team?.abbreviation || ''), full_name: away.team?.displayName || away.team?.name || '' },
-      home_team_score: finiteNumberOrNull(home.score),
-      visitor_team_score: finiteNumberOrNull(away.score) }];
+      home_team_score: scoreboardScore(home.score, state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled'),
+      visitor_team_score: scoreboardScore(away.score, state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled') }];
   }).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
 }
 function minutesAsNumber(value) {
