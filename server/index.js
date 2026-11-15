@@ -605,9 +605,9 @@ app.get('/api/players', async (req, res) => {
   } catch (espnError) {
     try {
       const rows = (await cached(`players:${seasonFor()}`, () => nba('commonallplayers', {
-        LeagueID: '00', Season: seasonFor(), IsOnlyCurrentSeason: '0'
+        LeagueID: '00', Season: seasonFor(), IsOnlyCurrentSeason: '1'
       }), 12 * 60 * 60 * 1000))[0] || [];
-      const filtered = rows.filter(p => !search || String(p.DISPLAY_FIRST_LAST || '').toLowerCase().includes(search));
+      const filtered = rows.filter(p => Number(p.ROSTERSTATUS) === 1 && (!search || String(p.DISPLAY_FIRST_LAST || '').toLowerCase().includes(search)));
       const data = filtered.slice((page - 1) * 100, page * 100).map(p => ({
         id: p.PERSON_ID, first_name: String(p.DISPLAY_FIRST_LAST || '').split(' ').slice(0,-1).join(' '),
         last_name: String(p.DISPLAY_FIRST_LAST || '').split(' ').slice(-1)[0],
