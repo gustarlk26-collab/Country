@@ -485,11 +485,21 @@ async function espnPlayers() {
   await Promise.all(workers);
   const failedTeams = results.filter(result => result.status === 'rejected').length;
   if (failedTeams) throw new Error('ESPN retornou elencos incompletos (' + failedTeams + ' franquias sem resposta).');
-  const unique = new Map();
+  const unique = new Map(), conflicts = new Set();
   results.forEach(result => {
-    if (result.status === 'fulfilled') result.value.forEach(player => { if (player.id) unique.set(player.id, player); });
+    if (result.status !== 'fulfilled') return;
+    result.value.forEach(player => {
+      const id = String(player.id || '');
+      if (!id || conflicts.has(id)) return;
+      const previous = unique.get(id);
+      if (!previous) unique.set(id, player);
+      else if (canonicalTeamAbbr(previous.team?.abbreviation || '') !== canonicalTeamAbbr(player.team?.abbreviation || '')) {
+        unique.delete(id);
+        conflicts.add(id);
+      }
+    });
   });
-  if (!unique.size) throw new Error('ESPN não retornou os elencos; a fonte externa está indisponível.');
+  if (!unique.size) throw new Error('ESPN não retornou elencos consistentes; a fonte externa está indisponível.');
   return [...unique.values()].sort((a,b) => a.last_name.localeCompare(b.last_name));
 }
 
