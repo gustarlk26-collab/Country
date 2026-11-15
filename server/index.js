@@ -388,12 +388,13 @@ async function espnBoxscore(gameId) {
       const athlete = entry.athlete || {};
       const fullName = athlete.displayName || athlete.fullName || athlete.shortName || '';
       const parts = fullName.split(' ');
+      const athleteId = Number(athlete.id);
       const min = formatMinutes(pick('MIN','MINUTES'));
-      if (minutesAsNumber(min) <= 0) return null;
+      if (!Number.isSafeInteger(athleteId) || athleteId <= 0 || !fullName.trim() || minutesAsNumber(min) <= 0) return null;
       const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
       const ft = madeAttempt(pick('FT','FREE THROWS','FTM-A','FTM/A'));
       const row = {
-        id: Number(athlete.id), player: { id: Number(athlete.id), first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot?.href||athlete.headshot||null },
+        id: athleteId, player: { id: athleteId, first_name: parts.slice(0,-1).join(' '), last_name: parts.slice(-1)[0] || '', headshot: athlete.headshot?.href||athlete.headshot||null },
         team: { id: Number(group.team?.id), abbreviation: canonicalTeamAbbr(group.team?.abbreviation || ''), full_name: group.team?.displayName || group.team?.name || '' },
         min, pts: numberOrNull(pick('PTS','POINTS')), reb: numberOrNull(pick('REB','REBOUNDS')), ast: numberOrNull(pick('AST','ASSISTS')),
         stl: numberOrNull(pick('STL','STEALS')), blk: numberOrNull(pick('BLK','BLOCKS')), fgm:fg.made, fga:fg.attempted, ftm:ft.made, fta:ft.attempted,
