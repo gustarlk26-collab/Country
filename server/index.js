@@ -97,10 +97,10 @@ function validGameClock(value) {
   if (value == null || String(value).trim() === '') return null;
   const raw = String(value).trim();
   let minutes, seconds;
-  const clock = raw.match(/^(\\d{1,2}):([0-5]\\d)$/);
+  const clock = raw.match(/^(\d{1,2}):([0-5]\d)$/);
   if (clock) { minutes = Number(clock[1]); seconds = Number(clock[2]); }
   else {
-    const duration = raw.match(/^PT(?:(\\d+)M)?(?:(\\d+(?:\\.\\d+)?)S)?$/i);
+    const duration = raw.match(/^PT(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/i);
     if (!duration || (!duration[1] && !duration[2])) return null;
     const total = Number(duration[1] || 0) * 60 + Number(duration[2] || 0);
     if (!Number.isFinite(total) || total < 0 || total > 720) return null;
