@@ -9,6 +9,9 @@ const worker = read('public/sw.js');
 const schema = read('supabase/schema.sql');
 const manifest = read('public/manifest.webmanifest');
 const render = read('render.yml');
+const teamMetaBlock = server.match(/const TEAM_META = \{([\s\S]*?)\n\};/);
+const teamAbbrs = [...(teamMetaBlock?.[1] || '').matchAll(/\d{10}:\['([A-Z]{3})'/g)].map(match => match[1]);
+const espnTeamMap = server.match(/const ESPN_TEAM_IDS = \{([^}]+)\}/)?.[1] || '';
 
 const featureBlock = app.match(/const featureKeys=\[([^\]]+)\]/);
 assert.ok(featureBlock, 'Lista de funcionalidades não encontrada.');
@@ -27,6 +30,9 @@ for (const key of features) assert.ok(renderedPages.has(key), 'Página sem condi
 
 const routes = [...server.matchAll(/app\.(get|post|put|delete|patch)\(['"]([^'"]+)/g)].map(match => match[1].toUpperCase() + ' ' + match[2]);
 assert.ok(routes.includes('GET /api/games/live'), 'Endpoint de placar ao vivo ausente.');
+assert.equal(teamAbbrs.length, 30, 'Diretório NBA deve conter as 30 franquias.');
+assert.equal(new Set(teamAbbrs).size, 30, 'Diretório de franquias contém abreviações duplicadas.');
+for (const abbr of teamAbbrs) assert.ok(new RegExp('(?:^|[,\\{])' + abbr + ':').test(espnTeamMap), 'ID ESPN ausente para franquia: ' + abbr);
 assert.ok(server.includes("if (data.length) {"), 'Placar vazio da ESPN deve acionar a fonte alternativa.');
 assert.ok(server.includes('NBA Live CDN scoreboard'), 'Fonte alternativa do placar ao vivo deve estar identificada.');
 assert.ok(routes.includes('GET /api/games/:id/stats'), 'Endpoint de box score ausente.');
