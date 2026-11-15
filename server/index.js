@@ -80,7 +80,7 @@ function dedupeGamePlayers(rows) {
   return [...byId.values()].map(entry => entry.row);
 }
 function finiteNumberOrNull(value) { return value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value); }
-function shootingPct(made, attempted) { const m=finiteNumberOrNull(made), a=finiteNumberOrNull(attempted); return m != null && a != null && a > 0 ? m / a : null; }
+function shootingPct(made, attempted) { const m=finiteNumberOrNull(made), a=finiteNumberOrNull(attempted); return m != null && a != null && Number.isInteger(m) && Number.isInteger(a) && m >= 0 && a > 0 && m <= a ? m / a : null; }
 function seasonFor(date = new Date()) {
   const year = date.getUTCFullYear();
   return date.getUTCMonth() >= 9 ? `${year}-${String(year + 1).slice(-2)}` : `${year - 1}-${String(year).slice(-2)}`;
