@@ -1096,7 +1096,7 @@ app.get('/api/injuries', async (_req, res) => {
       team: group.displayName || group.team?.displayName || group.team?.abbreviation || '',
       status: item.status || item.type?.description || item.details?.type || 'Status não informado',
       detail: item.shortComment || item.longComment || item.details?.detail || ''
-    })).filter(item => item.name);
+    })).filter(item => item.name));
     res.json({ data, source: 'ESPN injuries', updatedAt: new Date().toISOString() });
   } catch (e) { res.status(503).json({ error: 'Relatórios de lesões indisponíveis: ' + e.message }); }
 });
