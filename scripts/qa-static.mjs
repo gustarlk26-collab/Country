@@ -113,6 +113,7 @@ assert.ok(server.includes("apis/common/v3/sports/basketball/nba/athletes/"), 'Pe
 assert.ok(server.includes("overview.statistics||overview.stats?.statistics"), 'Fallback ESPN deve ler somente o bloco estatístico documentado.');
 assert.ok(server.includes("/athletes/'+player.espn_id+'/stats'"), 'Fallback ESPN deve consultar estatísticas detalhadas da temporada.');
 assert.ok(server.includes('statsPayload.categories||statsPayload.statCategories'), 'Fallback detalhado deve mapear categorias e rótulos reais da ESPN.');
+assert.ok(server.includes("categoryKey==='total'||categoryKey==='totals'") && server.includes('if(categoryKey===\'total\'||categoryKey===\'totals\')continue;'), 'Perfil por jogo deve ignorar categorias ESPN explicitamente identificadas como totais da temporada.');
 assert.ok(server.includes("source:Object.keys(detailedStats).length?'ESPN athlete profile + season statistics'"), 'Perfil deve informar a fonte estatística que realmente retornou dados.');
 assert.ok(server.includes('Array.isArray(rawCategories)?rawCategories:Object.values(rawCategories)'), 'Parser ESPN deve tolerar payload de categorias em array ou objeto.');
 assert.ok(app.includes("adv.error)setError('Métricas avançadas do perfil indisponíveis:") && app.includes('As médias básicas foram preservadas.'), 'Falhas ao atualizar métricas avançadas do perfil devem ser comunicadas sem ocultar as médias básicas.');
