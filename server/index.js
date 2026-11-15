@@ -1210,8 +1210,12 @@ app.get('/api/team-stats',async(_req,res)=>{
         fg_pct:number(row.FG_PCT),fg3_pct:number(row.FG3_PCT),pace:number(adv.PACE),off_rating:number(adv.OFF_RATING),def_rating:number(adv.DEF_RATING),net_rating:number(adv.NET_RATING)};
     });
     if(!data.length)throw new Error(baseResult.status==='rejected'?baseResult.reason.message:'Fontes não retornaram dados de franquias.');
+    const sources=[];
+    if(base.length)sources.push('NBA Stats base');
+    if(advanced.length)sources.push('NBA Stats advanced');
+    if(fallback.length)sources.push('ESPN standings');
     res.json({data:data.sort((a,b)=>(b.net_rating??b.win_pct??-Infinity)-(a.net_rating??a.win_pct??-Infinity)),season,
-      source:base.length?'NBA Stats team dashboard':'ESPN standings; stats not supplied',updatedAt:new Date().toISOString()});
+      source:sources.join(' + ')||'No verified source',updatedAt:new Date().toISOString()});
   }catch(e){res.status(503).json({error:'Estatísticas dos times indisponíveis: '+e.message});}
 });
 app.get('/api/standings', async (_req, res) => {
