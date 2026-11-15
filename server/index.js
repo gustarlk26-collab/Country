@@ -597,10 +597,16 @@ app.get('/api/players/:id/bio',async(req,res)=>{
   try{
     const id=String(req.params.id);
     if(!/^\d{1,12}$/.test(id))return res.status(400).json({error:'ID de jogador inválido.'});
-    const requestedName=String(req.query.name||'').trim().toLowerCase().replace(/[^a-z0-9]/g,'');
-    const roster=await cached('espn:active-players',espnPlayers,30*60*1000);
+    const requestedName=String(req.query.name||'').trim().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+    const requestedTeam=canonicalTeamAbbr(String(req.query.team||'').trim());
+    let roster=[];
+    if(requestedTeam&&Object.values(TEAM_META).some(meta=>meta[0]===requestedTeam)){
+      try{roster=await espnTeamRoster(requestedTeam);}catch(teamError){console.warn('ESPN roster lookup failed for '+requestedTeam+': '+teamError.message);}
+    }
+    if(!roster.length)roster=await cached('espn:active-players',espnPlayers,30*60*1000);
+    const normalizeName=value=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
     let player=roster.find(item=>String(item.espn_id||item.id)===id);
-    if(!player&&requestedName)player=roster.find(item=>(item.first_name+item.last_name).toLowerCase().replace(/[^a-z0-9]/g,'')===requestedName);
+    if(!player&&requestedName)player=roster.find(item=>normalizeName(item.first_name+' '+item.last_name)===requestedName);
     if(!player)return res.status(404).json({error:'Biografia não encontrada no elenco consultado.'});
     let detail={},overview={},statsPayload={};
     const [detailResult,overviewResult,statsResult]=await Promise.allSettled([
