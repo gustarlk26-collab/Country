@@ -106,7 +106,7 @@ function validGameClock(value) {
     if (!Number.isFinite(total) || total < 0 || total > 720) return null;
     minutes = Math.floor(total / 60); seconds = Math.floor(total % 60);
   }
-  return minutes <= 12 ? minutes + ':' + String(seconds).padStart(2, '0') : null;
+  return minutes < 12 || (minutes === 12 && seconds === 0) ? minutes + ':' + String(seconds).padStart(2, '0') : null;
 }
 function shootingPct(made, attempted) { const m=finiteNumberOrNull(made), a=finiteNumberOrNull(attempted); return m != null && a != null && Number.isInteger(m) && Number.isInteger(a) && m >= 0 && a > 0 && m <= a ? m / a : null; }
 function seasonFor(date = new Date()) {
