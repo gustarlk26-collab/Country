@@ -255,3 +255,6 @@ assert.ok(styles.includes('photo-1560553814-060afcd8904a') && styles.includes('b
 assert.ok(styles.includes('backdrop-filter:blur(14px)') && styles.includes('background-color:rgba(12,13,15,.84)'), 'Painéis devem preservar legibilidade com vidro desfocado sobre a fotografia.');
 
 assert.ok(app.includes("new URL(path,window.location.origin).toString()") && app.includes("const attempts=method==='GET'?3:1") && app.includes("900*(attempt+1)") && app.includes("mode:'same-origin'"), 'Chamadas GET da API devem usar a origem do serviço e tolerar falhas transitórias/cold start com tentativas progressivas.');
+
+assert.ok(styles.includes('.layout.light{') && styles.includes('--bg:#e9eef4') && styles.includes('--panel:#f4f6f8') && styles.includes('LIGHT THEME — warm arena paper'), 'Tema claro deve usar paleta suave de arena, superfícies cinza-azuladas e contraste legível em vez de branco puro.');
+assert.ok(styles.includes('.layout.light .shot-chart') && styles.includes('.layout.light .news-card') && styles.includes('.layout.light .franchise-scoreboard article') && styles.includes('.layout.light .auth-card'), 'Tema claro deve adaptar também componentes especiais, gráficos, notícias, comparador e autenticação.');
