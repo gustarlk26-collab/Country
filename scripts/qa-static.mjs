@@ -274,4 +274,6 @@ assert.ok(app.includes('homeRecord:home.length?') && app.includes("x.homeRecord|
 assert.ok(app.includes("streak:streakKind?(streakCount<0?recent.length:streakCount):null"), 'Sequências sem jogos não podem ser exibidas como sequência numérica zero.');
 assert.ok(app.includes("s?.min==null?'N/D':fmt(s.min)") && app.includes("s?.pts==null?'N/D':fmt(s.pts)"), 'Rotação não pode deixar células vazias quando a estatística individual não foi retornada.');
 
+assert.ok(server.includes("const number=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value)"), 'Estatísticas de franquias devem rejeitar booleanos e strings vazias antes de converter números.');
+assert.ok(server.includes("rawValue == null || typeof rawValue === 'boolean' || String(rawValue).trim() === '' || !Number.isFinite(Number(rawValue)) ? null : Number(rawValue)"), 'Recordes históricos devem rejeitar booleanos e strings vazias em vez de contar zero/um falsos.');
 assert.ok(app.includes("label:'Pontos por jogo',key:'pts'") && app.includes("label:'Rebotes por jogo',key:'reb'") && app.includes("label:'Tocos por jogo',key:'blk'") && app.includes('Estes rankings não representam vencedores de MVP'), 'Central de prêmios não pode apresentar líderes de pontos/tocos como vencedores de prêmios oficiais.');
