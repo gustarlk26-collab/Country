@@ -130,7 +130,7 @@ assert.ok(app.includes("s?.min==null?'':fmt(s.min)"), 'Elenco em rotação não 
 assert.ok(app.includes("value=x=>!x?'':loss?(x[key]==null||x[loss]==null?'':String(x[key])+'–'+String(x[loss]))"), 'Comparação de franquias deve deixar em branco métricas ausentes.');
 assert.ok(app.includes("(p.position||p.jersey)&&<small>"), 'Ficha do elenco deve ocultar metadados não publicados.');
 assert.ok(server.includes('display_clock:'), 'Backend não entrega o relógio da partida.');
-assert.ok(server.includes('display_clock: validGameClock(g.gameClock)') && server.includes('display_clock: validGameClock(game.gameClock)'), 'Feeds principal e alternativo devem validar o relógio antes de exibi-lo.');
+assert.ok(server.includes('validGameClock(g.gameClock, g.period)') && server.includes('validGameClock(game.gameClock, period)'), 'Feeds principal e alternativo devem validar o relógio antes de exibi-lo, considerando o período.');
 assert.ok(server.includes('function finiteNumberOrNull(value)'), 'Placar não pode transformar texto não numérico em NaN.');
 assert.ok(server.includes('Number.isInteger(m) && Number.isInteger(a) && m >= 0 && a > 0 && m <= a ? m / a : null'), 'Percentuais devem rejeitar conversões negativas, fracionárias ou maiores que tentativas e manter N/D quando ausentes.');
 assert.ok(server.includes('return made <= attempted ? { made, attempted } : { made: null, attempted: null };'), 'Parser de box score deve rejeitar conversões maiores que o total de tentativas.');
