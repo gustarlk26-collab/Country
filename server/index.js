@@ -279,20 +279,30 @@ async function espnGames(start, end) {
   for (let day = queryStart; day <= queryEnd; day = shiftIsoDate(day, 1)) dates.push(day);
   const events = new Map();
   const failures = [];
-  for (let i = 0; i < dates.length; i += 8) {
-    const batch = dates.slice(i, i + 8);
-    const results = await Promise.allSettled(batch.map(async day => {
+  const results = new Array(dates.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(20, dates.length) }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= dates.length) return;
+      const day = dates[index];
       const ymd = day.replaceAll('-', '');
-      return cached('espn-scoreboard-day:' + ymd, async () => {
-        const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=' + ymd + '&limit=1000');
-        return body.events || [];
-      }, 90 * 1000);
-    }));
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') failures.push(batch[index] + ': ' + (result.reason?.message || 'falha ESPN'));
-      else result.value.forEach(event => { if (event?.id) events.set(String(event.id), event); });
-    });
-  }
+      try {
+        const value = await cached('espn-scoreboard-day:' + ymd, async () => {
+          const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=' + ymd + '&limit=1000');
+          return body.events || [];
+        }, 90 * 1000);
+        results[index] = { status: 'fulfilled', value };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  });
+  await Promise.all(workers);
+  results.forEach((result, index) => {
+    if (result?.status === 'rejected') failures.push(dates[index] + ': ' + (result.reason?.message || 'falha ESPN'));
+    else if (result?.status === 'fulfilled') result.value.forEach(event => { if (event?.id) events.set(String(event.id), event); });
+  });
   if (!events.size) throw new Error('ESPN não retornou partidas. ' + (failures.length ? failures.slice(0, 3).join('; ') : 'Confira a temporada e o calendário.'));
   return [...events.values()].flatMap(event => {
     const competition = event.competitions?.[0];
