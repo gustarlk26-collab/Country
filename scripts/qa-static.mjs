@@ -152,6 +152,7 @@ assert.ok(app.includes('let refreshing=false;') && app.includes('let active=true
 assert.ok(app.includes('Promise.allSettled([api(\'/api/teams\'') && app.includes("if(tm.status==='fulfilled')setTeams") && app.includes("if(gm.status==='fulfilled'){setGames") && app.includes('setGamesLoaded(true)'), 'Falha isolada de times ou calendário não deve bloquear o carregamento do outro conjunto de dados, e o calendário só deve ser marcado como carregado após resposta válida.');
 assert.ok(server.includes('Math.min(8, dates.length)'), 'Calendário ESPN deve limitar concorrência para reduzir bloqueios da fonte externa.');
 assert.ok(server.includes("90 * 1000"), 'Cache diário ESPN deve ter TTL definido.');
+assert.ok(app.includes('const boxRequestRef=useRef(0)') && app.includes('const request=++boxRequestRef.current') && app.includes('if(request!==boxRequestRef.current)return') && app.includes('if(request===boxRequestRef.current)setBusy(false)'), 'Respostas atrasadas de box scores não podem sobrescrever a partida selecionada mais recentemente.');
 assert.ok(app.includes("scorePending:'Placar em atualização'"), 'Cards de jogos devem explicar placar pendente sem inventar zero.');
 assert.ok(app.includes("rawStatus.includes('postpon')?copy.postponed"), 'Partidas adiadas não podem aparecer como agendadas.');
 assert.ok(server.includes("rawStatus === 'ppd' ? 'Adiado'"), 'Fallback NBA CDN deve preservar partidas com status PPD.');
