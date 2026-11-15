@@ -102,6 +102,8 @@ assert.ok(app.includes("vs:'VS'"), 'Jogos agendados devem mostrar VS em vez de e
 assert.ok(app.includes("cache:cacheGet?fetchOptions.cache:'no-store'"), 'Atualização forçada ainda pode usar cache HTTP do navegador.');
 
 assert.ok(styles.includes('@media'), 'Regras responsivas não encontradas.');
+assert.ok(app.includes("e.currentTarget.src='/court-icon.svg'"), 'Imagens de atletas devem ter fallback local quando a CDN falhar.');
+assert.ok(!app.includes("style.visibility='hidden'"), 'Falha de headshot não deve deixar espaços vazios na interface.');
 assert.ok(styles.includes('prefers-reduced-motion'), 'Preferência de movimento reduzido não respeitada.');
 assert.ok(worker.includes("url.pathname.startsWith('/api/')"), 'Service worker deve deixar respostas da API fora do cache offline.');
 assert.ok(schema.includes('enable row level security'), 'RLS não está habilitado no esquema.');
