@@ -1285,12 +1285,16 @@ app.get('/api/team-stats',async(_req,res)=>{
     for(const game of gameRows){
       const id=String(game.TEAM_ID||game.Team_ID||'');
       if(!TEAM_META[Number(id)])continue;
-      const item=gameFallback.get(id)||{gp:0,wins:0,losses:0,pts:0,reb:0,ast:0,stl:0,blk:0,fgm:0,fga:0,fg3m:0,fg3a:0};
+      const item=gameFallback.get(id)||{gp:0,decided:0,wins:0,losses:0,pts:0,reb:0,ast:0,stl:0,blk:0,fgm:0,fga:0,fg3m:0,fg3a:0,counts:{pts:0,reb:0,ast:0,stl:0,blk:0,fgm:0,fga:0,fg3m:0,fg3a:0}};
       item.gp++;
-      if(String(game.WL||'').toUpperCase()==='W')item.wins++;
-      if(String(game.WL||'').toUpperCase()==='L')item.losses++;
+      const outcome=String(game.WL||'').toUpperCase();
+      if(outcome==='W'){item.wins++;item.decided++;}
+      if(outcome==='L'){item.losses++;item.decided++;}
       for(const [key,field] of [['pts','PTS'],['reb','REB'],['ast','AST'],['stl','STL'],['blk','BLK'],['fgm','FGM'],['fga','FGA'],['fg3m','FG3M'],['fg3a','FG3A']]){
-        const value=Number(game[field]);if(Number.isFinite(value))item[key]+=value;
+        const raw=game[field];
+        if(raw==null||typeof raw==='boolean'||String(raw).trim()==='')continue;
+        const value=Number(raw);
+        if(Number.isFinite(value)&&value>=0){item[key]+=value;item.counts[key]++;}
       }
       gameFallback.set(id,item);
     }
@@ -1309,14 +1313,14 @@ app.get('/api/team-stats',async(_req,res)=>{
       const nonNegative=value=>{const parsed=number(value);return parsed!=null&&parsed>=0?parsed:null;};
       const positive=value=>{const parsed=number(value);return parsed!=null&&parsed>0?parsed:null;};
       const percentage=value=>{const parsed=number(value);return parsed!=null&&parsed>=0&&parsed<=1?parsed:null;};
-      const average=(total,gp)=>gp>0?total/gp:null;
+      const average=(total,count)=>count>0?total/count:null;
       const gp=nonNegative(row.GP)??(games.gp||null);
-      const wins=nonNegative(row.W)??(games.gp?games.wins:null);
-      const losses=nonNegative(row.L)??(games.gp?games.losses:null);
-      const winPct=percentage(row.W_PCT??standing.win_pct)??(gp>0&&wins!=null?wins/gp:null);
-      const stat=(official,field)=>nonNegative(official)??(games.gp?average(games[field],games.gp):null);
-      const fgPct=percentage(row.FG_PCT)??(games.fga>0?games.fgm/games.fga:null);
-      const fg3Pct=percentage(row.FG3_PCT)??(games.fg3a>0?games.fg3m/games.fg3a:null);
+      const wins=nonNegative(row.W)??(games.decided?games.wins:null);
+      const losses=nonNegative(row.L)??(games.decided?games.losses:null);
+      const winPct=percentage(row.W_PCT??standing.win_pct)??(games.decided>0&&wins!=null&&losses!=null?wins/(wins+losses):null);
+      const stat=(official,field)=>nonNegative(official)??average(games[field],games.counts?.[field]||0);
+      const fgPct=percentage(row.FG_PCT)??(games.counts?.fga>0?games.fgm/games.fga:null);
+      const fg3Pct=percentage(row.FG3_PCT)??(games.counts?.fg3a>0?games.fg3m/games.fg3a:null);
       return {team:{id:teamId,abbreviation,full_name:row.TEAM_NAME||standing.team?.full_name||meta?.[1]||abbreviation,
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
         wins,losses,win_pct:winPct,gp,pts:stat(row.PTS,'pts'),reb:stat(row.REB,'reb'),ast:stat(row.AST,'ast'),stl:stat(row.STL,'stl'),blk:stat(row.BLK,'blk'),
