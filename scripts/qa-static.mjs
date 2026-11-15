@@ -38,6 +38,8 @@ assert.ok(server.includes("if (failures) throw new Error('ESPN não respondeu a 
 assert.ok(server.includes('NBA Live CDN scoreboard'), 'Fonte alternativa do placar ao vivo deve estar identificada.');
 assert.ok(routes.includes('GET /api/games/:id/stats'), 'Endpoint de box score ausente.');
 assert.ok(server.includes('async function nbaGameIdFromEspn(eventId)'), 'Fallback deve converter IDs ESPN em IDs oficiais da NBA quando necessário.');
+assert.ok(server.includes("Number(game.gameType) === 2"), 'Confronto direto deve consultar jogos da temporada regular NBA no fallback CDN.');
+assert.ok(server.includes("Calendário NBA CDN HTTP " ) && server.includes('nenhum jogo regular encontrado para'), 'Confronto direto deve ter fallback NBA CDN quando a ESPN falhar.');
 assert.ok(server.includes('game.gameDateTimeUTC?saoPauloDate(game.gameDateTimeUTC)'), 'Conciliação de IDs de partidas deve usar a mesma data local brasileira nas duas fontes.');
 assert.ok(server.includes('async function nbaLivePeriodSummary(gameId)'), 'Parciais por quarto devem ter fallback NBA Live.');
 assert.ok(server.includes("'NBA Live CDN boxscore'"), 'A origem alternativa dos parciais deve ser identificada.');
