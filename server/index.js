@@ -381,7 +381,9 @@ function formatMinutes(value) {
 }
 function madeAttempt(value) {
   const match = String(value || '').match(/(\d+)\s*[-/]\s*(\d+)/);
-  return match ? { made: Number(match[1]), attempted: Number(match[2]) } : { made: null, attempted: null };
+  if (!match) return { made: null, attempted: null };
+  const made = Number(match[1]), attempted = Number(match[2]);
+  return made <= attempted ? { made, attempted } : { made: null, attempted: null };
 }
 async function espnBoxscore(gameId) {
   const body = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${encodeURIComponent(gameId)}`);
