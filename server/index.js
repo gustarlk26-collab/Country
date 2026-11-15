@@ -1124,13 +1124,26 @@ app.get('/api/news', async (_req, res) => {
 app.get('/api/injuries', async (_req, res) => {
   try {
     const body = await cached('espn:injuries', () => espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries'), 2 * 60 * 1000);
-    const teams = body.injuries || body.teams || [];
-    const data = teams.flatMap(group => (group.injuries || group.items || []).map(item => ({
-      name: item.athlete?.displayName || item.athlete?.fullName || item.name || null,
-      team: group.displayName || group.team?.displayName || group.team?.abbreviation || '',
-      status: item.status || item.type?.description || item.details?.type || 'Status não informado',
-      detail: item.shortComment || item.longComment || item.details?.detail || ''
-    })).filter(item => item.name));
+    const groups = Array.isArray(body.injuries) ? body.injuries : Array.isArray(body.teams) ? body.teams : [];
+    const entries = groups.flatMap(group => {
+      const items = Array.isArray(group.injuries) ? group.injuries
+        : Array.isArray(group.items) ? group.items
+        : (group.athlete || group.name) ? [group] : [];
+      return items.map(item => {
+        const status = item.status;
+        const detail = item.shortComment || item.longComment || item.details?.detail || item.details?.description || '';
+        return {
+          name: item.athlete?.displayName || item.athlete?.fullName || item.name || null,
+          team: group.team?.displayName || group.team?.abbreviation || group.displayName || item.team?.displayName || item.team?.abbreviation || '',
+          status: (typeof status === 'string' ? status : status?.type?.description || status?.description || status?.name)
+            || item.type?.description || item.details?.type || 'Status não informado',
+          detail: typeof detail === 'string' ? detail : ''
+        };
+      }).filter(item => item.name);
+    });
+    const unique = new Map();
+    entries.forEach(item => unique.set(item.team + '|' + item.name, item));
+    const data = [...unique.values()].sort((a,b) => a.name.localeCompare(b.name, 'pt-BR'));
     res.json({ data, source: 'ESPN injuries', updatedAt: new Date().toISOString() });
   } catch (e) { res.status(503).json({ error: 'Relatórios de lesões indisponíveis: ' + e.message }); }
 });
