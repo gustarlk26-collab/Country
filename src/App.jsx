@@ -25,6 +25,7 @@ export default function App(){
  const playerRequestRef=useRef(0);
  const profileRequestRef=useRef(0);
  useEffect(()=>{boxGameRef.current=boxGame;},[boxGame]);
+ useEffect(()=>{if(page!=='boxscore')boxRequestRef.current+=1;},[page]);
  useEffect(()=>{try{localStorage.setItem('courtside-fantasy-roster',JSON.stringify(fantasyIds));}catch{}},[fantasyIds]);
  useEffect(()=>{try{localStorage.setItem('courtside-bet-journal',JSON.stringify(betJournal));}catch{}},[betJournal]);
  useEffect(()=>{const activeGroup=navGroups.find(group=>group.items.some(([key])=>key===page));if(activeGroup)setMobileNavGroup(activeGroup.label)},[page]);
