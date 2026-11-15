@@ -1280,12 +1280,14 @@ app.get('/api/team-stats',async(_req,res)=>{
       const standing=standingsByAbbr.get(abbreviation)||{};
       const teamId=Number(row.TEAM_ID||adv.TEAM_ID)||Number(Object.keys(TEAM_META).find(key=>TEAM_META[key][0]===abbreviation)),meta=TEAM_META[teamId];
       const number=value=>value==null||value===''||!Number.isFinite(Number(value))?null:Number(value);
+      const nonNegative=value=>{const parsed=number(value);return parsed!=null&&parsed>=0?parsed:null;};
+      const positive=value=>{const parsed=number(value);return parsed!=null&&parsed>0?parsed:null;};
       const percentage=value=>{const parsed=number(value);return parsed!=null&&parsed>=0&&parsed<=1?parsed:null;};
       return {team:{id:teamId,abbreviation,full_name:row.TEAM_NAME||standing.team?.full_name||meta?.[1]||abbreviation,
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
-        wins:number(row.W),losses:number(row.L),win_pct:percentage(row.W_PCT??standing.win_pct),
-        gp:number(row.GP),pts:number(row.PTS),reb:number(row.REB),ast:number(row.AST),stl:number(row.STL),blk:number(row.BLK),
-        fg_pct:number(row.FG_PCT),fg3_pct:number(row.FG3_PCT),pace:number(adv.PACE),off_rating:number(adv.OFF_RATING),def_rating:number(adv.DEF_RATING),net_rating:number(adv.NET_RATING)};
+        wins:nonNegative(row.W),losses:nonNegative(row.L),win_pct:percentage(row.W_PCT??standing.win_pct),
+        gp:nonNegative(row.GP),pts:nonNegative(row.PTS),reb:nonNegative(row.REB),ast:nonNegative(row.AST),stl:nonNegative(row.STL),blk:nonNegative(row.BLK),
+        fg_pct:percentage(row.FG_PCT),fg3_pct:percentage(row.FG3_PCT),pace:positive(adv.PACE),off_rating:positive(adv.OFF_RATING),def_rating:positive(adv.DEF_RATING),net_rating:number(adv.NET_RATING)};
     });
     if(!data.length)throw new Error(baseResult.status==='rejected'?baseResult.reason.message:'Fontes não retornaram dados de franquias.');
     const sources=[];
