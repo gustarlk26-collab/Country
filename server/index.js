@@ -355,11 +355,12 @@ async function espnGames(start, end) {
   }).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
 }
 function minutesAsNumber(value) {
+  if (value == null || String(value).trim() === '') return null;
   const formatted = formatMinutes(value);
   const clock = String(formatted || '').match(/^(\d+):(\d{2})$/);
   if (clock) return Number(clock[1]) + Number(clock[2]) / 60;
   const numeric = Number(formatted);
-  return Number.isFinite(numeric) ? numeric : 0;
+  return Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
 }
 function gameScore(stats) {
   const keys = ['pts','fgm','fga','ftm','fta','oreb','dreb','stl','ast','blk','pf','turnover'];
