@@ -995,8 +995,8 @@ app.get('/api/records', async (_req, res) => {
       const leaders = rows.map(row => {
         const rawValue = row[category] ?? row.VALUE;
         const value = rawValue == null || rawValue === '' || !Number.isFinite(Number(rawValue)) ? null : Number(rawValue);
-        return { player_id: row.PLAYER_ID, player_name: row.PLAYER || row.PLAYER_NAME || 'Jogador', value, team: row.TEAM };
-      }).filter(row => row.value != null).slice(0, 10);
+        return { player_id: row.PLAYER_ID, player_name: row.PLAYER || row.PLAYER_NAME || null, value, team: row.TEAM };
+      }).filter(row => row.value != null && row.player_name).slice(0, 10);
       return { category, label, leaders };
     })), 12 * 60 * 60 * 1000);
     res.json({ data, source:'NBA Stats all-time league leaders', updatedAt:new Date().toISOString() });
