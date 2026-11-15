@@ -258,3 +258,7 @@ assert.ok(app.includes("new URL(path,window.location.origin).toString()") && app
 
 assert.ok(styles.includes('.layout.light{') && styles.includes('--bg:#e9eef4') && styles.includes('--panel:#f4f6f8') && styles.includes('LIGHT THEME — warm arena paper'), 'Tema claro deve usar paleta suave de arena, superfícies cinza-azuladas e contraste legível em vez de branco puro.');
 assert.ok(styles.includes('.layout.light .shot-chart') && styles.includes('.layout.light .news-card') && styles.includes('.layout.light .franchise-scoreboard article') && styles.includes('.layout.light .auth-card'), 'Tema claro deve adaptar também componentes especiais, gráficos, notícias, comparador e autenticação.');
+
+assert.ok(app.includes('homeRecord:home.length?') && app.includes("x.homeRecord||'Sem dados na amostra'") && app.includes("x.totalRecord||'Sem partidas finalizadas'"), 'Casa e fora não pode transformar ausência de jogos finalizados em campanha 0–0.');
+assert.ok(app.includes("streak:streakKind?(streakCount<0?recent.length:streakCount):null"), 'Sequências sem jogos não podem ser exibidas como sequência numérica zero.');
+assert.ok(app.includes("s?.min==null?'N/D':fmt(s.min)") && app.includes("s?.pts==null?'N/D':fmt(s.pts)"), 'Rotação não pode deixar células vazias quando a estatística individual não foi retornada.');
