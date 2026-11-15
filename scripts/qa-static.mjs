@@ -118,6 +118,7 @@ assert.ok(app.includes("(p.position||p.jersey)&&<small>"), 'Ficha do elenco deve
 assert.ok(server.includes('display_clock:'), 'Backend não entrega o relógio da partida.');
 assert.ok(server.includes('function finiteNumberOrNull(value)'), 'Placar não pode transformar texto não numérico em NaN.');
 assert.ok(server.includes('function shootingPct(made, attempted)'), 'Percentuais de arremesso devem exigir conversões e tentativas oficiais válidas.');
+assert.ok(server.includes('return made <= attempted ? { made, attempted } : { made: null, attempted: null };'), 'Parser de box score deve rejeitar conversões maiores que o total de tentativas.');
 assert.ok(server.includes("fgParsed.made??finiteNumberOrNull(pick('FGM'))"), 'Parser ESPN deve aceitar arremessos convertidos e tentados em campos separados.');
 assert.ok(server.includes("ftParsed.attempted??finiteNumberOrNull(pick('FTA'))"), 'Parser ESPN deve aceitar tentativas de lance livre em campos separados.');
 assert.ok(server.includes("r.LOC_X != null && r.LOC_X !== '' && r.LOC_Y != null && r.LOC_Y !== ''"), 'Mapa de arremessos não pode colocar tentativas sem coordenadas em 0,0.');
