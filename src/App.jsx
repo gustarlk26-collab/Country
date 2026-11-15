@@ -144,8 +144,9 @@ export default function App(){
       if(updated)setBoxGame(current=>current&&sameGame(current,updated)?({...current,...updated,home_team_score:updated.home_team_score??current.home_team_score,visitor_team_score:updated.visitor_team_score??current.visitor_team_score}):current);
       const activeGame=updated||selectedGame;
       if(page==='boxscore'&&activeGame?.id&&(activeGame.status_state==='in_progress'||activeGame.status_state==='final')){
+        const boxRequest=boxRequestRef.current;
         const score=await api('/api/games/'+encodeURIComponent(activeGame.id)+'/stats',{cache:false});
-        if(!active)return;
+        if(!active||boxRequest!==boxRequestRef.current||!sameGame(boxGameRef.current,activeGame))return;
         setBoxStats(score.data||[]);
       }
     } catch(e) { if(active)setLiveUnavailable(true); /* Mantém os últimos dados válidos durante falhas transitórias. */ }
