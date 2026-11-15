@@ -139,7 +139,7 @@ assert.ok(app.includes('setLiveUnavailable(true)'), 'Falhas do feed ao vivo deve
 assert.ok(app.includes('live-warning'), 'A interface deve diferenciar visualmente o feed indisponível.');
 assert.ok(app.includes('g.display_clock'), 'Relógio da partida não é exibido no cartão.');
 assert.ok(app.includes("pt:'Aguardando atualização',en:'Waiting for update',es:'Esperando actualización'"), 'Rodapé deve informar estado inicial sem exibir N/D.');
-assert.ok(app.includes("s?.min==null?'':fmt(s.min)"), 'Elenco em rotação não deve mostrar zero ou N/D quando o atleta não tem estatística.');
+assert.ok(app.includes("s?.min==null?'N/D':fmt(s.min)") && app.includes("s?.pts==null?'N/D':fmt(s.pts)"), 'Elenco em rotação deve identificar explicitamente estatísticas não retornadas, sem células vazias ou zeros falsos.');
 assert.ok(app.includes("return team[row.key]==null?'Sem dado':fmt(team[row.key],1)") && app.includes("return 'Sem dados'"), 'Comparação de franquias deve sinalizar métricas ausentes sem inventar números.');
 assert.ok(app.includes("(p.position||p.jersey)&&<small>"), 'Ficha do elenco deve ocultar metadados não publicados.');
 assert.ok(server.includes('display_clock:'), 'Backend não entrega o relógio da partida.');
