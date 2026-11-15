@@ -65,6 +65,10 @@ assert.ok(server.includes('const min = stats.minutes ?? null;'), 'Box score NBA 
 assert.match(server, /function scoreboardScore\(value, statusState\)/, 'Placares devem validar o estado da partida antes de exibir pontuação.');
 assert.match(server, /statusState === 'scheduled' \|\| value == null \|\| value === ''/, 'Partidas agendadas ou sem pontuação não podem exibir zero fictício.');
 assert.match(server, /Number\.isSafeInteger\(score\) && score >= 0 \? score : null/, 'Placar deve aceitar apenas inteiros não negativos.');
+assert.match(server, /function validPeriod\(value\)/, 'Períodos devem ser inteiros positivos.');
+assert.match(server, /function periodLabel\(value\)/, 'Rótulos devem identificar corretamente quartos e prorrogações.');
+assert.match(server, /function validGameClock\(value\)/, 'Relógio deve rejeitar formatos e valores inválidos.');
+assert.match(server, /minutes <= 12 \? minutes \+ ':' \+ String\(seconds\)\.padStart\(2, '0'\) : null/, 'Relógio deve respeitar limite de 12 minutos por período.');
 assert.match(server, /if \(value == null \|\| String\(value\)\.trim\(\) === ''\) return null;/, 'Minutos ausentes não podem ser convertidos em zero.');
 assert.match(server, /Number\.isFinite\(numeric\) && numeric >= 0 \? numeric : null/, 'Minutos inválidos ou negativos devem permanecer indisponíveis.');
 assert.ok(server.includes("teams.filter(team => team && Number.isSafeInteger(Number(team.teamId)) && Number(team.teamId) > 0 && /^[A-Z]{3}$/.test(String(team.teamTricode || '')))") && server.includes('(p.teamId == null || Number(p.teamId) === Number(team.teamId))'), 'Box score NBA Live deve validar a equipe e rejeitar atleta associado a outra equipe.');
