@@ -1196,12 +1196,12 @@ app.get('/api/team-stats',async(_req,res)=>{
     const advById=new Map(advanced.map(row=>[String(row.TEAM_ID),row]));
     const baseById=new Map(base.map(row=>[String(row.TEAM_ID),row]));
     const standingsByAbbr=new Map(fallback.map(row=>[row.team?.abbreviation,row]));
-    const ids=new Set([...baseById.keys(),...fallback.map(row=>String(row.team?.abbreviation||'')).filter(Boolean)]);
+    const ids=new Set([...baseById.keys(),...advById.keys(),...fallback.map(row=>String(row.team?.abbreviation||'')).filter(Boolean)]);
     const data=[...ids].map(id=>{
       const row=baseById.get(id)||{},adv=advById.get(id)||{};
-      const abbreviation=row.TEAM_ABBREVIATION||id;
+      const abbreviation=row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||TEAM_META[Number(id)]?.[0]||id;
       const standing=standingsByAbbr.get(abbreviation)||{};
-      const teamId=Number(row.TEAM_ID)||Number(Object.keys(TEAM_META).find(key=>TEAM_META[key][0]===abbreviation)),meta=TEAM_META[teamId];
+      const teamId=Number(row.TEAM_ID||adv.TEAM_ID)||Number(Object.keys(TEAM_META).find(key=>TEAM_META[key][0]===abbreviation)),meta=TEAM_META[teamId];
       const number=value=>value==null||value===''||!Number.isFinite(Number(value))?null:Number(value);
       return {team:{id:teamId,abbreviation,full_name:row.TEAM_NAME||standing.team?.full_name||meta?.[1]||abbreviation,
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
