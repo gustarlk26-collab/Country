@@ -640,3 +640,23 @@ button,.feature-tile,.sidebar nav button{ -webkit-tap-highlight-color:transparen
  .panel,.metric-card,.feature-tile,.evolution-card{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 }
 @media(prefers-reduced-motion:reduce){.layout{background-attachment:scroll,scroll,scroll}}
+
+
+/* Franchise comparison: clear team selection and side-by-side scorecards */
+.franchise-compare{display:grid;gap:18px}
+.franchise-selectors{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;align-items:end;padding:16px;border:1px solid var(--border,rgba(255,255,255,.12));border-radius:16px;background:rgba(8,16,30,.42)}
+.franchise-selectors label{display:grid;gap:8px;min-width:0}
+.franchise-selectors label>span,.franchise-scoreboard article>span{font-size:11px;font-weight:800;letter-spacing:.12em;opacity:.72}
+.franchise-selectors select{width:100%;min-height:46px}
+.franchise-swap{width:44px;height:44px;border-radius:50%;font-size:24px;font-weight:700;line-height:1}
+.franchise-scoreboard{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;align-items:center}
+.franchise-scoreboard article{min-width:0;padding:20px;border:1px solid var(--border,rgba(255,255,255,.12));border-radius:18px;background:linear-gradient(145deg,rgba(24,45,72,.76),rgba(8,16,30,.66));display:grid;gap:8px}
+.franchise-scoreboard article h3{margin:0;font-size:clamp(17px,2.3vw,24px);overflow-wrap:anywhere}
+.franchise-scoreboard article>b{font-size:clamp(25px,4vw,36px);font-variant-numeric:tabular-nums}
+.franchise-scoreboard article>small{opacity:.75}
+.franchise-vs{font-size:13px;font-weight:900;letter-spacing:.1em;opacity:.65}
+.franchise-warning{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px;border:1px solid rgba(245,158,11,.35);border-radius:12px;background:rgba(245,158,11,.08)}
+.franchise-compare .table-wrap{overflow-x:auto}
+.franchise-compare table{min-width:620px}
+.franchise-compare td:last-child{font-weight:700}
+@media(max-width:640px){.franchise-selectors{grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);gap:8px;padding:10px}.franchise-selectors select{font-size:13px;padding:9px 6px}.franchise-swap{width:40px;height:40px}.franchise-scoreboard{gap:7px}.franchise-scoreboard article{padding:12px 10px}.franchise-vs{font-size:11px}}
