@@ -155,7 +155,7 @@ useEffect(()=>{
   if(!session)return;
   let refreshing=false;
   const timer=window.setInterval(async()=>{
-    if(refreshing)return;
+    if(document.visibilityState!=='visible'||refreshing)return;
     refreshing=true;
     try {
       if(page==='rankings'){const r=await api('/api/rankings/recent');setRanking(r.data||[]);}
