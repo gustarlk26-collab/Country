@@ -333,7 +333,9 @@ body{background-color:#050b14;background-image:radial-gradient(ellipse at 50% -1
 .status-scheduled{color:#63a9ed}
 .game-live{background:linear-gradient(90deg,rgba(220,65,65,.09),transparent 70%);border-left:3px solid #e35b62;padding-left:10px}
 @media(max-width:650px){
- .table-wrap{overflow:visible}
+ /* Tabelas extensas precisam rolar no próprio contêiner, sem cortar colunas. */
+ .table-wrap{max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+ .table-wrap table{min-width:560px;width:100%}
  .table-wrap table{width:100%;table-layout:fixed;white-space:normal;font-size:10px}
  .table-wrap th,.table-wrap td{padding:7px 4px;overflow-wrap:anywhere;word-break:normal}
  .table-wrap th{font-size:8px;letter-spacing:0}
