@@ -336,11 +336,12 @@ function formatGameClock(value){
  return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
 }
 function GameList({games,onOpen,t,lang='pt'}){
- const labels={pt:{live:'● AO VIVO',scheduled:'Agendado',away:'Visitante',home:'Mandante',awaiting:'Aguardando jogo',time:'Horário não informado',vs:'VS',scorePending:'Placar em atualização',noScore:'Placar indisponível'},en:{live:'● LIVE',scheduled:'Scheduled',away:'Away',home:'Home',awaiting:'Awaiting game',time:'Time not announced',vs:'VS',scorePending:'Score updating',noScore:'Score unavailable'},es:{live:'● EN VIVO',scheduled:'Programado',away:'Visitante',home:'Local',awaiting:'Esperando el partido',time:'Horario no anunciado',vs:'VS',scorePending:'Actualizando marcador',noScore:'Marcador no disponible'}};
+ const labels={pt:{live:'● AO VIVO',scheduled:'Agendado',postponed:'Adiado',cancelled:'Cancelado',suspended:'Suspenso',delayed:'Atrasado',away:'Visitante',home:'Mandante',awaiting:'Aguardando jogo',time:'Horário não informado',vs:'VS',scorePending:'Placar em atualização',noScore:'Placar indisponível'},en:{live:'● LIVE',scheduled:'Scheduled',postponed:'Postponed',cancelled:'Canceled',suspended:'Suspended',delayed:'Delayed',away:'Away',home:'Home',awaiting:'Awaiting game',time:'Time not announced',vs:'VS',scorePending:'Score updating',noScore:'Score unavailable'},es:{live:'● EN VIVO',scheduled:'Programado',postponed:'Aplazado',cancelled:'Cancelado',suspended:'Suspendido',delayed:'Retrasado',away:'Visitante',home:'Local',awaiting:'Esperando el partido',time:'Horario no anunciado',vs:'VS',scorePending:'Actualizando marcador',noScore:'Marcador no disponible'}};
  const copy=labels[lang]||labels.pt;
  return games?.length?<div className="games-list">{games.map(g=>{
   const live=g.status_state==='in_progress',final=g.status_state==='final',hasScore=Number.isFinite(Number(g.visitor_team_score))&&g.visitor_team_score!=null&&Number.isFinite(Number(g.home_team_score))&&g.home_team_score!=null,canOpen=live||final;
-  const status=live?copy.live:final?'FINAL':copy.scheduled;
+  const rawStatus=String(g.status||'').toLowerCase();
+  const status=live?copy.live:final?'FINAL':rawStatus.includes('postpon')?copy.postponed:rawStatus.includes('cancel')?copy.cancelled:rawStatus.includes('suspend')?copy.suspended:rawStatus.includes('delay')?copy.delayed:copy.scheduled;
   const clock=live&&g.display_clock?' · '+(g.period_label?g.period_label+' ':'')+formatGameClock(g.display_clock):'';
   const visitorAbbr=g.visitor_team?.abbreviation||g.visitor_team?.full_name||copy.away;
   const homeAbbr=g.home_team?.abbreviation||g.home_team?.full_name||copy.home;
