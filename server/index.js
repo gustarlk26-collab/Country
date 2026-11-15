@@ -154,8 +154,9 @@ async function nbaHistoricalBoxscore(gameId) {
     row.game_score = gameScore(row);
     return row;
   });
-  if (!data.length) throw new Error('A NBA não retornou atletas com minutos jogados para esta partida.');
-  return data;
+  const uniqueData = [...new Map(data.filter(row => Number.isSafeInteger(Number(row.id)) && Number(row.id) > 0 && String(row.player?.first_name || row.player?.last_name || '').trim()).map(row => [`${row.team?.abbreviation || row.team?.id || ''}|${row.id}`, row])).values()];
+  if (!uniqueData.length) throw new Error('A NBA não retornou atletas válidos com minutos jogados para esta partida.');
+  return uniqueData;
 }
 async function nbaGameIdFromEspn(eventId) {
   const body=await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event='+encodeURIComponent(eventId));
@@ -415,8 +416,9 @@ async function espnBoxscore(gameId) {
       return row;
     });
   }).filter(Boolean);
-  if (!rows.length) throw new Error('ESPN não retornou atletas com minutos jogados para esta partida.');
-  return rows;
+  const uniqueRows = [...new Map(rows.filter(row => Number.isSafeInteger(Number(row.id)) && Number(row.id) > 0 && String(row.player?.first_name || row.player?.last_name || '').trim()).map(row => [`${row.team?.abbreviation || row.team?.id || ''}|${row.id}`, row])).values()];
+  if (!uniqueRows.length) throw new Error('ESPN não retornou atletas válidos com minutos jogados para esta partida.');
+  return uniqueRows;
 }
 
 async function espnTeamRoster(abbreviation) {
