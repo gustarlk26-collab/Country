@@ -117,7 +117,7 @@ assert.ok(app.includes("value=x=>!x?'':loss?(x[key]==null||x[loss]==null?'':Stri
 assert.ok(app.includes("(p.position||p.jersey)&&<small>"), 'Ficha do elenco deve ocultar metadados não publicados.');
 assert.ok(server.includes('display_clock:'), 'Backend não entrega o relógio da partida.');
 assert.ok(server.includes('function finiteNumberOrNull(value)'), 'Placar não pode transformar texto não numérico em NaN.');
-assert.ok(server.includes('function shootingPct(made, attempted)'), 'Percentuais de arremesso devem exigir conversões e tentativas oficiais válidas.');
+assert.ok(server.includes('Number.isInteger(m) && Number.isInteger(a) && m >= 0 && a > 0 && m <= a ? m / a : null'), 'Percentuais devem rejeitar conversões negativas, fracionárias ou maiores que tentativas e manter N/D quando ausentes.');
 assert.ok(server.includes('return made <= attempted ? { made, attempted } : { made: null, attempted: null };'), 'Parser de box score deve rejeitar conversões maiores que o total de tentativas.');
 assert.ok(server.includes('function validatedAttemptPair(made, attempted)') && server.includes("validatedAttemptPair(fgParsed.made ?? pick('FGM'), fgParsed.attempted ?? pick('FGA'))"), 'Parser ESPN deve validar campos separados de arremessos de quadra.');
 assert.ok(server.includes("validatedAttemptPair(ftParsed.made ?? pick('FTM'), ftParsed.attempted ?? pick('FTA'))"), 'Parser ESPN deve validar campos separados de lance livre.');
