@@ -65,6 +65,7 @@ assert.ok(app.includes('window.setInterval(refreshLive,15000)'), 'Atualização 
 assert.ok(app.includes('setLiveUnavailable(true)'), 'Falhas do feed ao vivo devem ser identificadas na interface.');
 assert.ok(app.includes('live-warning'), 'A interface deve diferenciar visualmente o feed indisponível.');
 assert.ok(app.includes('g.display_clock'), 'Relógio da partida não é exibido no cartão.');
+assert.ok(app.includes("pt:'Aguardando atualização',en:'Waiting for update',es:'Esperando actualización'"), 'Rodapé deve informar estado inicial sem exibir N/D.');
 assert.ok(server.includes('display_clock:'), 'Backend não entrega o relógio da partida.');
 assert.ok(server.includes("const today = saoPauloDate(new Date().toISOString())"), 'Calendário CDN deve usar a data local de São Paulo.');
 assert.ok(server.includes("espn-scoreboard-day:"), 'Consultas diárias ESPN devem usar cache para reduzir chamadas repetidas.');
