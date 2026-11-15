@@ -417,12 +417,41 @@ async function espnBoxscore(gameId) {
   if (!rows.length) throw new Error('ESPN não retornou atletas com minutos jogados para esta partida.');
   return rows;
 }
+const ESPN_TEAM_IDS = {
+  ATL:1,BOS:2,NOP:3,CHI:4,CLE:5,DAL:6,DEN:7,DET:8,GSW:9,HOU:10,
+  IND:11,LAC:12,LAL:13,MIA:14,MIL:15,MIN:16,BKN:17,NYK:18,ORL:19,
+  PHI:20,PHX:21,POR:22,SAC:23,SAS:24,OKC:25,UTA:26,WAS:27,TOR:28,MEM:29,CHA:30
+};
+async function espnTeamRoster(abbreviation) {
+  const meta = Object.values(TEAM_META).find(item => item[0] === abbreviation);
+  const teamId = ESPN_TEAM_IDS[abbreviation];
+  if (!meta || !teamId) throw new Error('Franquia NBA não encontrada: ' + abbreviation);
+  return cached('espn:roster:' + abbreviation, async () => {
+    const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/' + teamId + '/roster');
+    const groups = body.athletes || [];
+    const athletes = groups.flatMap(group => Array.isArray(group.items) ? group.items : [group]);
+    const roster = athletes.filter(p => p && (p.id || p.uid)).map(p => {
+      const fullName = p.fullName || p.displayName || '';
+      const parts = fullName.split(' ');
+      return {
+        id: Number(p.id || String(p.uid).split(':').pop()),
+        first_name: p.firstName || parts.slice(0,-1).join(' '),
+        last_name: p.lastName || parts.slice(-1)[0] || '',
+        position: p.position?.abbreviation || p.position?.name || '',
+        team: { abbreviation, full_name: meta[1] || abbreviation },
+        is_active: true, headshot: p.headshot?.href || p.headshot || null,
+        espn_id:Number(p.id||String(p.uid).split(':').pop()),
+        height:p.displayHeight||p.height||null,weight:p.displayWeight||p.weight||null,
+        birth_date:p.dateOfBirth||null,age:p.age??null,birth_place:p.birthPlace||null,
+        college:p.college?.name||p.college||null,experience:p.experience?.displayValue||p.experience?.years||null,
+        jersey:p.jersey||null,family:p.relatives||p.family||null
+      };
+    });
+    if (!roster.length) throw new Error('ESPN retornou elenco vazio para ' + abbreviation);
+    return roster;
+  }, 30 * 60 * 1000);
+}
 async function espnPlayers() {
-  const ids = {
-    ATL:1,BOS:2,NOP:3,CHI:4,CLE:5,DAL:6,DEN:7,DET:8,GSW:9,HOU:10,
-    IND:11,LAC:12,LAL:13,MIA:14,MIL:15,MIN:16,BKN:17,NYK:18,ORL:19,
-    PHI:20,PHX:21,POR:22,SAC:23,SAS:24,OKC:25,UTA:26,WAS:27,TOR:28,MEM:29,CHA:30
-  };
   const teams = Object.values(TEAM_META).map(meta => meta[0]);
   const results = new Array(teams.length);
   let cursor = 0;
@@ -430,34 +459,8 @@ async function espnPlayers() {
     while (true) {
       const index = cursor++;
       if (index >= teams.length) return;
-      const abbreviation = teams[index];
-      const teamId = ids[abbreviation];
       try {
-        const players = await cached('espn:roster:' + abbreviation, async () => {
-          const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/' + teamId + '/roster');
-          const groups = body.athletes || [];
-          const athletes = groups.flatMap(group => Array.isArray(group.items) ? group.items : [group]);
-          const fullTeam = Object.values(TEAM_META).find(meta => meta[0] === abbreviation)?.[1] || abbreviation;
-          const roster = athletes.filter(p => p && (p.id || p.uid)).map(p => {
-            const fullName = p.fullName || p.displayName || '';
-            const parts = fullName.split(' ');
-            return {
-              id: Number(p.id || String(p.uid).split(':').pop()),
-              first_name: p.firstName || parts.slice(0,-1).join(' '),
-              last_name: p.lastName || parts.slice(-1)[0] || '',
-              position: p.position?.abbreviation || p.position?.name || '',
-              team: { abbreviation, full_name: fullTeam },
-              is_active: true, headshot: p.headshot?.href || p.headshot || null, espn_id:Number(p.id||String(p.uid).split(':').pop()),
-              height:p.displayHeight||p.height||null,weight:p.displayWeight||p.weight||null,
-              birth_date:p.dateOfBirth||null,age:p.age??null,birth_place:p.birthPlace||null,
-              college:p.college?.name||p.college||null,experience:p.experience?.displayValue||p.experience?.years||null,
-              jersey:p.jersey||null,family:p.relatives||p.family||null
-            };
-          });
-          if (!roster.length) throw new Error('ESPN retornou elenco vazio para ' + abbreviation);
-          return roster;
-        }, 30 * 60 * 1000);
-        results[index] = { status: 'fulfilled', value: players };
+        results[index] = { status: 'fulfilled', value: await espnTeamRoster(teams[index]) };
       } catch (reason) {
         results[index] = { status: 'rejected', reason };
       }
@@ -471,6 +474,7 @@ async function espnPlayers() {
   if (!unique.size) throw new Error('ESPN não retornou os elencos; a fonte externa está indisponível.');
   return [...unique.values()].sort((a,b) => a.last_name.localeCompare(b.last_name));
 }
+
 async function espnStandings() {
   const body = await espnJson('https://site.api.espn.com/apis/v2/sports/basketball/nba/standings');
   const groups = body.children || body.standings?.children || [];
@@ -512,8 +516,7 @@ app.get('/api/teams/:abbr/roster', async (req,res)=>{
     const abbreviation=String(req.params.abbr||'').toUpperCase();
     const meta=Object.values(TEAM_META).find(item=>item[0]===abbreviation);
     if(!meta)return res.status(404).json({error:'Franquia NBA não encontrada.'});
-    const all=await cached('espn:active-players',espnPlayers,30*60*1000);
-    const data=all.filter(player=>player.team?.abbreviation===abbreviation);
+    const data=await espnTeamRoster(abbreviation);
     res.json({data,team:{abbreviation,name:meta[1],conference:meta[2],division:meta[3]},source:'ESPN team roster',updatedAt:new Date().toISOString()});
   }catch(e){res.status(503).json({error:'Elenco indisponível: '+e.message});}
 });
