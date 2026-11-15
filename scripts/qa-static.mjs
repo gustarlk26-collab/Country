@@ -71,7 +71,8 @@ assert.match(server, /function validPeriod\(value\)/, 'Períodos devem ser intei
 assert.match(server, /function periodLabel\(value\)/, 'Rótulos devem identificar corretamente quartos e prorrogações.');
 assert.match(server, /function validGameClock\(value\)/, 'Relógio deve rejeitar formatos e valores inválidos.');
 assert.ok(server.includes(String.raw`raw.match(/^(\d{1,2}):([0-5]\d)$/)`) && server.includes(String.raw`raw.match(/^PT(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/i)`), 'Relógio deve reconhecer MM:SS e durações ISO 8601 com dígitos reais.');
-assert.ok(server.includes("minutes < 12 || (minutes === 12 && seconds === 0)"), 'Relógio não pode aceitar mais de 12:00 como tempo restante de um período NBA.');
+assert.ok(server.includes('const maxMinutes = Number(period) > 4 ? 5 : 12') && server.includes('minutes < maxMinutes || (minutes === maxMinutes && seconds === 0)'), 'Relógio deve respeitar 12:00 nos quartos e 5:00 nas prorrogações.');
+assert.ok(server.includes('validGameClock(g.gameClock, g.period)') && server.includes('validGameClock(statusInfo.displayClock, period)'), 'Feeds devem informar o período ao validar o relógio.');
 assert.match(server, /if \(value == null \|\| String\(value\)\.trim\(\) === ''\) return null;/, 'Minutos ausentes não podem ser convertidos em zero.');
 assert.match(server, /Number\.isFinite\(numeric\) && numeric >= 0 \? numeric : null/, 'Minutos inválidos ou negativos devem permanecer indisponíveis.');
 assert.ok(server.includes("teams.filter(team => team && Number.isSafeInteger(Number(team.teamId)) && Number(team.teamId) > 0 && /^[A-Z]{3}$/.test(String(team.teamTricode || '')))") && server.includes('(p.teamId == null || Number(p.teamId) === Number(team.teamId))'), 'Box score NBA Live deve validar a equipe e rejeitar atleta associado a outra equipe.');
