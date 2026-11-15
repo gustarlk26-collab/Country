@@ -992,10 +992,12 @@ app.get('/api/records', async (_req, res) => {
         SeasonType:'Regular Season', StatCategory:category
       });
       const rows = sets[0] || [];
-      return { category, label, leaders: rows.slice(0,10).map(row => ({
-        player_id: row.PLAYER_ID, player_name: row.PLAYER || row.PLAYER_NAME || 'Jogador',
-        value: Number(row[category] ?? row.VALUE ?? 0), team: row.TEAM
-      })) };
+      const leaders = rows.map(row => {
+        const rawValue = row[category] ?? row.VALUE;
+        const value = rawValue == null || rawValue === '' || !Number.isFinite(Number(rawValue)) ? null : Number(rawValue);
+        return { player_id: row.PLAYER_ID, player_name: row.PLAYER || row.PLAYER_NAME || 'Jogador', value, team: row.TEAM };
+      }).filter(row => row.value != null).slice(0, 10);
+      return { category, label, leaders };
     })), 12 * 60 * 60 * 1000);
     res.json({ data, source:'NBA Stats all-time league leaders', updatedAt:new Date().toISOString() });
   } catch (e) { res.status(e.status || 503).json({ error:'Recordes históricos temporariamente indisponíveis: '+e.message }); }
