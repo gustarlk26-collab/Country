@@ -772,8 +772,8 @@ async function nbaLivePeriodSummary(gameId) {
   const competitors = teams.map(team => ({
     name: [team.teamCity, team.teamName].filter(Boolean).join(' ') || team.teamTricode || 'Time',
     abbreviation: team.teamTricode || '',
-    score: team.score == null ? null : Number(team.score),
-    linescores: (team.periods || []).map(period => period.score == null ? null : Number(period.score))
+    score: finiteNumberOrNull(team.score),
+    linescores: (Array.isArray(team.periods) ? team.periods : []).map(period => finiteNumberOrNull(period?.score))
   }));
   const periods = competitors.reduce((max, team) => Math.max(max, team.linescores.length), 0);
   if (!competitors.some(team => team.abbreviation) || !periods) throw new Error('NBA Live não publicou parciais por período para este jogo.');
