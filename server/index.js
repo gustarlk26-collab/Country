@@ -203,9 +203,13 @@ async function espnJson(url) {
   return response.json();
 }
 async function nbaCdnGames(start, end) {
-  const schedulePromise = fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json', {
-    headers: NBA_HEADERS, signal: AbortSignal.timeout(8000)
-  }).then(async r => { if (!r.ok) throw new Error(`NBA CDN schedule HTTP ${r.status}`); return r.json(); });
+  const schedulePromise = cached('nba:season-schedule', async () => {
+    const response = await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json', {
+      headers: NBA_HEADERS, signal: AbortSignal.timeout(8000)
+    });
+    if (!response.ok) throw new Error('NBA CDN schedule HTTP ' + response.status);
+    return response.json();
+  }, 6 * 60 * 60 * 1000);
   const today = saoPauloDate(new Date().toISOString());
   const [schedule, live] = await Promise.all([
     schedulePromise,
