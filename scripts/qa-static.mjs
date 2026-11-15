@@ -59,7 +59,7 @@ assert.equal(new Set(routeKeys).size, routeKeys.length, 'Há rotas HTTP duplicad
 assert.ok(schema.includes('auth.uid() = user_id'), 'As políticas Supabase devem restringir os dados ao usuário autenticado.');
 assert.ok(schema.includes('with check (auth.uid() = user_id)'), 'As gravações Supabase devem validar o proprietário do registro.');
 assert.ok(server.includes('fgm: numberOrNull(r.FGM)'), 'Médias não devem transformar campos vazios em zero.');
-assert.ok(server.includes('return match ? { made: Number(match[1]), attempted: Number(match[2]) } : { made: null, attempted: null };'), 'Arremessos ausentes no box score ESPN não podem virar zero fictício.');
+assert.ok(server.includes('if (!match) return { made: null, attempted: null };') && server.includes('return made <= attempted ? { made, attempted } : { made: null, attempted: null };'), 'Arremessos ausentes ou impossíveis no box score ESPN não podem virar zero fictício.');
 assert.ok(server.includes('!Number.isSafeInteger(athleteId) || athleteId <= 0 || !fullName.trim()'), 'Box score ESPN não deve criar linhas com atletas sem ID ou nome válido.');
 assert.ok(server.includes('const min = stats.minutes ?? null;'), 'Box score NBA Live não deve inventar 0:00 quando os minutos não foram publicados.');
 assert.ok(server.includes("teams.filter(team => team && Number.isSafeInteger(Number(team.teamId)) && Number(team.teamId) > 0 && /^[A-Z]{3}$/.test(String(team.teamTricode || '')))") && server.includes('(p.teamId == null || Number(p.teamId) === Number(team.teamId))'), 'Box score NBA Live deve validar a equipe e rejeitar atleta associado a outra equipe.');
