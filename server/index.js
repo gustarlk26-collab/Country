@@ -81,7 +81,7 @@ function dedupeGamePlayers(rows) {
 }
 function finiteNumberOrNull(value) { return value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value); }
 function scoreboardScore(value, statusState) {
-  if (statusState === 'scheduled' || value == null || value === '') return null;
+  if (statusState === 'scheduled' || value == null || (typeof value === 'string' && value.trim() === '')) return null;
   const score = Number(value);
   return Number.isSafeInteger(score) && score >= 0 ? score : null;
 }
