@@ -56,6 +56,7 @@ assert.ok(app.includes('p.team?.abbreviation===teamA&&p.pts!=null'), 'Destaques 
 assert.ok(app.includes('Nenhum valor será estimado.'), 'Painéis de times devem explicar a ausência de métricas sem inventar números.');
 assert.ok(app.includes("const raw=p[m.key],value=raw==null||raw===''?null:Number(raw)"), 'Perfil de estilo não pode transformar estatística ausente em zero.');
 assert.ok(app.includes("].filter(x=>x.value!=null&&x.value!=='')"), 'Biografia deve ocultar campos que a fonte não forneceu.');
+assert.ok(app.includes("Number.isFinite(new Date(playerBio.birth_date).getTime())?new Date(playerBio.birth_date).toLocaleDateString"), 'Biografia deve validar datas antes de exibi-las.');
 assert.ok(app.includes("Sem partidas no período"), 'Ferramentas de forma devem explicar quando não há amostra.');
 
 
