@@ -660,3 +660,26 @@ button,.feature-tile,.sidebar nav button{ -webkit-tap-highlight-color:transparen
 .franchise-compare table{min-width:620px}
 .franchise-compare td:last-child{font-weight:700}
 @media(max-width:640px){.franchise-selectors{grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);gap:8px;padding:10px}.franchise-selectors select{font-size:13px;padding:9px 6px}.franchise-swap{width:40px;height:40px}.franchise-scoreboard{gap:7px}.franchise-scoreboard article{padding:12px 10px}.franchise-vs{font-size:11px}}
+
+
+/* Courtside visual refresh: premium NBA analytics dashboard */
+.layout{background:radial-gradient(ellipse at 78% 0%,rgba(24,104,181,.20),transparent 34%),linear-gradient(145deg,#06101f 0%,#091a2d 52%,#071426 100%);background-attachment:fixed}
+.sidebar{background:linear-gradient(180deg,rgba(7,20,37,.97),rgba(5,15,28,.985));border-right:1px solid rgba(103,164,220,.16);box-shadow:12px 0 42px rgba(0,0,0,.18);backdrop-filter:blur(18px)}
+.brand{padding-bottom:30px}.brand-icon{width:42px;height:42px;border-radius:14px;box-shadow:0 8px 24px rgba(20,121,232,.32);background:linear-gradient(145deg,#2696ff,#0759bd)}
+.brand b{letter-spacing:1.6px}.sidebar nav button{border:1px solid transparent;transition:background .2s,border-color .2s,transform .2s}.sidebar nav button:hover{transform:translateX(2px);background:rgba(34,112,184,.16);border-color:rgba(76,157,231,.14)}.sidebar nav button.active{background:linear-gradient(100deg,rgba(20,121,232,.28),rgba(20,121,232,.08));border-color:rgba(70,157,235,.25);box-shadow:inset 3px 0 #2995ff;color:#fff}
+.main{background:transparent}.topbar{position:sticky;top:0;z-index:4;background:rgba(7,20,37,.76);backdrop-filter:blur(18px);border-bottom:1px solid rgba(112,164,210,.15);padding:22px clamp(18px,3vw,42px);min-height:94px}
+.topbar h1{font-size:clamp(23px,2.2vw,30px);letter-spacing:-.8px}.eyebrow{letter-spacing:2.2px;color:#65b5ff}
+.content{padding:clamp(18px,2.6vw,36px);max-width:1580px}
+.panel,.metric-card,.team-card,.feature-tile{border:1px solid rgba(122,171,215,.16);background:linear-gradient(145deg,rgba(17,40,65,.92),rgba(10,28,48,.94));box-shadow:0 14px 36px rgba(0,0,0,.16);border-radius:17px;transition:border-color .2s,transform .2s,box-shadow .2s}
+.panel{padding:clamp(17px,2vw,25px);margin-bottom:20px}.panel:hover,.metric-card:hover{border-color:rgba(75,159,231,.3);box-shadow:0 18px 42px rgba(0,0,0,.22)}
+.panel h2{font-size:18px;letter-spacing:-.25px}.metric-card{padding:20px;position:relative;overflow:hidden;gap:10px}.metric-card:after{content:"";position:absolute;width:110px;height:110px;right:-44px;top:-48px;border-radius:50%;background:rgba(37,139,231,.10);filter:blur(2px)}.metric-card svg{color:#69b8ff;width:20px;height:20px}.metric-card b{font-size:29px;letter-spacing:-1px}
+.primary{background:linear-gradient(135deg,#1688f5,#0863c5);border-color:#278eea;box-shadow:0 6px 18px rgba(13,111,210,.22)}.primary:hover{filter:brightness(1.1);transform:translateY(-1px)}.secondary{background:rgba(27,57,86,.75);border-color:rgba(127,174,216,.2)}.secondary:hover{border-color:rgba(91,174,245,.48);background:rgba(35,76,115,.8)}
+input,select{background:rgba(5,19,34,.8);border-color:rgba(125,171,211,.22)}input:focus,select:focus{box-shadow:0 0 0 3px rgba(39,137,239,.14)}
+table{font-size:12.5px}th{color:#8eabc8;letter-spacing:1px}td{border-bottom-color:rgba(119,164,205,.12)}tbody tr:hover{background:rgba(47,116,174,.12)}
+.feature-hub{background:radial-gradient(ellipse at 90% 0%,rgba(23,123,211,.2),transparent 42%),linear-gradient(140deg,rgba(16,43,70,.97),rgba(8,25,44,.98));border-color:rgba(86,159,220,.24)}.feature-tile{background:linear-gradient(145deg,rgba(22,51,79,.92),rgba(12,32,53,.96));text-align:left;padding:18px}.feature-tile:hover{transform:translateY(-3px);border-color:rgba(79,169,244,.48);box-shadow:0 16px 30px rgba(0,0,0,.24)}.feature-icon{background:linear-gradient(145deg,rgba(35,143,239,.24),rgba(13,79,144,.18));border:1px solid rgba(83,169,239,.2);border-radius:12px}
+.game-row{padding:17px 10px;border-bottom-color:rgba(119,164,205,.14);border-radius:10px;transition:background .18s}.game-row:hover{background:rgba(35,103,161,.12)}
+.mvp-card{background:radial-gradient(circle at 85% 20%,rgba(75,167,245,.3),transparent 35%),linear-gradient(110deg,#174a78,#0b2038);border:1px solid rgba(113,187,245,.22);border-radius:17px;box-shadow:0 16px 36px rgba(0,0,0,.2)}
+.alert{background:rgba(113,35,47,.28);border-color:rgba(229,91,108,.35)}.toast{background:rgba(18,92,70,.28);border:1px solid rgba(64,190,143,.25)}
+@media(max-width:900px){.topbar{position:relative;padding:18px}.content{padding:16px}.panel{border-radius:14px}.cards{gap:10px}}
+@media(prefers-reduced-motion:no-preference){.panel,.metric-card,.feature-tile{animation:cfRise .42s ease both}@keyframes cfRise{from{opacity:.65;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}}
+.layout.light .sidebar{background:rgba(248,251,255,.96);border-right-color:#dbe5f0}.layout.light .topbar{background:rgba(248,251,255,.86);border-bottom-color:#dce6f0}.layout.light .panel,.layout.light .metric-card,.layout.light .team-card,.layout.light .feature-tile{background:linear-gradient(145deg,#fff,#f5f8fc);border-color:#dce6f0;box-shadow:0 10px 28px rgba(32,67,105,.07)}
