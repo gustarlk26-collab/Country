@@ -32,6 +32,13 @@ assert.ok(app.includes("api('/api/games/live',{cache:false})"), 'Frontend não c
 assert.ok(app.includes('window.setInterval(refreshLive,15000)'), 'Atualização automática do placar não está configurada para 15 segundos.');
 assert.ok(app.includes('g.display_clock'), 'Relógio da partida não é exibido no cartão.');
 assert.ok(server.includes('display_clock:'), 'Backend não entrega o relógio da partida.');
+assert.ok(server.includes("const today = saoPauloDate(new Date().toISOString())"), 'Calendário CDN deve usar a data local de São Paulo.');
+assert.ok(server.includes("espn-scoreboard-day:"), 'Consultas diárias ESPN devem usar cache para reduzir chamadas repetidas.');
+assert.ok(server.includes("90 * 1000"), 'Cache diário ESPN deve ter TTL definido.');
+assert.ok(app.includes("scorePending:'Placar em atualização'"), 'Cards de jogos devem explicar placar pendente sem inventar zero.');
+assert.ok(app.includes("noScore:'Placar indisponível'"), 'Cards de jogos finalizados sem score devem explicar a ausência de dado.');
+assert.ok(app.includes("vs:'VS'"), 'Jogos agendados devem mostrar VS em vez de estatística fictícia ou N/D.');
+
 assert.ok(app.includes("cache:cacheGet?fetchOptions.cache:'no-store'"), 'Atualização forçada ainda pode usar cache HTTP do navegador.');
 
 assert.ok(styles.includes('@media'), 'Regras responsivas não encontradas.');
