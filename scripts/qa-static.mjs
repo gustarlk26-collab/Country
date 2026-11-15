@@ -128,6 +128,7 @@ assert.ok(server.includes('30 * 60 * 1000'), 'Cache do calendário alternativo d
 assert.ok(server.includes("espn-scoreboard-day:"), 'Consultas diárias ESPN devem usar cache para reduzir chamadas repetidas.');
 assert.ok(server.includes("if (failures.length) throw new Error('Calendário ESPN incompleto ('"), 'Calendário parcial da ESPN deve acionar o calendário completo da NBA CDN.');
 assert.ok(server.includes("espn:roster:' + abbreviation"), 'Elencos ESPN devem ser armazenados em cache por franquia.');
+assert.ok(server.includes('Number.isSafeInteger(player.id) && player.id > 0') && server.includes('new Map(roster.map(player => [player.id, player]))'), 'Elencos devem descartar IDs inválidos e deduplicar jogadores por ID oficial.');
 assert.ok(server.includes('async function espnTeamRoster(abbreviation)') && server.includes('const data=await espnTeamRoster(abbreviation);'), 'A página de elenco deve consultar somente a franquia selecionada, sem carregar os 30 elencos.');
 assert.ok(server.includes('Math.min(6, teams.length)'), 'Consultas de elenco devem limitar concorrência para evitar bloqueios da ESPN.');
 assert.ok(server.includes('new Set([...baseById.keys(),...advById.keys(),...fallback.map(row=>String(row.team?.abbreviation||\'\')).filter(Boolean)])'), 'Estatísticas dos times devem preservar franquias retornadas por qualquer uma das fontes disponíveis.');
