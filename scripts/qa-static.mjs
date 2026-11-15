@@ -45,6 +45,8 @@ assert.ok(app.includes("const fallbackStats=bio?.stats||{}"), 'Perfil deve usar 
 assert.ok(app.includes("raw==null||raw===''||!Number.isFinite(Number(raw))?NaN:Number(raw)"), 'Props não podem interpretar estatística ausente como zero.');
 assert.ok(app.includes('alphaAverages.filter(p=>p[statMetric]!=null'), 'Rankings estatísticos devem excluir métricas ausentes.');
 assert.ok(app.includes('averages.filter(p=>p[category.key]!=null'), 'Destaques por categoria devem excluir valores ausentes.');
+assert.ok(app.includes("const rows=alphaTeamStats.filter(x=>x.pace!=null)"), 'Painel Pace deve ocultar times sem métrica oficial.');
+assert.ok(app.includes('Nenhum valor será estimado.'), 'Painéis de times devem explicar a ausência de métricas sem inventar números.');
 assert.ok(app.includes("const raw=p[m.key],value=raw==null||raw===''?null:Number(raw)"), 'Perfil de estilo não pode transformar estatística ausente em zero.');
 assert.ok(app.includes("].filter(x=>x.value!=null&&x.value!=='')"), 'Biografia deve ocultar campos que a fonte não forneceu.');
 assert.ok(app.includes("Sem partidas no período"), 'Ferramentas de forma devem explicar quando não há amostra.');
