@@ -555,7 +555,12 @@ async function espnStandings() {
       win_pct: stats.winPercent ?? stats.win_pct ?? null
     };
   }));
-  return entries.sort((a,b) => (b.win_pct ?? 0) - (a.win_pct ?? 0));
+  return entries.sort((a,b) => {
+    if (a.win_pct == null && b.win_pct != null) return 1;
+    if (b.win_pct == null && a.win_pct != null) return -1;
+    const percentageOrder = (Number(b.win_pct) || 0) - (Number(a.win_pct) || 0);
+    return percentageOrder || a.team.full_name.localeCompare(b.team.full_name, 'en');
+  });
 }
 
 async function requireFamily(req, res, next) {
