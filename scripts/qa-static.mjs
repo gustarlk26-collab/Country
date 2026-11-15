@@ -41,6 +41,8 @@ assert.ok(server.includes('rows.filter(r => Number(r.GP) > 0).map(r => ({'), 'Ra
 assert.ok(server.includes("apis/common/v3/sports/basketball/nba/athletes/"), 'Perfil deve ter uma fonte alternativa ESPN para dados de temporada.');
 assert.ok(server.includes("overview.statistics||overview.stats?.statistics"), 'Fallback ESPN deve ler somente o bloco estatístico documentado.');
 assert.ok(app.includes("const fallbackStats=bio?.stats||{}"), 'Perfil deve usar a fonte alternativa apenas para campos sem dado primário.');
+assert.ok(app.includes('const samePlayer=candidate=>String(candidate.player?.id)===String(player.id)'), 'Perfil deve conciliar IDs ESPN e NBA Stats pelo atleta correto.');
+assert.ok(app.includes('candidate.team.abbreviation===targetTeam'), 'Conciliação por nome deve respeitar a equipe quando disponível.');
 
 assert.ok(app.includes("raw==null||raw===''||!Number.isFinite(Number(raw))?NaN:Number(raw)"), 'Props não podem interpretar estatística ausente como zero.');
 assert.ok(app.includes('].filter(column=>rows.some(row=>row[column.key]!=null))'), 'Evolução do jogador deve ocultar colunas sem dados oficiais.');
