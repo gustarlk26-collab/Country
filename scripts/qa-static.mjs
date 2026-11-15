@@ -147,6 +147,7 @@ assert.ok(server.includes("rawStatus === 'ppd' ? 'Adiado'"), 'Fallback NBA CDN d
 assert.ok(server.includes("rawStatus.includes('cancel') ? 'Cancelado'"), 'Fallback NBA CDN deve preservar partidas canceladas.');
 assert.ok(app.includes("rawStatus.includes('cancel')?copy.cancelled"), 'Partidas canceladas devem manter o status correto.');
 assert.ok(app.includes("noScore:'Placar indisponível'"), 'Cards de jogos finalizados sem score devem explicar a ausência de dado.');
+assert.ok(app.includes("{p.gamesPlayed??'N/D'} jogos"), 'Cards de atletas não podem transformar jogos disputados ausentes em zero.');
 assert.ok(app.includes("vs:'VS'"), 'Jogos agendados devem mostrar VS em vez de estatística fictícia ou N/D.');
 
 assert.ok(app.includes("cache:cacheGet?fetchOptions.cache:'no-store'"), 'Atualização forçada ainda pode usar cache HTTP do navegador.');
