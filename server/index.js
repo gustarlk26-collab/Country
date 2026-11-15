@@ -79,7 +79,7 @@ function dedupeGamePlayers(rows) {
   }
   return [...byId.values()].map(entry => entry.row);
 }
-function finiteNumberOrNull(value) { return value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value); }
+function finiteNumberOrNull(value) { return value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value); }
 function scoreboardScore(value, statusState) {
   if (statusState === 'scheduled' || value == null || (typeof value === 'string' && value.trim() === '')) return null;
   const score = Number(value);
@@ -904,7 +904,7 @@ app.get('/api/rankings/recent', async (_req, res) => {
       LastNGames: '5', MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 2 * 60 * 1000))[0] || [];
-    const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+    const numberOrNull = value => value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
     const data = rows.filter(r => numberOrNull(r.GP) > 0).map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { abbreviation: r.TEAM_ABBREVIATION },
@@ -935,7 +935,7 @@ app.get('/api/averages', async (req, res) => {
       LastNGames: String(requested), MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 3 * 60 * 1000))[0] || [];
-    const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+    const numberOrNull = value => value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
     const nonNegative = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0?parsed:null; };
     const percentage = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0&&parsed<=1?parsed:null; };
     const attempts = (made, attempted) => { const m=nonNegative(made), a=nonNegative(attempted); return m!=null&&a!=null&&m>a?{made:null,attempted:null}:{made:m,attempted:a}; };
@@ -1155,7 +1155,7 @@ app.get('/api/advanced', async (req, res) => {
       LastNGames: String(requested), MeasureType: 'Advanced', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 3 * 60 * 1000))[0] || [];
-    const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+    const numberOrNull = value => value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
     const data = rows.filter(r => Number(r.GP) > 0).map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { id: r.TEAM_ID, abbreviation: r.TEAM_ABBREVIATION }, gamesPlayed: Number(r.GP),
@@ -1187,7 +1187,7 @@ app.get('/api/mvp', async (_req, res) => {
       MeasureType: 'Base', LastNGames: '0', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 5 * 60 * 1000))[0] || [];
-    const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+    const numberOrNull = value => value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
     const data = rows.map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { abbreviation: r.TEAM_ABBREVIATION },
