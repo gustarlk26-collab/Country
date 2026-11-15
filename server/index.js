@@ -576,7 +576,7 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       family:Array.isArray(athlete.relatives)?athlete.relatives:Array.isArray(athlete.family)?athlete.family:Array.isArray(player.family)?player.family:null,
       biography:athlete.biography||athlete.description||null,
       stats:Object.values(playerStats).some(value=>value!=null)?playerStats:null,
-      source:statsPayload.categories?'ESPN athlete profile + season statistics':'ESPN athlete profile + season overview'
+      source:Object.keys(detailedStats).length?'ESPN athlete profile + season statistics':overview.statistics?'ESPN athlete profile + season overview':'ESPN athlete profile'
     };
     res.json({data,updatedAt:new Date().toISOString()});
   }catch(e){res.status(503).json({error:'Ficha biográfica indisponível: '+e.message});}
