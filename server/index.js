@@ -1084,11 +1084,11 @@ app.get('/api/injuries', async (_req, res) => {
     const body = await cached('espn:injuries', () => espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries'), 2 * 60 * 1000);
     const teams = body.injuries || body.teams || [];
     const data = teams.flatMap(group => (group.injuries || group.items || []).map(item => ({
-      name: item.athlete?.displayName || item.athlete?.fullName || item.name || 'Jogador',
+      name: item.athlete?.displayName || item.athlete?.fullName || item.name || null,
       team: group.displayName || group.team?.displayName || group.team?.abbreviation || '',
       status: item.status || item.type?.description || item.details?.type || 'Status não informado',
       detail: item.shortComment || item.longComment || item.details?.detail || ''
-    })));
+    })).filter(item => item.name);
     res.json({ data, source: 'ESPN injuries', updatedAt: new Date().toISOString() });
   } catch (e) { res.status(503).json({ error: 'Relatórios de lesões indisponíveis: ' + e.message }); }
 });
