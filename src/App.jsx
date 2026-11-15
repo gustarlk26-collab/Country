@@ -128,7 +128,7 @@ export default function App(){
         const byId=new Map(current.map(game=>[String(game.id),game]));
         updates.forEach(game=>{
           const match=[...byId.entries()].find(([,existing])=>sameGame(existing,game));
-          if(match){byId.delete(match[0]);byId.set(String(game.id),{...match[1],...game});}
+          if(match){byId.delete(match[0]);const previous=match[1];byId.set(String(game.id),{...previous,...game,home_team_score:game.home_team_score??previous.home_team_score,visitor_team_score:game.visitor_team_score??previous.visitor_team_score});}
           else byId.set(String(game.id),game);
         });
         return [...byId.values()].sort((x,y)=>new Date(x.datetime||x.date)-new Date(y.datetime||y.date));
