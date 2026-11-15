@@ -605,9 +605,15 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     }
     if(!roster.length)roster=await cached('espn:active-players',espnPlayers,30*60*1000);
     const normalizeName=value=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
-    let player=roster.find(item=>String(item.espn_id||item.id)===id);
-    if(!player&&requestedName)player=roster.find(item=>normalizeName(item.first_name+' '+item.last_name)===requestedName);
-    if(!player)return res.status(404).json({error:'Biografia não encontrada no elenco consultado.'});
+    // O parâmetro :id vem da NBA Stats; ele não pertence ao espaço de IDs da ESPN.
+    // Nunca comparar IDs de provedores diferentes: resolva a ficha pelo nome e pela franquia.
+    const nameMatches=requestedName?roster.filter(item=>
+      normalizeName(item.first_name+' '+item.last_name)===requestedName &&
+      (!requestedTeam||canonicalTeamAbbr(item.team?.abbreviation||'')===requestedTeam)
+    ):[];
+    if(nameMatches.length>1)return res.status(409).json({error:'Mais de um atleta corresponde ao nome informado. A ficha não pode ser associada com segurança.'});
+    const player=nameMatches[0]||null;
+    if(!player)return res.status(404).json({error:'Biografia não encontrada para este nome e franquia na ESPN.'});
     let detail={},overview={},statsPayload={};
     const [detailResult,overviewResult,statsResult]=await Promise.allSettled([
       cached('espn-athlete:'+player.espn_id,()=>espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/athletes/'+player.espn_id),24*60*60*1000),
