@@ -82,6 +82,8 @@ assert.ok(app.includes("(p.position||p.jersey)&&<small>"), 'Ficha do elenco deve
 assert.ok(server.includes('display_clock:'), 'Backend não entrega o relógio da partida.');
 assert.ok(server.includes("const today = saoPauloDate(new Date().toISOString())"), 'Calendário CDN deve usar a data local de São Paulo.');
 assert.ok(server.includes("espn-scoreboard-day:"), 'Consultas diárias ESPN devem usar cache para reduzir chamadas repetidas.');
+assert.ok(server.includes("espn:roster:' + abbreviation"), 'Elencos ESPN devem ser armazenados em cache por franquia.');
+assert.ok(server.includes('Math.min(6, teams.length)'), 'Consultas de elenco devem limitar concorrência para evitar bloqueios da ESPN.');
 assert.ok(server.includes('Math.min(20, dates.length)'), 'Calendário ESPN deve limitar concorrência para evitar carregamento sequencial lento.');
 assert.ok(server.includes("90 * 1000"), 'Cache diário ESPN deve ter TTL definido.');
 assert.ok(app.includes("scorePending:'Placar em atualização'"), 'Cards de jogos devem explicar placar pendente sem inventar zero.');
