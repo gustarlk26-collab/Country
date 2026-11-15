@@ -93,9 +93,10 @@ function periodLabel(value) {
   const period = validPeriod(value);
   return period == null ? null : period <= 4 ? 'Q' + period : 'OT' + (period - 4);
 }
-function validGameClock(value) {
+function validGameClock(value, period) {
   if (value == null || String(value).trim() === '') return null;
   const raw = String(value).trim();
+  const maxMinutes = Number(period) > 4 ? 5 : 12;
   let minutes, seconds;
   const clock = raw.match(/^(\d{1,2}):([0-5]\d)$/);
   if (clock) { minutes = Number(clock[1]); seconds = Number(clock[2]); }
@@ -103,10 +104,10 @@ function validGameClock(value) {
     const duration = raw.match(/^PT(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/i);
     if (!duration || (!duration[1] && !duration[2])) return null;
     const total = Number(duration[1] || 0) * 60 + Number(duration[2] || 0);
-    if (!Number.isFinite(total) || total < 0 || total > 720) return null;
+    if (!Number.isFinite(total) || total < 0 || total > maxMinutes * 60) return null;
     minutes = Math.floor(total / 60); seconds = Math.floor(total % 60);
   }
-  return minutes < 12 || (minutes === 12 && seconds === 0) ? minutes + ':' + String(seconds).padStart(2, '0') : null;
+  return minutes < maxMinutes || (minutes === maxMinutes && seconds === 0) ? minutes + ':' + String(seconds).padStart(2, '0') : null;
 }
 function shootingPct(made, attempted) { const m=finiteNumberOrNull(made), a=finiteNumberOrNull(attempted); return m != null && a != null && Number.isInteger(m) && Number.isInteger(a) && m >= 0 && a > 0 && m <= a ? m / a : null; }
 function seasonFor(date = new Date()) {
@@ -281,7 +282,7 @@ async function nbaCdnGames(start, end) {
       id: String(g.gameId), date: localDate, datetime: datetime || localDate,
       status, status_state: statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled',
       period: validPeriod(g.period), period_label: periodLabel(g.period),
-      display_clock: validGameClock(g.gameClock),
+      display_clock: validGameClock(g.gameClock, g.period),
       home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: [home.teamCity, home.teamName].filter(Boolean).join(' ') },
       visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: [away.teamCity, away.teamName].filter(Boolean).join(' ') },
       home_team_score: scoreboardScore(g.homeTeamScore, statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled'),
@@ -301,7 +302,7 @@ async function nbaCdnGames(start, end) {
       status: g.gameStatusText || (statusCode === 3 ? 'Final' : statusCode === 2 ? 'Em andamento' : 'Agendado'),
       status_state: statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled',
       period: validPeriod(g.period), period_label: periodLabel(g.period),
-      display_clock: validGameClock(g.gameClock),
+      display_clock: validGameClock(g.gameClock, g.period),
       home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: home.teamName || home.teamCity || '' },
       visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: away.teamName || away.teamCity || '' },
       home_team_score: scoreboardScore(home.score, statusCode === 3 ? 'final' : statusCode === 2 ? 'in_progress' : 'scheduled'),
@@ -375,7 +376,7 @@ async function espnGames(start, end) {
     const period = validPeriod(statusInfo.period);
     return [{ id: String(event.id), date: localDate, datetime, status, status_state: state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled',
       period, period_label: periodLabel(period),
-      display_clock: validGameClock(statusInfo.displayClock),
+      display_clock: validGameClock(statusInfo.displayClock, period),
       home_team: { id: Number(home.team?.id), abbreviation: canonicalTeamAbbr(home.team?.abbreviation || ''), full_name: home.team?.displayName || home.team?.name || '' },
       visitor_team: { id: Number(away.team?.id), abbreviation: canonicalTeamAbbr(away.team?.abbreviation || ''), full_name: away.team?.displayName || away.team?.name || '' },
       home_team_score: scoreboardScore(home.score, state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled'),
@@ -770,7 +771,7 @@ async function espnLiveGames() {
       status: statusType.shortDetail || statusType.description || 'Agendado',
       status_state: state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled',
       period, period_label: periodLabel(period),
-      display_clock: validGameClock(statusInfo.displayClock),
+      display_clock: validGameClock(statusInfo.displayClock, period),
       home_team: { id: Number(home.team.id), abbreviation: canonicalTeamAbbr(home.team.abbreviation), full_name: home.team.displayName || home.team.name || '' },
       visitor_team: { id: Number(away.team.id), abbreviation: canonicalTeamAbbr(away.team.abbreviation), full_name: away.team.displayName || away.team.name || '' },
       home_team_score: finiteNumberOrNull(home.score),
@@ -808,7 +809,7 @@ app.get('/api/games/live', async (_req, res) => {
           status: game.gameStatusText || (state === 3 ? 'Final' : state === 2 ? 'Em andamento' : 'Agendado'),
           status_state: state === 3 ? 'final' : state === 2 ? 'in_progress' : 'scheduled',
           period, period_label: periodLabel(period),
-          display_clock: validGameClock(game.gameClock),
+          display_clock: validGameClock(game.gameClock, period),
           home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: home.teamName || home.teamCity || '' },
           visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: away.teamName || away.teamCity || '' },
           home_team_score: finiteNumberOrNull(home.score),
