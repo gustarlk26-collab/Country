@@ -1101,11 +1101,19 @@ app.get('/api/mvp', async (_req, res) => {
       MeasureType: 'Base', LastNGames: '0', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 5 * 60 * 1000))[0] || [];
+    const numberOrNull = value => value == null || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
     const data = rows.map(r => ({
       player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
       team: { abbreviation: r.TEAM_ABBREVIATION },
-      gp: r.GP, pts: r.PTS, reb: r.REB, ast: r.AST, stl: r.STL, blk: r.BLK, fg_pct: r.FG_PCT, fg3_pct: r.FG3_PCT
-    })).filter(r => Number(r.gp) >= 1).sort((a,b) => Number(b.pts || 0) - Number(a.pts || 0));
+      gp: numberOrNull(r.GP), pts: numberOrNull(r.PTS), reb: numberOrNull(r.REB), ast: numberOrNull(r.AST),
+      stl: numberOrNull(r.STL), blk: numberOrNull(r.BLK), fg_pct: numberOrNull(r.FG_PCT), fg3_pct: numberOrNull(r.FG3_PCT)
+    })).filter(r => r.gp != null && r.gp >= 1 && r.pts != null).sort((a,b) => {
+      const pointsOrder = b.pts - a.pts;
+      if (pointsOrder) return pointsOrder;
+      const nameA = `${a.player.first_name} ${a.player.last_name}`.trim();
+      const nameB = `${b.player.first_name} ${b.player.last_name}`.trim();
+      return nameA.localeCompare(nameB, 'en');
+    });
     res.json({ data: data.slice(0,100), leader: data[0] || null, season, method: 'Líderes estatísticos da temporada regular NBA por pontos por jogo; não representa votação oficial do prêmio NBA MVP.' });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
