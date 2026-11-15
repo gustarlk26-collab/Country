@@ -638,6 +638,8 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     const rawCategories=statsPayload.categories||statsPayload.statCategories||[];
     const statCategories=Array.isArray(rawCategories)?rawCategories:Object.values(rawCategories);
     for(const category of statCategories){
+      const categoryKey=String(category.name||category.displayName||'').toLowerCase().replace(/[^a-z]/g,'');
+      if(categoryKey==='total'||categoryKey==='totals'||categoryKey==='seasonal')continue;
       const labels=Array.isArray(category.labels)?category.labels:[];
       const values=Array.isArray(category.totals)?category.totals:Array.isArray(category.values)?category.values:[];
       labels.forEach((label,index)=>{
