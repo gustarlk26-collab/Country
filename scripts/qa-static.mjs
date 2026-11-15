@@ -38,6 +38,8 @@ assert.ok(schema.includes('auth.uid() = user_id'), 'As políticas Supabase devem
 assert.ok(schema.includes('with check (auth.uid() = user_id)'), 'As gravações Supabase devem validar o proprietário do registro.');
 assert.ok(server.includes('fgm: numberOrNull(r.FGM)'), 'Médias não devem transformar campos vazios em zero.');
 assert.ok(server.includes('rows.filter(r => Number(r.GP) > 0).map(r => ({'), 'Ranking recente não deve incluir atletas sem jogos na amostra.');
+assert.ok(server.includes('rawValue == null || rawValue ==='), 'Recordes históricos não podem converter valores ausentes em zero.');
+assert.ok(server.includes('.filter(row => row.value != null).slice(0, 10)'), 'Líderes históricos devem exibir somente valores oficiais disponíveis.');
 assert.ok(server.includes("apis/common/v3/sports/basketball/nba/athletes/"), 'Perfil deve ter uma fonte alternativa ESPN para dados de temporada.');
 assert.ok(server.includes("overview.statistics||overview.stats?.statistics"), 'Fallback ESPN deve ler somente o bloco estatístico documentado.');
 assert.ok(server.includes("/athletes/'+player.espn_id+'/stats'"), 'Fallback ESPN deve consultar estatísticas detalhadas da temporada.');
