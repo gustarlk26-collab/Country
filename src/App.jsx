@@ -32,19 +32,32 @@ export default function App(){
  useEffect(()=>{
   if(lang==='pt'||!featureNews.length){setTranslatedNews({});return;}
   let active=true;
+  const controller=new AbortController();
   const translateOne=async(text)=>{
    if(!text)return text;
    try{
     const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+lang+'&dt=t&q='+encodeURIComponent(text);
-    const response=await fetch(url);
+    const response=await fetch(url,{signal:controller.signal});
     if(!response.ok)throw new Error('Translation unavailable');
     const data=await response.json();
     return Array.isArray(data?.[0])?data[0].map(part=>part?.[0]||'').join(''):text;
    }catch{return text;}
   };
-  Promise.all(featureNews.map(async(item)=>({id:item.id,title:await translateOne(item.title),description:await translateOne(item.description)})))
-   .then(items=>{if(active)setTranslatedNews(old=>({...old,[lang]:items}));});
-  return()=>{active=false;};
+  const translateNews=async()=>{
+   const items=[];
+   for(let i=0;i<featureNews.length;i+=2){
+    if(!active)return;
+    const batch=await Promise.all(featureNews.slice(i,i+2).map(async item=>({
+     id:item.id,
+     title:await translateOne(item.title),
+     description:await translateOne(item.description)
+    })));
+    items.push(...batch);
+   }
+   if(active)setTranslatedNews(old=>({...old,[lang]:items}));
+  };
+  translateNews();
+  return()=>{active=false;controller.abort();};
  },[lang,featureNews]);
  const featureKeys=['shotmap','livecenter','playoffs','records','history','fantasy','injuries','quarters','power','evolution','headtohead','awards','news','customcalendar','historicstats','gamegrade','teamhub','playercards','alerts','teamanalytics','matchup','homeaway','form','streaks','rest','schedulestrength','rotation','lineups','playerprops','bankroll','betjournal','pace','defense','statlab','simulator'];
  const featureNames={shotmap:'Mapa de arremessos',livecenter:'Central de jogos ao vivo',playoffs:'Playoffs e chaveamento',records:'Recordes da NBA',history:'Comparação histórica',fantasy:'Fantasy NBA',injuries:'Lesões e desfalques',quarters:'Estatísticas por quarto',power:'Power Rankings',evolution:'Evolução na temporada',headtohead:'Histórico de confrontos',awards:'Central de prêmios',news:'Notícias NBA',customcalendar:'Calendário personalizado',historicstats:'Estatísticas históricas',gamegrade:'Notas por partida',teamhub:'Central dos times',playercards:'Cards de jogadores',alerts:'Alertas ao vivo',teamanalytics:'Análise dos times',matchup:'Comparador de franquias',homeaway:'Desempenho casa e fora',form:'Forma recente dos times',streaks:'Sequências de vitórias',rest:'Descanso e calendário',schedulestrength:'Dificuldade do calendário',rotation:'Minutos e rotação',lineups:'Elencos e titulares',playerprops:'Laboratório de props',bankroll:'Gestão de banca',betjournal:'Diário de apostas',pace:'Ritmo de jogo',defense:'Painel defensivo',statlab:'Laboratório estatístico',simulator:'Simulador de cenários'};
