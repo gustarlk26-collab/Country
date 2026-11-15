@@ -1,12 +1,14 @@
 # Courtside Family
 
-Painel privado de NBA com React, Express e Supabase. O backend consulta **NBA Stats** e **NBA Live CDN**; não depende mais de uma chave paga da BALLDONTLIE.
+Painel privado de NBA com React, Express e Supabase. O backend combina **ESPN**, **NBA Stats** e **NBA Live CDN**; não depende de uma chave paga da BALLDONTLIE.
 
 ## Recursos implementados
 
 - Login Supabase e validação de sessão no backend.
 - Lista pesquisável e paginada de jogadores.
 - Calendário NBA por intervalo de datas (até 90 dias por consulta).
+- Placar diário ao vivo com período, relógio e atualização do painel a cada 15 segundos.
+- Fallback de calendário e placar pela NBA CDN quando a ESPN falha ou retorna dados incompletos.
 - Box score por partida a partir da NBA Live CDN.
 - Ranking de médias dos últimos cinco jogos usando NBA Stats.
 - Líderes estatísticos da temporada regular (ordenados por pontos por jogo; não é o prêmio oficial NBA MVP).
@@ -16,7 +18,7 @@ Painel privado de NBA com React, Express e Supabase. O backend consulta **NBA St
 
 ## Fonte de dados e limitações
 
-O projeto usa endpoints públicos de NBA Stats (`stats.nba.com/stats`) e NBA Live CDN (`cdn.nba.com/static/json/liveData`). Não é necessária chave BALLDONTLIE ou outra chave NBA.
+O projeto usa os placares e elencos públicos da ESPN, endpoints de NBA Stats (`stats.nba.com/stats`) e NBA Live CDN (`cdn.nba.com/static/json/liveData` e calendário oficial). Não é necessária chave BALLDONTLIE ou outra chave NBA.
 
 Esses endpoints não constituem uma API pública com SLA: a NBA pode aplicar bloqueios temporários, limites de frequência, mudanças de formato ou atrasos. O servidor usa cache e mensagens de erro; não inventa estatísticas quando a fonte não responde. Jogos futuros não possuem box score até que a NBA publique os dados.
 
