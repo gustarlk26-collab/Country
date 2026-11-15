@@ -131,7 +131,7 @@ assert.ok(server.includes("(group.athlete || group.name) ? [group] : []"), 'Pars
 assert.ok(server.includes("entries.forEach(item => unique.set(item.team + '|' + item.name, item))"), 'Relatórios de lesões devem remover duplicatas por atleta e equipe.');
 assert.ok(server.includes("typeof detail === 'string' ? detail : ''"), 'Relatórios de lesões não podem renderizar objetos como [object Object].');
 assert.ok(app.includes('let refreshing=false;') && app.includes('if(refreshing)return;') && app.includes('finally { refreshing=false; }'), 'Atualização periódica de painéis deve impedir requisições sobrepostas.');
-assert.ok(app.includes('Promise.allSettled([api(\'/api/teams\'') && app.includes("if(tm.status==='fulfilled')setTeams") && app.includes("if(gm.status==='fulfilled')setGames"), 'Falha isolada de times ou calendário não deve bloquear o carregamento do outro conjunto de dados.');
+assert.ok(app.includes('Promise.allSettled([api(\'/api/teams\'') && app.includes("if(tm.status==='fulfilled')setTeams") && app.includes("if(gm.status==='fulfilled'){setGames") && app.includes('setGamesLoaded(true)'), 'Falha isolada de times ou calendário não deve bloquear o carregamento do outro conjunto de dados, e o calendário só deve ser marcado como carregado após resposta válida.');
 assert.ok(server.includes('Math.min(8, dates.length)'), 'Calendário ESPN deve limitar concorrência para reduzir bloqueios da fonte externa.');
 assert.ok(server.includes("90 * 1000"), 'Cache diário ESPN deve ter TTL definido.');
 assert.ok(app.includes("scorePending:'Placar em atualização'"), 'Cards de jogos devem explicar placar pendente sem inventar zero.');
