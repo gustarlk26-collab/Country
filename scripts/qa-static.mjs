@@ -233,4 +233,6 @@ assert.ok(styles.includes('.father-welcome-ball') && styles.includes('@keyframes
 assert.ok(styles.includes('.father-welcome-skip') && styles.includes('prefers-reduced-motion:reduce'), 'A homenagem deve permitir pular a animação e respeitar movimento reduzido.'); 
 assert.ok(styles.includes('COURTSIDE PREMIUM VISUAL SYSTEM') && styles.includes('#ff9b42') && styles.includes('backdrop-filter:blur(14px)'), 'A identidade premium deve incluir paleta quente e superfícies de vidro.'); 
 
+assert.ok(server.includes("app.use(cors({ origin: true, credentials: false") && server.includes("allowedHeaders: ['Authorization','Content-Type']"), 'CORS deve aceitar chamadas autenticadas por Bearer sem exigir cookies.');
+assert.ok(app.includes("if(firstError?.name!=='TypeError')") && app.includes("Falha de conexão com a API") && app.includes("setTimeout(resolve,900)"), 'O cliente deve repetir uma falha de rede transitória e apresentar diagnóstico claro.');
 console.log('Courtside QA estática aprovada: ' + features.length + ' funcionalidades, ' + navKeys.length + ' itens de navegação e ' + routes.length + ' rotas verificadas.');
