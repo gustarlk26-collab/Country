@@ -136,7 +136,7 @@ export default function App(){
       setLastSync(new Date());
       const selectedGame=boxGameRef.current;
       const updated=updates.find(game=>sameGame(game,selectedGame));
-      if(updated)setBoxGame(current=>current&&sameGame(current,updated)?({...current,...updated}):current);
+      if(updated)setBoxGame(current=>current&&sameGame(current,updated)?({...current,...updated,home_team_score:updated.home_team_score??current.home_team_score,visitor_team_score:updated.visitor_team_score??current.visitor_team_score}):current);
       const activeGame=updated||selectedGame;
       if(page==='boxscore'&&activeGame?.id&&(activeGame.status_state==='in_progress'||activeGame.status_state==='final')){
         const score=await api('/api/games/'+encodeURIComponent(activeGame.id)+'/stats',{cache:false});
