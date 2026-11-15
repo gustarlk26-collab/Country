@@ -1271,38 +1271,62 @@ app.get('/api/injuries', async (_req, res) => {
 app.get('/api/team-stats',async(_req,res)=>{
   try{
     const season=seasonFor();
-    const [baseResult,advancedResult,standingResult]=await Promise.allSettled([
+    const [baseResult,advancedResult,standingResult,gameFinderResult]=await Promise.allSettled([
       cached('team-stats-base:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Base',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),3*60*1000),
       cached('team-stats-advanced:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Advanced',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),3*60*1000),
-      cached('espn:standings',espnStandings,5*60*1000)
+      cached('espn:standings',espnStandings,5*60*1000),
+      cached('team-stats-gamefinder:'+season,()=>nba('leaguegamefinder',{PlayerOrTeam:'T',LeagueID:'00',Season:season,SeasonType:'Regular Season',TeamID:0,VsTeamID:0,DateFrom:'',DateTo:'',Outcome:'',Location:'',SeasonSegment:''}),3*60*1000)
     ]);
     const base=baseResult.status==='fulfilled'?(baseResult.value[0]||[]):[];
     const advanced=advancedResult.status==='fulfilled'?(advancedResult.value[0]||[]):[];
     const fallback=standingResult.status==='fulfilled'?standingResult.value:[];
+    const gameRows=gameFinderResult.status==='fulfilled'?(gameFinderResult.value[0]||[]):[];
+    const gameFallback=new Map();
+    for(const game of gameRows){
+      const id=String(game.TEAM_ID||game.Team_ID||'');
+      if(!TEAM_META[Number(id)])continue;
+      const item=gameFallback.get(id)||{gp:0,wins:0,losses:0,pts:0,reb:0,ast:0,stl:0,blk:0,fgm:0,fga:0,fg3m:0,fg3a:0};
+      item.gp++;
+      if(String(game.WL||'').toUpperCase()==='W')item.wins++;
+      if(String(game.WL||'').toUpperCase()==='L')item.losses++;
+      for(const [key,field] of [['pts','PTS'],['reb','REB'],['ast','AST'],['stl','STL'],['blk','BLK'],['fgm','FGM'],['fga','FGA'],['fg3m','FG3M'],['fg3a','FG3A']]){
+        const value=Number(game[field]);if(Number.isFinite(value))item[key]+=value;
+      }
+      gameFallback.set(id,item);
+    }
     const advById=new Map(advanced.map(row=>[String(row.TEAM_ID),row]));
     const baseById=new Map(base.map(row=>[String(row.TEAM_ID),row]));
     const standingsByAbbr=new Map(fallback.map(row=>[row.team?.abbreviation,row]));
-    if(!base.length&&!advanced.length&&!fallback.length)throw new Error('Nenhuma fonte retornou estatísticas de franquias.');
-    const ids=new Set([...Object.keys(TEAM_META),...baseById.keys(),...advById.keys(),...fallback.map(row=>String(row.team?.abbreviation||'')).filter(Boolean)]);
+    if(!base.length&&!advanced.length&&!fallback.length&&!gameRows.length)throw new Error('Nenhuma fonte retornou estatísticas de franquias.');
+    // The comparison is always exactly the 30 NBA franchises. ESPN abbreviations must never be
+    // added as extra IDs: doing so duplicated every team when the standings fallback was present.
+    const ids=new Set([...Object.keys(TEAM_META),...baseById.keys(),...advById.keys()]);
     const data=[...ids].map(id=>{
-      const row=baseById.get(id)||{},adv=advById.get(id)||{};
-      const abbreviation=row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||TEAM_META[Number(id)]?.[0]||id;
+      const teamId=Number(id),meta=TEAM_META[teamId],row=baseById.get(id)||{},adv=advById.get(id)||{},games=gameFallback.get(id)||{};
+      const abbreviation=row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||meta?.[0]||'';
       const standing=standingsByAbbr.get(abbreviation)||{};
-      const teamId=Number(row.TEAM_ID||adv.TEAM_ID)||Number(Object.keys(TEAM_META).find(key=>TEAM_META[key][0]===abbreviation)),meta=TEAM_META[teamId];
       const number=value=>value==null||value===''||!Number.isFinite(Number(value))?null:Number(value);
       const nonNegative=value=>{const parsed=number(value);return parsed!=null&&parsed>=0?parsed:null;};
       const positive=value=>{const parsed=number(value);return parsed!=null&&parsed>0?parsed:null;};
       const percentage=value=>{const parsed=number(value);return parsed!=null&&parsed>=0&&parsed<=1?parsed:null;};
+      const average=(total,gp)=>gp>0?total/gp:null;
+      const gp=nonNegative(row.GP)??(games.gp||null);
+      const wins=nonNegative(row.W)??(games.gp?games.wins:null);
+      const losses=nonNegative(row.L)??(games.gp?games.losses:null);
+      const winPct=percentage(row.W_PCT??standing.win_pct)??(gp>0&&wins!=null?wins/gp:null);
+      const stat=(official,field)=>nonNegative(official)??(games.gp?average(games[field],games.gp):null);
+      const fgPct=percentage(row.FG_PCT)??(games.fga>0?games.fgm/games.fga:null);
+      const fg3Pct=percentage(row.FG3_PCT)??(games.fg3a>0?games.fg3m/games.fg3a:null);
       return {team:{id:teamId,abbreviation,full_name:row.TEAM_NAME||standing.team?.full_name||meta?.[1]||abbreviation,
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
-        wins:nonNegative(row.W),losses:nonNegative(row.L),win_pct:percentage(row.W_PCT??standing.win_pct),
-        gp:nonNegative(row.GP),pts:nonNegative(row.PTS),reb:nonNegative(row.REB),ast:nonNegative(row.AST),stl:nonNegative(row.STL),blk:nonNegative(row.BLK),
-        fg_pct:percentage(row.FG_PCT),fg3_pct:percentage(row.FG3_PCT),pace:positive(adv.PACE),off_rating:positive(adv.OFF_RATING),def_rating:positive(adv.DEF_RATING),net_rating:number(adv.NET_RATING)};
+        wins,losses,win_pct:winPct,gp,pts:stat(row.PTS,'pts'),reb:stat(row.REB,'reb'),ast:stat(row.AST,'ast'),stl:stat(row.STL,'stl'),blk:stat(row.BLK,'blk'),
+        fg_pct:fgPct,fg3_pct:fg3Pct,pace:positive(adv.PACE),off_rating:positive(adv.OFF_RATING),def_rating:positive(adv.DEF_RATING),net_rating:number(adv.NET_RATING)};
     });
-    if(!data.length)throw new Error(baseResult.status==='rejected'?baseResult.reason.message:'Fontes não retornaram dados de franquias.');
+    if(data.length!==30||data.some(item=>!item.team?.abbreviation))throw new Error(`Base de franquias inconsistente: esperadas 30 equipes, recebidas ${data.length}.`);
     const sources=[];
     if(base.length)sources.push('NBA Stats base');
     if(advanced.length)sources.push('NBA Stats advanced');
+    if(gameRows.length)sources.push('NBA Stats game finder (médias calculadas dos jogos oficiais)');
     if(fallback.length)sources.push('ESPN standings');
     res.json({data:data.sort((a,b)=>{if(a.net_rating==null&&b.net_rating!=null)return 1;if(b.net_rating==null&&a.net_rating!=null)return -1;if(a.net_rating!=null&&b.net_rating!=null&&a.net_rating!==b.net_rating)return b.net_rating-a.net_rating;return (b.win_pct??-Infinity)-(a.win_pct??-Infinity);}),season,
       source:sources.join(' + ')||'No verified source',updatedAt:new Date().toISOString()});
