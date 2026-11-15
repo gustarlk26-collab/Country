@@ -43,6 +43,7 @@ assert.ok(server.includes("overview.statistics||overview.stats?.statistics"), 'F
 assert.ok(app.includes("const fallbackStats=bio?.stats||{}"), 'Perfil deve usar a fonte alternativa apenas para campos sem dado primário.');
 
 assert.ok(app.includes("raw==null||raw===''||!Number.isFinite(Number(raw))?NaN:Number(raw)"), 'Props não podem interpretar estatística ausente como zero.');
+assert.ok(app.includes('trendColumns.filter(column=>rows.some(row=>row[column.key]!=null))'), 'Evolução do jogador deve ocultar colunas sem dados oficiais.');
 assert.ok(app.includes('alphaAverages.filter(p=>p[statMetric]!=null'), 'Rankings estatísticos devem excluir métricas ausentes.');
 assert.ok(app.includes('averages.filter(p=>p[category.key]!=null'), 'Destaques por categoria devem excluir valores ausentes.');
 assert.ok(app.includes("riskPct!==''&&Number.isFinite(Number(riskPct))"), 'Calculadora de banca deve validar campos vazios e limites de risco.');
