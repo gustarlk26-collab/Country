@@ -637,8 +637,11 @@ app.get('/api/games/live', async (_req, res) => {
   const today = saoPauloDate(new Date().toISOString());
   try {
     const data = await cached('espn-live-games:' + today, espnLiveGames, 8000);
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    return res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN daily scoreboard' });
+    if (data.length) {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN daily scoreboard' });
+    }
+    throw new Error('ESPN não retornou partidas para a data local; consultando a fonte alternativa.');
   } catch (espnError) {
     try {
       const response = await fetch('https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json', {
