@@ -80,6 +80,8 @@ assert.ok(app.includes("s?.min==null?'':fmt(s.min)"), 'Elenco em rotação não 
 assert.ok(app.includes("value=x=>!x?'':loss?(x[key]==null||x[loss]==null?'':String(x[key])+'–'+String(x[loss]))"), 'Comparação de franquias deve deixar em branco métricas ausentes.');
 assert.ok(app.includes("(p.position||p.jersey)&&<small>"), 'Ficha do elenco deve ocultar metadados não publicados.');
 assert.ok(server.includes('display_clock:'), 'Backend não entrega o relógio da partida.');
+assert.ok(server.includes("if (date !== today && state !== 'in') return []"), 'Partidas ao vivo após meia-noite devem continuar visíveis no horário local.');
+assert.ok(server.includes('if (localDate !== today && state !== 2) return null'), 'Fallback NBA Live deve preservar jogos que seguem ao vivo após meia-noite.');
 assert.ok(server.includes("const today = saoPauloDate(new Date().toISOString())"), 'Calendário CDN deve usar a data local de São Paulo.');
 assert.ok(server.includes("cached('nba:season-schedule'"), 'Calendário oficial da NBA deve ser armazenado em cache para reduzir chamadas externas.');
 assert.ok(server.includes('30 * 60 * 1000'), 'Cache do calendário alternativo deve expirar em trinta minutos.');
