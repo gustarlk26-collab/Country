@@ -39,6 +39,8 @@ assert.equal(new Set(routeKeys).size, routeKeys.length, 'Há rotas HTTP duplicad
 assert.ok(schema.includes('auth.uid() = user_id'), 'As políticas Supabase devem restringir os dados ao usuário autenticado.');
 assert.ok(schema.includes('with check (auth.uid() = user_id)'), 'As gravações Supabase devem validar o proprietário do registro.');
 assert.ok(server.includes('fgm: numberOrNull(r.FGM)'), 'Médias não devem transformar campos vazios em zero.');
+assert.ok(server.includes('return match ? { made: Number(match[1]), attempted: Number(match[2]) } : { made: null, attempted: null };'), 'Arremessos ausentes no box score ESPN não podem virar zero fictício.');
+assert.ok(server.includes('if (keys.some(key => stats[key] == null || !Number.isFinite(Number(stats[key])))) return null;'), 'Game Score só pode ser calculado quando todos os componentes oficiais existem.');
 assert.ok(server.includes('rows.filter(r => Number(r.GP) > 0).map(r => ({'), 'Ranking recente não deve incluir atletas sem jogos na amostra.');
 assert.ok(server.includes('rawValue == null || rawValue ==='), 'Recordes históricos não podem converter valores ausentes em zero.');
 assert.ok(server.includes('.filter(row => row.value != null && row.player_name).slice(0, 10)'), 'Líderes históricos devem exibir somente valores oficiais com atleta identificado.');
@@ -92,7 +94,7 @@ assert.ok(server.includes('30 * 60 * 1000'), 'Cache do calendário alternativo d
 assert.ok(server.includes("espn-scoreboard-day:"), 'Consultas diárias ESPN devem usar cache para reduzir chamadas repetidas.');
 assert.ok(server.includes("espn:roster:' + abbreviation"), 'Elencos ESPN devem ser armazenados em cache por franquia.');
 assert.ok(server.includes('Math.min(6, teams.length)'), 'Consultas de elenco devem limitar concorrência para evitar bloqueios da ESPN.');
-assert.ok(server.includes('Math.min(20, dates.length)'), 'Calendário ESPN deve limitar concorrência para evitar carregamento sequencial lento.');
+assert.ok(server.includes('Math.min(8, dates.length)'), 'Calendário ESPN deve limitar concorrência para reduzir bloqueios da fonte externa.');
 assert.ok(server.includes("90 * 1000"), 'Cache diário ESPN deve ter TTL definido.');
 assert.ok(app.includes("scorePending:'Placar em atualização'"), 'Cards de jogos devem explicar placar pendente sem inventar zero.');
 assert.ok(app.includes("rawStatus.includes('postpon')?copy.postponed"), 'Partidas adiadas não podem aparecer como agendadas.');
