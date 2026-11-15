@@ -159,27 +159,28 @@ export default function App(){
 useEffect(()=>{
   if(!session)return;
   let refreshing=false;
+  let active=true;
   const timer=window.setInterval(async()=>{
-    if(document.visibilityState!=='visible'||refreshing)return;
+    if(!active||document.visibilityState!=='visible'||refreshing)return;
     refreshing=true;
     try {
-      if(page==='rankings'){const r=await api('/api/rankings/recent');setRanking(r.data||[]);}
-      if(page==='highlights'||page==='averages'){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
-      if(['teams','playoffs','power','teamhub','teamanalytics'].includes(page)){const r=await api('/api/standings');setStandings(r.data||[]);}
-       if(['power','teamhub','teamanalytics','betlab','matchup','homeaway','form','streaks','rest','schedulestrength','pace','defense','simulator'].includes(page)){const r=await api('/api/team-stats');setTeamStats(r.data||[]);}
-       if(['teamanalytics','lineups','rotation'].includes(page)){const r=await api('/api/teams/'+encodeURIComponent(teamA)+'/roster');setTeamRoster(r.data||[]);}
-      if(['mvp','mvpRace'].includes(page)){const r=await api('/api/mvp');setMvp(r);}
-      if(['records','historicstats'].includes(page)){const r=await api('/api/records');setRecordLeaders(r.data||[]);}
-      if(page==='injuries'){const r=await api('/api/injuries');setFeatureInjuries(r.data||[]);}
-      if(page==='news'){const r=await api('/api/news');setFeatureNews(r.data||[]);}
-      if(page==='advanced'){const r=await api('/api/advanced?last=0');setAdvanced(r.data||[]);}
-      if(page==='profile'&&selectedProfile?.player?.id){const [base,adv]=await Promise.all([api('/api/averages?last=0'),api('/api/advanced?last=0').catch(()=>({data:[]}))]);setProfileLeagueAverages(base.data||[]);const targetName=[selectedProfile.player?.first_name,selectedProfile.player?.last_name].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase(),targetTeam=selectedProfile.team?.abbreviation||'';const matches=row=>String(row.player?.id)===String(selectedProfile.player.id)||(targetName&&[row.player?.first_name,row.player?.last_name].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase()===targetName&&(!targetTeam||!row.team?.abbreviation||row.team.abbreviation===targetTeam));const current=(base.data||[]).find(matches);const advancedCurrent=(adv.data||[]).find(matches)||null;if(current)setSelectedProfile({...current,player:selectedProfile.player,team:current.team||selectedProfile.team,advanced:advancedCurrent||selectedProfile.advanced});setProfileAdvanced(advancedCurrent||selectedProfile.advanced||null);}
-      if(page==='quarters'&&quarterGameId){const r=await api('/api/games/'+quarterGameId+'/summary');setQuarterSummary(r.data||null);}
+      if(page==='rankings'){const r=await api('/api/rankings/recent');if(!active)return;setRanking(r.data||[]);}
+      if(page==='highlights'||page==='averages'){const r=await api('/api/averages?last='+averagePeriod);if(!active)return;setAverages(r.data||[]);}
+      if(['teams','playoffs','power','teamhub','teamanalytics'].includes(page)){const r=await api('/api/standings');if(!active)return;setStandings(r.data||[]);}
+       if(['power','teamhub','teamanalytics','betlab','matchup','homeaway','form','streaks','rest','schedulestrength','pace','defense','simulator'].includes(page)){const r=await api('/api/team-stats');if(!active)return;setTeamStats(r.data||[]);}
+       if(['teamanalytics','lineups','rotation'].includes(page)){const r=await api('/api/teams/'+encodeURIComponent(teamA)+'/roster');if(!active)return;setTeamRoster(r.data||[]);}
+      if(['mvp','mvpRace'].includes(page)){const r=await api('/api/mvp');if(!active)return;setMvp(r);}
+      if(['records','historicstats'].includes(page)){const r=await api('/api/records');if(!active)return;setRecordLeaders(r.data||[]);}
+      if(page==='injuries'){const r=await api('/api/injuries');if(!active)return;setFeatureInjuries(r.data||[]);}
+      if(page==='news'){const r=await api('/api/news');if(!active)return;setFeatureNews(r.data||[]);}
+      if(page==='advanced'){const r=await api('/api/advanced?last=0');if(!active)return;setAdvanced(r.data||[]);}
+      if(page==='profile'&&selectedProfile?.player?.id){const [base,adv]=await Promise.all([api('/api/averages?last=0'),api('/api/advanced?last=0').catch(()=>({data:[]}))]);if(!active)return;setProfileLeagueAverages(base.data||[]);const targetName=[selectedProfile.player?.first_name,selectedProfile.player?.last_name].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase(),targetTeam=selectedProfile.team?.abbreviation||'';const matches=row=>String(row.player?.id)===String(selectedProfile.player.id)||(targetName&&[row.player?.first_name,row.player?.last_name].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase()===targetName&&(!targetTeam||!row.team?.abbreviation||row.team.abbreviation===targetTeam));const current=(base.data||[]).find(matches);const advancedCurrent=(adv.data||[]).find(matches)||null;if(current)setSelectedProfile({...current,player:selectedProfile.player,team:current.team||selectedProfile.team,advanced:advancedCurrent||selectedProfile.advanced});setProfileAdvanced(advancedCurrent||selectedProfile.advanced||null);}
+      if(page==='quarters'&&quarterGameId){const r=await api('/api/games/'+quarterGameId+'/summary');if(!active)return;setQuarterSummary(r.data||null);}
       if(['history','evolution','fantasy','awards','playercards','teamanalytics','betlab','playerprops','statlab','rotation','lineups'].includes(page)){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
     } catch(e) { /* Mantém a última resposta válida. */ }
     finally { refreshing=false; }
   },60000);
-  return()=>window.clearInterval(timer);
+  return()=>{active=false;window.clearInterval(timer);};
 },[session,api,page,averagePeriod,quarterGameId,selectedProfile,teamA]);
  const loadPlayers=async(reset=false)=>{const requestId=++playerRequestRef.current;setBusy(true);setError('');try{const qs=new URLSearchParams();qs.set('search',playerSearch);if(!reset&&playerCursor)qs.set('cursor',playerCursor);const result=await api(`/api/players?${qs}`);if(requestId!==playerRequestRef.current)return;setPlayers(old=>reset?result.data||[]:[...old,...(result.data||[])]);setPlayerCursor(result.meta?.next_cursor||null);}catch(e){if(requestId===playerRequestRef.current)setError(e.message);}finally{if(requestId===playerRequestRef.current)setBusy(false);}};
  const loadRankings=async()=>{setBusy(true);setError('');try{const r=await api('/api/rankings/recent?days=45');setRanking(r.data||[]);}catch(e){setError(e.message);}finally{setBusy(false);}};
