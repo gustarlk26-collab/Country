@@ -45,6 +45,7 @@ assert.ok(app.includes("const fallbackStats=bio?.stats||{}"), 'Perfil deve usar 
 assert.ok(app.includes("raw==null||raw===''||!Number.isFinite(Number(raw))?NaN:Number(raw)"), 'Props não podem interpretar estatística ausente como zero.');
 assert.ok(app.includes('alphaAverages.filter(p=>p[statMetric]!=null'), 'Rankings estatísticos devem excluir métricas ausentes.');
 assert.ok(app.includes('averages.filter(p=>p[category.key]!=null'), 'Destaques por categoria devem excluir valores ausentes.');
+assert.ok(app.includes("riskPct!==''&&Number.isFinite(Number(riskPct))"), 'Calculadora de banca deve validar campos vazios e limites de risco.');
 assert.ok(app.includes('metricColumns.some(column=>p[column.key]!=null)'), 'Tabela avançada deve excluir atletas sem métricas oficiais.');
 assert.ok(app.includes('featureKeys.includes(page)&&<section className="panel feature-workspace">'), 'Páginas de ferramentas devem manter o contêiner e cabeçalho compartilhados.');
 assert.ok(app.includes('rows.some(p=>p[column.key]!=null)'), 'Tabela avançada deve ocultar colunas sem valores publicados.');
