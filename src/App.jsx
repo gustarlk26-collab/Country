@@ -116,11 +116,13 @@ export default function App(){
  useEffect(()=>{
   if(!session||!['overview','games','livecenter','customcalendar','boxscore'].includes(page))return;
   let running=false;
+  let active=true;
   const refreshLive=async()=>{
-    if(running||document.visibilityState!=='visible')return;
+    if(!active||running||document.visibilityState!=='visible')return;
     running=true;
     try {
       const gamesResult=await api('/api/games/live',{cache:false});
+      if(!active)return;
       const updates=gamesResult.data||[];
       setLiveUnavailable(false);
       const sameGame=(left,right)=>String(left?.id)===String(right?.id)||(left?.date===right?.date&&left?.home_team?.abbreviation===right?.home_team?.abbreviation&&left?.visitor_team?.abbreviation===right?.visitor_team?.abbreviation);
@@ -140,16 +142,17 @@ export default function App(){
       const activeGame=updated||selectedGame;
       if(page==='boxscore'&&activeGame?.id&&(activeGame.status_state==='in_progress'||activeGame.status_state==='final')){
         const score=await api('/api/games/'+encodeURIComponent(activeGame.id)+'/stats',{cache:false});
+        if(!active)return;
         setBoxStats(score.data||[]);
       }
-    } catch(e) { setLiveUnavailable(true); /* Mantém os últimos dados válidos durante falhas transitórias. */ }
+    } catch(e) { if(active)setLiveUnavailable(true); /* Mantém os últimos dados válidos durante falhas transitórias. */ }
     finally { running=false; }
   };
   const onVisible=()=>{if(document.visibilityState==='visible')refreshLive();};
   document.addEventListener('visibilitychange',onVisible);
   refreshLive();
   const timer=window.setInterval(refreshLive,15000);
-  return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);};
+  return()=>{active=false;window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);};
 },[session,api,page]);
 useEffect(()=>{
   if(!session)return;
