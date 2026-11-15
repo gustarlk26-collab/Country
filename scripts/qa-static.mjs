@@ -35,6 +35,8 @@ assert.equal(new Set(routeKeys).size, routeKeys.length, 'Há rotas HTTP duplicad
 assert.ok(schema.includes('auth.uid() = user_id'), 'As políticas Supabase devem restringir os dados ao usuário autenticado.');
 assert.ok(schema.includes('with check (auth.uid() = user_id)'), 'As gravações Supabase devem validar o proprietário do registro.');
 assert.ok(server.includes('fgm: numberOrNull(r.FGM)'), 'Médias não devem transformar campos vazios em zero.');
+assert.ok(app.includes("raw==null||raw===''||!Number.isFinite(Number(raw))?NaN:Number(raw)"), 'Props não podem interpretar estatística ausente como zero.');
+assert.ok(app.includes('alphaAverages.filter(p=>p[statMetric]!=null'), 'Rankings estatísticos devem excluir métricas ausentes.');
 
 assert.ok(app.includes("api('/api/games/live',{cache:false})"), 'Frontend não consulta o placar ao vivo sem cache.');
 assert.ok(app.includes('window.setInterval(refreshLive,15000)'), 'Atualização automática do placar não está configurada para 15 segundos.');
