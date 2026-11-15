@@ -734,6 +734,7 @@ app.get('/api/games/live', async (_req, res) => {
         const datetime = game.gameTimeUTC || '';
         const localDate = saoPauloDate(datetime) || today;
         if (localDate !== today && state !== 2) return null;
+        if (!/^\d{10}$/.test(String(game.gameId || '')) || !home.teamTricode || !away.teamTricode) return null;
         return {
           id: String(game.gameId), date: localDate, datetime,
           status: game.gameStatusText || (state === 3 ? 'Final' : state === 2 ? 'Em andamento' : 'Agendado'),
