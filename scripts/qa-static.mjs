@@ -34,6 +34,7 @@ assert.equal(teamAbbrs.length, 30, 'Diretório NBA deve conter as 30 franquias.'
 assert.equal(new Set(teamAbbrs).size, 30, 'Diretório de franquias contém abreviações duplicadas.');
 for (const abbr of teamAbbrs) assert.ok(new RegExp('(?:^|[,\\{])' + abbr + ':').test(espnTeamMap), 'ID ESPN ausente para franquia: ' + abbr);
 assert.ok(server.includes("if (data.length) {"), 'Placar vazio da ESPN deve acionar a fonte alternativa.');
+assert.ok(server.includes("if (failures) throw new Error('ESPN não respondeu a todas as datas do placar diário.')"), 'Placar ao vivo parcial da ESPN deve acionar o feed alternativo completo.');
 assert.ok(server.includes('NBA Live CDN scoreboard'), 'Fonte alternativa do placar ao vivo deve estar identificada.');
 assert.ok(routes.includes('GET /api/games/:id/stats'), 'Endpoint de box score ausente.');
 assert.ok(server.includes('async function nbaLivePeriodSummary(gameId)'), 'Parciais por quarto devem ter fallback NBA Live.');
