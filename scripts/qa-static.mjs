@@ -27,6 +27,9 @@ for (const key of features) assert.ok(navKeys.includes(key), 'Funcionalidade for
 
 const renderedPages = new Set([...app.matchAll(/page\s*===?\s*['"]([^'"]+)['"]/g)].map(match => match[1]));
 for (const key of features) assert.ok(renderedPages.has(key), 'Página sem condição de renderização: ' + key);
+assert.ok(app.includes("{p.gamesPlayed??'N/D'} jogos"), 'Evolução não deve inventar zero para jogos ausentes.');
+assert.ok(app.includes(".filter(m=>m.value!=null&&Number.isFinite(m.value))"), 'Perfil estatístico deve descartar métricas não numéricas.');
+assert.ok(server.includes("if (!/^\\d{10}$/.test(String(game.gameId || '')) || !home.teamTricode || !away.teamTricode) return null;"), 'Placar CDN deve descartar partidas sem ID ou equipes válidas.');
 
 const routes = [...server.matchAll(/app\.(get|post|put|delete|patch)\(['"]([^'"]+)/g)].map(match => match[1].toUpperCase() + ' ' + match[2]);
 assert.ok(routes.includes('GET /api/games/live'), 'Endpoint de placar ao vivo ausente.');
