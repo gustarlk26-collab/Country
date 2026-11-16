@@ -163,7 +163,10 @@ assert.ok(app.includes("api('/api/games/live',{cache:false})"), 'Frontend não c
 assert.ok(app.includes('window.setInterval(refreshLive,15000)'), 'Atualização automática do placar não está configurada para 15 segundos.');
 assert.ok(app.includes('overviewGames=useMemo') && app.includes('sortedGames.filter(g=>g.status_state===\'in_progress\')') && app.includes('GameList games={overviewGames.slice(0,8)}'), 'Visão geral deve manter jogos ao vivo visíveis mesmo quando atravessam a meia-noite local.');
 
-assert.ok(app.includes('byId.set(String(game.id),{...previous,...game})') && !app.includes('home_team_score:game.home_team_score??previous.home_team_score'), 'O feed ao vivo não pode preservar placares antigos quando a fonte atual não confirma um valor novo.');
+const liveMergeStart=app.indexOf('if(updates.length)setGames(current=>{');
+const liveMergeEnd=app.indexOf('const selectedGame=boxGameRef.current;',liveMergeStart);
+const liveMerge=app.slice(liveMergeStart,liveMergeEnd);
+assert.ok(liveMerge.includes('byId.set(String(game.id),{...previous,...game})') && !liveMerge.includes('home_team_score:game.home_team_score??previous.home_team_score'), 'O feed ao vivo não pode preservar placares antigos quando a fonte atual não confirma um valor novo.');
 assert.ok(app.includes("const statusRank={scheduled:0,in_progress:1,final:2}") && app.includes("if(previousRank>incomingRank)") && app.includes("current.filter(item=>['in_progress','final'].includes(item.status_state)"), 'O calendário deve aceitar atualizações novas no mesmo estágio ou posteriores e preservar somente estados ao vivo mais recentes quando a resposta estiver atrasada.');
 assert.ok(app.includes("clockUnavailable:'Relógio oficial indisponível'") && app.includes("const clock=live?' · '+(g.period_label?g.period_label+' ':'')+(g.display_clock?formatGameClock(g.display_clock):copy.clockUnavailable):'';"), 'Jogos ao vivo sem relógio validado devem informar a indisponibilidade em vez de exibir um minuto incorreto.');
 assert.ok(app.includes('const settingsRequestRef=useRef(0)') && app.includes('if(request!==settingsRequestRef.current)return') && app.includes("setLang(data?.language||'pt');setTheme(data?.theme||'dark')"), 'Configurações não podem ser sobrescritas por respostas atrasadas de outro usuário e devem aplicar padrões quando não houver registro.');
