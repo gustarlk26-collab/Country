@@ -396,3 +396,5 @@ assert.ok(app.includes('const TEAM_LOGO_IDS={ATL:1610612737') && app.includes("h
 assert.ok(styles.includes('.game-matchup-teams') && styles.includes('.game-team-logo') && styles.includes('@media(max-width:650px){.game-matchup-teams'), 'Escudos dos times devem manter alinhamento e tamanho responsivo em telas pequenas.');
 
 assert.ok(app.includes("TEAM_LOGO_IDS[team.abbreviation]?'https://cdn.nba.com/logos/nba/'+TEAM_LOGO_IDS[team.abbreviation]") && app.includes("TEAM_LOGO_IDS[teamA]?'https://cdn.nba.com/logos/nba/'+TEAM_LOGO_IDS[teamA]"), 'Central dos times e análise da franquia devem usar o mesmo diretório de escudos oficiais da NBA que os cartões de jogos.');
+
+assert.ok(styles.includes('@keyframes courtsideLivePulse') && styles.includes('.live i,.status-live:before') && styles.includes('@media(prefers-reduced-motion:reduce){.live i,.status-live:before'), 'Indicadores de partida ao vivo devem pulsar discretamente e respeitar movimento reduzido.');
