@@ -1221,6 +1221,33 @@ app.get('/api/mvp', async (_req, res) => {
 });
 
 
+app.get('/api/historicstats', async (req, res) => {
+  const season=String(req.query.season||'').trim();
+  const seasonType=String(req.query.type||'Regular Season').trim();
+  const perMode=String(req.query.mode||'PerGame').trim();
+  const match=season.match(/^(19[4-9][0-9]|20[0-9]{2})-(\d{2})$/);
+  if(!match||Number(match[2])!==(Number(match[1])+1)%100||Number(match[1])>Number(seasonFor().slice(0,4))) {
+    return res.status(400).json({error:'Temporada inválida. Use o formato AAAA-AA e uma temporada já iniciada.'});
+  }
+  if(!['Regular Season','Playoffs'].includes(seasonType)||!['PerGame','Totals'].includes(perMode)) {
+    return res.status(400).json({error:'Tipo de temporada ou modo estatístico inválido.'});
+  }
+  try {
+    const data=await cached('historic-player-stats:'+season+':'+seasonType+':'+perMode,async()=>{
+      const rows=(await nba('leaguedashplayerstats',{
+        ...playerDashFilters(),LeagueID:'00',Season:season,SeasonType:seasonType,PerMode:perMode,
+        LastNGames:'0',MeasureType:'Base',PaceAdjust:'N',PlusMinus:'N',Rank:'N',
+        Month:'0',Period:'0',GameScope:'',PlayerExperience:'',PlayerPosition:'',StarterBench:''
+      }))[0]||[];
+      const number=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
+      return rows.filter(row=>Number.isSafeInteger(Number(row.PLAYER_ID))&&Number(row.PLAYER_ID)>0&&String(row.PLAYER_NAME||'').trim()&&number(row.GP)>0)
+        .map(row=>({player_id:Number(row.PLAYER_ID),player_name:String(row.PLAYER_NAME),team:row.TEAM_ABBREVIATION||null,games:number(row.GP),minutes:number(row.MIN),pts:number(row.PTS),reb:number(row.REB),ast:number(row.AST),stl:number(row.STL),blk:number(row.BLK),fg_pct:number(row.FG_PCT),fg3_pct:number(row.FG3_PCT),ft_pct:number(row.FT_PCT)}))
+        .sort((a,b)=>(b.pts??-Infinity)-(a.pts??-Infinity)||a.player_name.localeCompare(b.player_name,'en'));
+    },6*60*60*1000);
+    res.json({data,season,seasonType,perMode,totalPlayers:data.length,source:'NBA Stats LeagueDashPlayerStats',updatedAt:new Date().toISOString()});
+  } catch(error) { res.status(error.status||503).json({error:'Arquivo histórico indisponível: '+error.message}); }
+});
+
 app.get('/api/records', async (_req, res) => {
   try {
     const categories = [
