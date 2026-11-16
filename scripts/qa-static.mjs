@@ -401,3 +401,12 @@ assert.ok(styles.includes('@keyframes courtsideLivePulse') && styles.includes('.
 
 const liveRouteBlock = server.slice(server.indexOf("app.get('/api/games/live'"), server.indexOf('async function nbaLivePeriodSummary'));
 assert.ok(liveRouteBlock.includes('  try {') && liveRouteBlock.includes("return res.status(503).json({ error: 'Falha ao consolidar o placar ao vivo:'"), 'Erros inesperados ao combinar ESPN e NBA Live devem retornar JSON 503 controlado, sem rejeição não tratada no Express.');
+
+const asyncRouteMatches = [...server.matchAll(/app\.(?:get|post|put|patch|delete)\(['"][^'"]+['"],\s*async/g)];
+assert.ok(asyncRouteMatches.length >= 19, 'Cobertura de rotas assíncronas do servidor incompleta.');
+for (let index = 0; index < asyncRouteMatches.length; index++) {
+  const start = asyncRouteMatches[index].index;
+  const end = index + 1 < asyncRouteMatches.length ? asyncRouteMatches[index + 1].index : server.indexOf('const limiter', start);
+  const routeBlock = server.slice(start, end < 0 ? server.length : end);
+  assert.ok(/\btry\s*\{/.test(routeBlock) && /\bcatch\s*\(/.test(routeBlock), 'Rota assíncrona sem tratamento de erro: ' + asyncRouteMatches[index][0]);
+}
