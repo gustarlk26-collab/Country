@@ -949,6 +949,7 @@ app.get('/api/averages', async (req, res) => {
     }), 3 * 60 * 1000))[0] || [];
     const numberOrNull = value => value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
     const nonNegative = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0?parsed:null; };
+    const positive = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>0?parsed:null; };
     const percentage = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0&&parsed<=1?parsed:null; };
     const attempts = (made, attempted) => { const m=nonNegative(made), a=nonNegative(attempted); return m!=null&&a!=null&&m>a?{made:null,attempted:null}:{made:m,attempted:a}; };
     const data = rows.filter(r => { const id=Number(r.PLAYER_ID),gp=numberOrNull(r.GP); return Number.isSafeInteger(id)&&id>0&&String(r.PLAYER_NAME||'').trim()&&gp!=null&&gp>0; }).map(r => ({
