@@ -305,3 +305,5 @@ assert.ok(app.includes("else setGames(current=>current.filter(game=>gameLocalDat
 assert.ok(app.includes("if(page==='historicstats')loadHistoricStats()"), 'A página de estatísticas históricas deve consultar automaticamente a temporada selecionada ao ser aberta.');
 
 assert.ok(server.includes("score:['in','post'].includes(String(competition.status?.type?.state||event.status?.type?.state||'pre').toLowerCase())?finiteNumberOrNull(side.score):null"), 'Confrontos diretos não podem exibir placar ou saldo em partidas ainda não iniciadas, mesmo que a ESPN envie zero no calendário.');
+
+assert.ok(server.includes("'/schedule?season=' + seasonYear + '&seasontype=2'"), 'Confrontos diretos devem solicitar explicitamente a temporada regular à ESPN, sem misturar pré-temporada ou playoffs.');
