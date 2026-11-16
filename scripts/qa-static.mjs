@@ -398,3 +398,6 @@ assert.ok(styles.includes('.game-matchup-teams') && styles.includes('.game-team-
 assert.ok(app.includes("TEAM_LOGO_IDS[team.abbreviation]?'https://cdn.nba.com/logos/nba/'+TEAM_LOGO_IDS[team.abbreviation]") && app.includes("TEAM_LOGO_IDS[teamA]?'https://cdn.nba.com/logos/nba/'+TEAM_LOGO_IDS[teamA]"), 'Central dos times e análise da franquia devem usar o mesmo diretório de escudos oficiais da NBA que os cartões de jogos.');
 
 assert.ok(styles.includes('@keyframes courtsideLivePulse') && styles.includes('.live i,.status-live:before') && styles.includes('@media(prefers-reduced-motion:reduce){.live i,.status-live:before'), 'Indicadores de partida ao vivo devem pulsar discretamente e respeitar movimento reduzido.');
+
+const liveRouteBlock = server.slice(server.indexOf("app.get('/api/games/live'"), server.indexOf('async function nbaLivePeriodSummary'));
+assert.ok(liveRouteBlock.includes('  try {') && liveRouteBlock.includes("return res.status(503).json({ error: 'Falha ao consolidar o placar ao vivo:'"), 'Erros inesperados ao combinar ESPN e NBA Live devem retornar JSON 503 controlado, sem rejeição não tratada no Express.');
