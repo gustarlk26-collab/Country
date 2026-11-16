@@ -8,6 +8,7 @@ const styles = read('src/styles.css');
 const worker = read('public/sw.js');
 const schema = read('supabase/schema.sql');
 const manifest = read('public/manifest.webmanifest');
+const arena = read('public/courtside-arena.svg');
 const render = read('render.yml');
 const teamMetaBlock = server.match(/const TEAM_META = \{([\s\S]*?)\n\};/);
 const teamAbbrs = [...(teamMetaBlock?.[1] || '').matchAll(/\d{10}:\['([A-Z]{3})'/g)].map(match => match[1]);
@@ -352,3 +353,7 @@ assert.ok(historicalBoxscore.includes('Number.isSafeInteger(parsed)&&parsed>=0')
 
 assert.ok(server.includes("res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'") && server.includes("'Surrogate-Control': 'no-store'"), 'Placar ao vivo deve impedir cache de navegador/proxy para não congelar placar, período ou relógio entre atualizações.');
 assert.ok(styles.includes(':focus-visible') && styles.includes('overscroll-behavior-x:contain') && styles.includes('env(safe-area-inset-top)') && styles.includes('@media(max-width:380px)'), 'UI deve oferecer foco acessível, rolagem de tabelas controlada e ajustes para telas móveis estreitas.');
+
+assert.ok(arena.includes('<svg') && arena.includes('viewBox="0 0 1800 1200"') && arena.includes('id="court"'), 'O fundo ilustrado original da arena deve existir como SVG válido e versionado no projeto.');
+assert.ok(styles.includes("url('/courtside-arena.svg')") && styles.includes('@keyframes courtsideEnter') && styles.includes('@keyframes courtsideGlow'), 'O tema deve usar o fundo original e animações próprias de interface.');
+assert.ok(app.includes('soundEnabled') && app.includes('AudioContextClass') && app.includes('aria-pressed={soundEnabled}') && app.includes('playUiSound(\'navigate\')'), 'Efeitos sonoros devem ser opcionais, sintetizados localmente e controlados por acessibilidade.');
