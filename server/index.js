@@ -875,11 +875,22 @@ app.get('/api/games/live', async (_req, res) => {
     const [oldId, existing] = match;
     merged.delete(oldId);
     if (game.status_state === 'in_progress' || game.status_state === 'final') {
-      merged.set(String(game.id), {
+      const combined = {
         ...existing, ...game,
         home_team_score: game.home_team_score ?? existing.home_team_score,
         visitor_team_score: game.visitor_team_score ?? existing.visitor_team_score
-      });
+      };
+      if (game.status_state === 'in_progress') {
+        // NBA Live é a fonte prioritária; se publicar o jogo sem relógio/período,
+        // conserva o valor oficial da ESPN em vez de apagar um dado ainda válido.
+        combined.period = game.period ?? existing.period ?? null;
+        combined.period_label = game.period_label || existing.period_label || '';
+        combined.display_clock = game.display_clock ?? existing.display_clock ?? null;
+      } else {
+        // Um jogo encerrado nunca pode herdar o relógio antigo da ESPN.
+        combined.display_clock = null;
+      }
+      merged.set(String(game.id), combined);
     } else {
       merged.set(String(game.id), { ...game, ...existing });
     }
