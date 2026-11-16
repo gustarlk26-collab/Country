@@ -42,6 +42,17 @@ try {
     headers: { Origin: 'https://untrusted.example', 'Access-Control-Request-Method': 'GET' }
   });
   assert.equal(blockedPreflight.headers.get('access-control-allow-origin'), null, 'Origem externa não autorizada não pode receber permissão CORS.');
+
+  const clientA = '198.51.100.10', clientB = '198.51.100.11';
+  for (let attempt = 0; attempt < 90; attempt++) {
+    const response = await fetch(base + '/api/teams', { headers: { 'X-Forwarded-For': clientA } });
+    assert.equal(response.status, 401, 'As primeiras 90 chamadas do mesmo cliente devem alcançar a autenticação.');
+  }
+  const otherClient = await fetch(base + '/api/teams', { headers: { 'X-Forwarded-For': clientB } });
+  assert.equal(otherClient.status, 401, 'Um segundo IP encaminhado pelo proxy deve ter seu próprio limite.');
+  const limitedClient = await fetch(base + '/api/teams', { headers: { 'X-Forwarded-For': clientA } });
+  assert.equal(limitedClient.status, 429, 'O 91º acesso do primeiro IP deve ser limitado sem bloquear o segundo cliente.');
+
   process.stdout.write('Smoke QA aprovada: servidor inicia, health check responde, API exige sessão e CORS respeita a allowlist.\\n');
 } finally {
   child.kill('SIGTERM');
