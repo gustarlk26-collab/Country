@@ -430,3 +430,6 @@ assert.ok(styles.includes('.layout{isolation:isolate}') && styles.includes('.lay
 
 assert.ok(app.includes("lang==='en'?'YOUR NBA HUB'") && app.includes("lang==='es'?'TU CENTRO NBA'") && app.includes("{featureKeys.length}"), 'Cabeçalho do centro NBA deve ser localizado e refletir a quantidade real de ferramentas.');
 assert.ok(app.includes("lang==='en'?'options':lang==='es'?'opciones':'opções'"), 'Contagem de opções por categoria deve respeitar o idioma selecionado.');
+
+assert.ok(app.includes("onClickCapture={e=>{const button=e.target?.closest?.('button');if(button&&soundEnabled)playUiSound(button.classList.contains('feature-tile')||button.closest('.nav-group')?'navigate':'tap');}}"), 'Efeitos sonoros opcionais devem cobrir botões e navegação em todas as páginas.');
+assert.ok(app.includes("if(enabling)playUiSound('success',true)") && app.includes("const [soundEnabled,setSoundEnabled]=useState(false)"), 'Som deve continuar desligado por padrão e confirmar a ativação apenas após ação do usuário.');
