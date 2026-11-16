@@ -51,7 +51,7 @@ const logoBlock = app.match(/const TEAM_LOGO_IDS=\{([^}]+)\}/)?.[1] || '';
 const logoEntries = [...logoBlock.matchAll(/([A-Z]{3}):(\d+)/g)].map(match => [match[1], Number(match[2])]);
 assert.equal(logoEntries.length, 30, 'Diretório de escudos oficiais deve conter as 30 franquias.');
 assert.deepEqual(logoEntries.map(([abbr]) => abbr).sort(), teamAbbrs.slice().sort(), 'Escudos devem cobrir exatamente as 30 abreviações oficiais.');
-const officialTeamIds = Object.fromEntries([...(teamMetaBlock?.[1] || '').matchAll(/(\\d+):\\['([A-Z]{3})'/g)].map(match => [match[2], Number(match[1])]));
+const officialTeamIds = Object.fromEntries([...(teamMetaBlock?.[1] || '').matchAll(/(\d+):\['([A-Z]{3})'/g)].map(match => [match[2], Number(match[1])]));
 for (const [abbr, id] of logoEntries) assert.equal(id, officialTeamIds[abbr], 'ID do escudo não corresponde à franquia ' + abbr);
 
 assert.ok(server.includes("app.get('/api/team-stats'") && server.includes("NBA Stats base") && server.includes("NBA Stats advanced"), 'Comparador de franquias deve consumir estatísticas oficiais da NBA.');
