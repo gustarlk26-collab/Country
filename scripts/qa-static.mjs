@@ -38,7 +38,7 @@ assert.ok(app.includes("String(value).trim()===''"), 'Formatadores globais devem
 assert.ok(app.includes("Alguns dados podem ficar indisponíveis.") && app.includes('A fonte não retornou médias para este jogador'), 'Perfil deve informar falhas e ausência de estatísticas em vez de ocultar respostas vazias.');
 assert.ok(server.includes("String(value).trim() === ''"), 'API deve rejeitar campos numéricos vazios em vez de convertê-los em zero.');
 assert.ok(app.includes(".filter(m=>m.value!=null&&Number.isFinite(m.value))"), 'Perfil estatístico deve descartar métricas não numéricas.');
-assert.ok(server.includes("if (!/^\\d{10}$/.test(String(game.gameId || '')) || !home.teamTricode || !away.teamTricode) return null;"), 'Placar CDN deve descartar partidas sem ID ou equipes válidas.');
+assert.ok(server.includes("if (!/^\\d{10}$/.test(String(game.gameId || '')) || !home.teamTricode || !away.teamTricode) return null;"), 'NBA Live deve descartar partidas sem ID válido ou equipes sem tricode.');
 
 const routes = [...server.matchAll(/app\.(get|post|put|delete|patch)\(['"]([^'"]+)/g)].map(match => match[1].toUpperCase() + ' ' + match[2]);
 assert.ok(routes.includes('GET /api/games/live'), 'Endpoint de placar ao vivo ausente.');
@@ -183,7 +183,7 @@ assert.ok(server.includes("if (date !== today && state !== 'in') return []"), 'P
 assert.ok(server.includes('if (localDate !== today && state !== 2) return null'), 'Fallback NBA Live deve preservar jogos que seguem ao vivo após meia-noite.');
 assert.ok(server.includes('async function nbaLiveScoreboard(today)') && server.includes('nbaLiveScoreboard(today)') && server.includes("source: espnResult.status === 'fulfilled' && nbaResult.status === 'fulfilled' ? 'ESPN + NBA Live CDN'") && server.includes("game.status_state === 'in_progress' || game.status_state === 'final'"), 'Placar ao vivo deve consultar NBA Live CDN a cada atualização e combinar estado, período, relógio e placar com o calendário ESPN.');
 assert.ok(server.includes("display_clock: statusState === 'in_progress' && period != null ? validGameClock(game.gameClock, period) : null") && server.includes('scoreboardScore(home.score, statusState)'), 'Relógio e placar do NBA Live devem ser validados pela situação real da partida antes de chegar à interface.');
-assert.ok(server.includes("if (!/^\\\\d{10}$/.test(String(game.gameId || ''))"), 'NBA Live deve validar o ID numérico de dez dígitos com regex de dígitos, sem filtrar todos os jogos.');
+assert.ok(server.includes("if (!/^\\d{10}$/.test(String(game.gameId || ''))"), 'NBA Live deve validar o ID numérico de dez dígitos com regex de dígitos.');
 assert.ok(app.includes("api(`/api/games/${encodeURIComponent(g.id)}/stats`,{cache:false})"), 'A abertura manual do box score deve ignorar o cache local para não exibir estatísticas antigas.');
 assert.ok(app.includes("boxGame?.status_state==='in_progress'?' · '+(boxGame?.display_clock?formatGameClock(boxGame.display_clock):'Relógio oficial indisponível')"), 'Box score deve exibir o período e o relógio oficial validado da partida ao vivo.');
 
