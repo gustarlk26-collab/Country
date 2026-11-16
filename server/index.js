@@ -574,7 +574,8 @@ async function espnStandings() {
       team: { id: Number(team.id), full_name: team.displayName || team.name || '', name: team.displayName || team.name || '',
         abbreviation: canonicalTeamAbbr(team.abbreviation || ''), conference: group.name || group.abbreviation || meta?.[2] || '' },
       wins, losses,
-      win_pct: Number.isFinite(winPct) && winPct >= 0 && winPct <= 1 ? winPct : null
+      win_pct: Number.isFinite(winPct) && winPct >= 0 && winPct <= 1 ? winPct : null,
+      playoff_rank: (()=>{const value=finiteNumberOrNull(stats.playoffSeed??stats.playoffRank??stats.rank);return value!=null&&Number.isSafeInteger(value)&&value>0?value:null;})()
     };
   }));
   return entries.sort((a,b) => {
@@ -1466,7 +1467,8 @@ app.get('/api/standings', async (_req, res) => {
       team: { id: r.TeamID, full_name: r.TeamName, name: r.TeamName, abbreviation: TEAM_META[Number(r.TeamID)]?.[0] || r.TeamAbbreviation, conference: r.Conference || TEAM_META[Number(r.TeamID)]?.[2] },
       wins: (()=>{const value=finiteNumberOrNull(r.WINS);return value!=null&&Number.isSafeInteger(value)&&value>=0?value:null;})(),
       losses: (()=>{const value=finiteNumberOrNull(r.LOSSES);return value!=null&&Number.isSafeInteger(value)&&value>=0?value:null;})(),
-      win_pct: r.WIN_PCT == null || r.WIN_PCT === '' || !Number.isFinite(Number(r.WIN_PCT)) || Number(r.WIN_PCT) < 0 || Number(r.WIN_PCT) > 1 ? null : Number(r.WIN_PCT)
+      win_pct: r.WIN_PCT == null || r.WIN_PCT === '' || !Number.isFinite(Number(r.WIN_PCT)) || Number(r.WIN_PCT) < 0 || Number(r.WIN_PCT) > 1 ? null : Number(r.WIN_PCT),
+      playoff_rank: (()=>{const value=finiteNumberOrNull(r.PlayoffRank);return value!=null&&Number.isSafeInteger(value)&&value>0?value:null;})()
     }));
     res.json({ data });
   } catch (e) {
