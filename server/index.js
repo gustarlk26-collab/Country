@@ -848,6 +848,7 @@ async function nbaLiveScoreboard(today) {
 app.get('/api/games/live', async (_req, res) => {
   // Placares/relógio não podem ser armazenados pelo navegador ou proxy: a rota já possui cache curto e controlado no servidor.
   res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', 'Pragma': 'no-cache', 'Expires': '0', 'Surrogate-Control': 'no-store' });
+  try {
   const today = saoPauloDate(new Date().toISOString());
   const [espnResult, nbaResult] = await Promise.allSettled([
     cached('espn-live-games:' + today, espnLiveGames, 8000),
@@ -890,6 +891,9 @@ app.get('/api/games/live', async (_req, res) => {
     source: espnResult.status === 'fulfilled' && nbaResult.status === 'fulfilled' ? 'ESPN + NBA Live CDN' : espnResult.status === 'fulfilled' ? 'ESPN daily scoreboard' : 'NBA Live CDN scoreboard',
     fallback: espnResult.status === 'rejected' || nbaResult.status === 'rejected'
   });
+  } catch (error) {
+    return res.status(503).json({ error: 'Falha ao consolidar o placar ao vivo: ' + (error?.message || 'erro inesperado na fonte de dados.') });
+  }
 });
 
 async function nbaLivePeriodSummary(gameId) {
