@@ -8,7 +8,7 @@ const port = 20000 + (process.pid % 20000);
 const origin = 'https://courtside-family.onrender.com';
 const child = spawn(process.execPath, ['server/index.js'], {
   cwd: root,
-  env: { ...process.env, PORT: String(port), CORS_ORIGIN: origin, FAMILY_EMAILS: '', SUPABASE_URL: '', SUPABASE_ANON_KEY: '' },
+  env: { ...process.env, PORT: String(port), CORS_ORIGIN: origin, FAMILY_EMAILS: '', SUPABASE_URL: 'https://smoke-test.supabase.co', SUPABASE_ANON_KEY: 'smoke-test-anon-key' },
   stdio: 'ignore'
 });
 const base = `http://127.0.0.1:${port}`;
