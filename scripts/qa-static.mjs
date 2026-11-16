@@ -373,3 +373,5 @@ assert.ok(app.includes("if(!active||request!==rankingsRequestRef.current)return;
 
 assert.ok(app.includes("const loadNewsNew=")===false && app.includes("newsRequestRef") && app.includes("injuriesRequestRef") && app.includes("if(!active||request!==newsRequestRef.current)return;") && app.includes("if(!active||request!==injuriesRequestRef.current)return;"), 'Notícias e lesões devem ignorar respostas atrasadas após troca de página ou atualização concorrente.');
 assert.ok(app.includes("return()=>{active=false;if(page==='news')newsRequestRef.current++;if(page==='injuries')injuriesRequestRef.current++;};"), 'A saída das páginas de notícias/lesões deve invalidar requisições pendentes.');
+
+assert.ok(!app.includes("onChange={e=>{setTeamA(e.target.value);loadTeamRoster(e.target.value);}}") && app.includes("if(['teamanalytics','lineups','rotation'].includes(page))loadTeamRoster(teamA);"), 'Trocar a franquia deve disparar apenas o carregamento centralizado do elenco, sem chamadas duplicadas no evento e no efeito.');
