@@ -435,3 +435,7 @@ assert.ok(app.includes("onClickCapture={e=>{const button=e.target?.closest?.('bu
 assert.ok(app.includes("if(enabling)playUiSound('success',true)") && app.includes("const [soundEnabled,setSoundEnabled]=useState(false)"), 'Som deve continuar desligado por padrão e confirmar a ativação apenas após ação do usuário.');
 
 assert.ok(styles.includes('button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible'), 'Campos de texto devem ter foco de teclado visível para acessibilidade.');
+
+const favoriteHandler = app.slice(app.indexOf('const toggleFavorite=async(p)=>{'), app.indexOf('const signOut=async()=>'));
+assert.ok(favoriteHandler.includes('try{') && favoriteHandler.includes('catch(error)') && favoriteHandler.includes('Não foi possível atualizar este favorito:'), 'Falhas de rede no salvamento ou remoção de favoritos devem ser tratadas e mostradas sem rejeições não tratadas.');
+assert.ok(favoriteHandler.includes('session?.user?.id!==userId') && favoriteHandler.includes('request!==favoritesRequestRef.current'), 'Operações de favoritos antigas não podem atualizar a sessão de outro usuário.');
