@@ -179,7 +179,7 @@ assert.ok(server.includes("const resultText = String(action.shotResult || '').to
 assert.ok(server.includes('if (!made && !missed) continue;'), 'Mapa alternativo deve descartar resultados de arremesso não identificados.');
 assert.ok(server.includes("if (rawX == null || rawX === '' || rawY == null || rawY === '') continue;"), 'Feed alternativo não pode converter coordenadas ausentes em zero.');
 assert.equal((server.match(/fg_pct:\s*shootingPct\(/g)||[]).length, 3, 'Todos os feeds de box score devem usar o cálculo seguro de aproveitamento.');
-assert.ok(server.includes('home_team_score: finiteNumberOrNull(home.score)'), 'Pontuação da casa deve aceitar somente números oficiais válidos.');
+assert.ok(server.includes("home_team_score: scoreboardScore(home.score, state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled')"), 'Pontuação da casa deve aceitar somente placares oficiais inteiros e não usar valores do calendário agendado.');
 assert.ok(server.includes("if (date !== today && state !== 'in') return []"), 'Partidas ao vivo após meia-noite devem continuar visíveis no horário local.');
 assert.ok(server.includes('if (localDate !== today && state !== 2) return null'), 'Fallback NBA Live deve preservar jogos que seguem ao vivo após meia-noite.');
 assert.ok(server.includes('async function nbaLiveScoreboard(today)') && server.includes('nbaLiveScoreboard(today)') && server.includes("source: espnResult.status === 'fulfilled' && nbaResult.status === 'fulfilled' ? 'ESPN + NBA Live CDN'") && server.includes("game.status_state === 'in_progress' || game.status_state === 'final'"), 'Placar ao vivo deve consultar NBA Live CDN a cada atualização e combinar estado, período, relógio e placar com o calendário ESPN.');
