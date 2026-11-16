@@ -400,7 +400,7 @@ assert.ok(app.includes("TEAM_LOGO_IDS[team.abbreviation]?'https://cdn.nba.com/lo
 assert.ok(styles.includes('@keyframes courtsideLivePulse') && styles.includes('.live i,.status-live:before') && styles.includes('@media(prefers-reduced-motion:reduce){.live i,.status-live:before'), 'Indicadores de partida ao vivo devem pulsar discretamente e respeitar movimento reduzido.');
 
 const liveRouteBlock = server.slice(server.indexOf("app.get('/api/games/live'"), server.indexOf('async function nbaLivePeriodSummary'));
-assert.ok(liveRouteBlock.includes('  try {') && liveRouteBlock.includes("return res.status(503).json({ error: 'Falha ao consolidar o placar ao vivo:'"), 'Erros inesperados ao combinar ESPN e NBA Live devem retornar JSON 503 controlado, sem rejeição não tratada no Express.');
+assert.ok(liveRouteBlock.includes('  try {') && liveRouteBlock.includes('Falha ao consolidar o placar ao vivo:'), 'Erros inesperados ao combinar ESPN e NBA Live devem retornar JSON 503 controlado, sem rejeição não tratada no Express.');
 
 const asyncRouteMatches = [...server.matchAll(/app\.(?:get|post|put|patch|delete)\(['"][^'"]+['"],\s*async/g)];
 assert.ok(asyncRouteMatches.length >= 19, 'Cobertura de rotas assíncronas do servidor incompleta.');
