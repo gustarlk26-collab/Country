@@ -51,7 +51,7 @@ assert.ok(server.includes('decided:0') && server.includes('games.decided?games.w
 assert.ok(app.includes("setTeamStatsBusy(true)") && app.includes("setTeamStatsMeta({season:r.season,source:r.source,updatedAt:r.updatedAt})"), 'Comparador deve exibir carregamento e metadados reais da fonte.');
 assert.ok(app.includes("FRANQUIA A") && app.includes("FRANQUIA B") && app.includes("Trocar franquias") && app.includes("Atualizar dados"), 'Comparador de franquias deve permitir selecionar, inverter e atualizar as equipes.');
 assert.ok(app.includes("Rating ofensivo") && app.includes("Rating defensivo") && app.includes("Aproveitamento de 3 pontos") && app.includes("Pontos por jogo"), 'Comparador deve apresentar métricas de produção e eficiência.');
-assert.ok(app.includes("!['win_pct','fg_pct','fg3_pct','off_rating','def_rating','net_rating'].includes(metric)") && qa.includes("const lower=metric==='def_rating'"), 'Comparador só pode indicar vantagem em métricas direcionais; volume, jogos e ritmo são descritivos, não uma superioridade automática.');
+assert.ok(app.includes("!['win_pct','fg_pct','fg3_pct','off_rating','def_rating','net_rating'].includes(metric)") && app.includes("const lower=metric==='def_rating'"), 'Comparador só pode indicar vantagem em métricas direcionais; volume, jogos e ritmo são descritivos, não uma superioridade automática.');
 assert.ok(app.includes("if(!Array.isArray(r.data)||!r.data.length)throw new Error('A fonte não retornou estatísticas de franquias.')"), 'Comparador não deve tratar resposta vazia como comparação válida.');
 
 for (const abbr of teamAbbrs) assert.ok(new RegExp('(?:^|[,\\{])' + abbr + ':').test(espnTeamMap), 'ID ESPN ausente para franquia: ' + abbr);
