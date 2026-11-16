@@ -383,7 +383,7 @@ assert.ok(!app.includes("onChange={e=>{setTeamA(e.target.value);loadTeamRoster(e
 
 assert.ok(app.includes("const favoritesRequestRef=useRef(0)") && app.includes("request!==favoritesRequestRef.current||session?.user?.id!==userId") && app.includes("else{favoritesRequestRef.current++;setFavorites([]);}"), 'Favoritos devem ser isolados por sessão e respostas pendentes da conta anterior não podem reaparecer após logout ou troca de usuário.');
 
-assert.ok(app.includes("const favoritesRequestRef=useRef(0),favoriteMutationRef=useRef(new Map())") && app.includes("favoriteMutationRef.current.clear()") && app.includes("const mutationKey=userId+':'+id,mutationToken=Symbol('favorite')"), 'Mutação de favoritos deve usar trava independente por jogador e invalidar travas no logout, sem cancelar atualizações de outros atletas.');
+assert.ok(app.includes("favoriteMutationRef=useRef(new Map()),favoriteSessionEpochRef=useRef(0),favoriteSessionUserRef=useRef(null)") && app.includes("syncFavoriteSession(s?.user?.id||null)") && app.includes("favoriteMutationRef.current.clear()"), 'Mutação de favoritos deve invalidar travas quando a sessão autenticada muda ou é encerrada.');
 
 assert.ok(app.includes("const loadCore=useCallback(async({force=false}={})=>{const request=++coreRequestRef.current") && app.includes("if(request!==coreRequestRef.current)return;") && app.includes("const signOut=async()=>{try{") && app.includes("coreRequestRef.current+=1"), 'Visão geral e calendário devem invalidar consultas antigas ao trocar período, atualizar manualmente ou sair da conta.');
 
@@ -441,7 +441,7 @@ assert.ok(styles.includes('button:focus-visible,a:focus-visible,select:focus-vis
 
 const favoriteHandler = app.slice(app.indexOf('const toggleFavorite=async(p)=>{'), app.indexOf('const signOut=async()=>'));
 assert.ok(favoriteHandler.includes('try{') && favoriteHandler.includes('catch(error)') && favoriteHandler.includes('Não foi possível atualizar este favorito:'), 'Falhas de rede no salvamento ou remoção de favoritos devem ser tratadas e mostradas sem rejeições não tratadas.');
-assert.ok(favoriteHandler.includes("favoriteMutationRef.current.has(mutationKey)") && favoriteHandler.includes("favoriteMutationRef.current.set(mutationKey,mutationToken)") && favoriteHandler.includes("favoriteMutationRef.current.get(mutationKey)===mutationToken") && !favoriteHandler.includes("favoritesRequestRef.current"), 'Favoritos de jogadores diferentes devem poder concluir sem perder atualizações; cliques duplicados no mesmo atleta devem ser serializados.');
+assert.ok(favoriteHandler.includes("favoriteMutationRef.current.has(mutationKey)") && favoriteHandler.includes("favoriteMutationRef.current.set(mutationKey,mutationToken)") && favoriteHandler.includes("favoriteMutationRef.current.get(mutationKey)===mutationToken") && favoriteHandler.includes("sessionEpoch!==favoriteSessionEpochRef.current") && !favoriteHandler.includes("favoritesRequestRef.current"), 'Favoritos de jogadores diferentes devem poder concluir sem perder atualizações; cliques duplicados e respostas de sessões anteriores devem ser bloqueados.');
 
 const signOutHandler = app.slice(app.indexOf('const signOut=async()=>{'), app.indexOf('const favIds='));
 assert.ok(signOutHandler.includes('try{') && signOutHandler.includes('catch(error)') && signOutHandler.includes('Não foi possível encerrar a sessão:'), 'Falhas de rede ao sair da conta devem ser capturadas e informadas ao usuário.');
