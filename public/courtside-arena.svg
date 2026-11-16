@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1200" fill="none">
+<defs>
+ <linearGradient id="night" x1="900" y1="0" x2="900" y2="1200" gradientUnits="userSpaceOnUse"><stop stop-color="#102b49"/><stop offset=".48" stop-color="#07182b"/><stop offset="1" stop-color="#030b16"/></linearGradient>
+ <radialGradient id="spot" cx="0" cy="0" r="1" gradientTransform="matrix(0 720 -920 0 900 80)" gradientUnits="userSpaceOnUse"><stop stop-color="#4ca9ff" stop-opacity=".34"/><stop offset="1" stop-color="#4ca9ff" stop-opacity="0"/></radialGradient>
+ <linearGradient id="court" x1="900" y1="600" x2="900" y2="1190" gradientUnits="userSpaceOnUse"><stop stop-color="#d98743" stop-opacity=".20"/><stop offset="1" stop-color="#71391f" stop-opacity=".05"/></linearGradient>
+ <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9bd5ff" stop-opacity=".22"/><stop offset="1" stop-color="#9bd5ff" stop-opacity="0"/></linearGradient>
+ <pattern id="seats" width="42" height="28" patternUnits="userSpaceOnUse"><path d="M3 8h28v7H3z" fill="#8db8dc" fill-opacity=".11"/><path d="M7 18h28v5H7z" fill="#8db8dc" fill-opacity=".07"/></pattern>
+ <filter id="blur"><feGaussianBlur stdDeviation="24"/></filter>
+</defs>
+<path fill="url(#night)" d="M0 0h1800v1200H0z"/><path fill="url(#spot)" d="M0 0h1800v1200H0z"/>
+<g opacity=".7"><path fill="url(#beam)" d="M140 0h190L620 700H440z"/><path fill="url(#beam)" d="M1470 0h190l-260 700h-180z"/></g>
+<ellipse cx="900" cy="420" rx="800" ry="240" fill="#2773ad" fill-opacity=".12" filter="url(#blur)"/>
+<path d="M0 310Q900 80 1800 310v250Q900 360 0 560V310Z" fill="url(#seats)" opacity=".8"/>
+<path d="M0 300Q900 70 1800 300M0 360Q900 130 1800 360M0 430Q900 200 1800 430" stroke="#8fc9f3" stroke-opacity=".15" stroke-width="3"/>
+<path d="M0 560Q900 390 1800 560" stroke="#d8a06d" stroke-opacity=".28" stroke-width="3"/>
+<path d="M220 1200 540 620h720l320 580H220Z" fill="url(#court)"/>
+<path d="M220 1200 540 620h720l320 580H220Z" stroke="#e5a36c" stroke-opacity=".2" stroke-width="3"/>
+<path d="M540 620v580m720-580v580M900 620v580" stroke="#e5a36c" stroke-opacity=".16" stroke-width="2"/>
+<path d="M670 1200v-210a230 230 0 0 1 460 0v210" stroke="#e5a36c" stroke-opacity=".22" stroke-width="3"/>
+<circle cx="900" cy="900" r="125" stroke="#e5a36c" stroke-opacity=".18" stroke-width="3"/>
+<path d="M0 1030 1800 760M0 1130 1800 860" stroke="#83b9e5" stroke-opacity=".06" stroke-width="2"/>
+<g fill="#c5e7ff" fill-opacity=".5"><circle cx="170" cy="205" r="3"/><circle cx="340" cy="150" r="2"/><circle cx="1490" cy="160" r="3"/><circle cx="1650" cy="250" r="2"/><circle cx="900" cy="100" r="3"/></g>
+</svg>
