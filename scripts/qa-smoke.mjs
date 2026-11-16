@@ -53,7 +53,7 @@ try {
   const limitedClient = await fetch(base + '/api/teams', { headers: { 'X-Forwarded-For': clientA } });
   assert.equal(limitedClient.status, 429, 'O 91º acesso do primeiro IP deve ser limitado sem bloquear o segundo cliente.');
 
-  process.stdout.write('Smoke QA aprovada: servidor inicia, health check responde, API exige sessão e CORS respeita a allowlist.\\n');
+  process.stdout.write('Smoke QA aprovada: servidor, health check, autenticação, CORS e rate limit por IP.\\n');
 } finally {
   child.kill('SIGTERM');
   await Promise.race([once(child, 'exit'), pause(1500)]);
