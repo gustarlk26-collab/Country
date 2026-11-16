@@ -147,6 +147,7 @@ export default function App(){
         });
         return [...byId.values()].sort((x,y)=>new Date(x.datetime||x.date)-new Date(y.datetime||y.date));
       });
+      else setGames(current=>current.filter(game=>gameLocalDate(game)!==dateNow(0)));
       setLastSync(new Date());
       const selectedGame=boxGameRef.current;
       const updated=updates.find(game=>sameGame(game,selectedGame));
