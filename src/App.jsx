@@ -165,8 +165,29 @@ export default function App(){
       const merged=incoming.map(game=>{
         const previous=current.find(item=>sameGame(item,game));
         if(!previous)return game;
-        if(['in_progress','final'].includes(previous.status_state))return {...game,...previous};
-        return {...previous,...game};
+        const statusRank={scheduled:0,in_progress:1,final:2};
+        const previousRank=statusRank[previous.status_state]??0;
+        const incomingRank=statusRank[game.status_state]??0;
+        // A resposta nova vence quando está no mesmo estágio ou avança o jogo.
+        // Só preservamos o estado ao vivo anterior se a API de calendário vier atrasada.
+        if(previousRank>incomingRank){
+          return {
+            ...previous,...game,
+            status:previous.status,
+            status_state:previous.status_state,
+            period:previous.period??game.period??null,
+            period_label:previous.period_label||game.period_label||'',
+            display_clock:previous.status_state==='final'?null:(previous.display_clock??game.display_clock??null),
+            home_team_score:previous.home_team_score??game.home_team_score??null,
+            visitor_team_score:previous.visitor_team_score??game.visitor_team_score??null
+          };
+        }
+        return {
+          ...previous,...game,
+          home_team_score:game.home_team_score??previous.home_team_score??null,
+          visitor_team_score:game.visitor_team_score??previous.visitor_team_score??null,
+          display_clock:game.status_state==='final'?null:(game.display_clock??previous.display_clock??null)
+        };
       });
       current.filter(item=>['in_progress','final'].includes(item.status_state)&&!merged.some(game=>sameGame(item,game))).forEach(item=>merged.push(item));
       return merged.sort((x,y)=>new Date(x.datetime||x.date)-new Date(y.datetime||y.date));
