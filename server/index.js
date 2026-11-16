@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
@@ -48,6 +49,7 @@ const NBA_HEADERS = {
 
 app.disable('x-powered-by');
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(compression({ threshold: 1024 })); // Compacta JSON e assets textuais maiores sem custo para payloads pequenos.
 app.set('trust proxy', 1); // Render fica atrás de um proxy; usa o IP do cliente para limitar requisições corretamente.
 app.use(cors({ origin(origin, callback) { if (!origin) return callback(null, true); return callback(null, ALLOWED_ORIGINS.includes(origin)); }, credentials: false, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Authorization','Content-Type'] }));
 app.use(express.json({ limit: '32kb' }));
