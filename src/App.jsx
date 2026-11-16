@@ -275,7 +275,7 @@ return()=>{active=false;if(page==='news')newsRequestRef.current++;if(page==='inj
       else setFavorites(current=>current.filter(f=>!ids.some(existingId=>String(existingId)===String(f.player_id))));
     }else{
       const {data,error:e}=await supabase.from('favorites').insert({user_id:userId,player_id:id,player_name:name,team_abbreviation:p.team?.abbreviation||p.team_abbreviation||null}).select().single();
-      if(session?.user?.id!==userId)return;
+      if(sessionEpoch!==favoriteSessionEpochRef.current||session?.user?.id!==userId)return;
       if(e)setError(e.message);
       else setFavorites(current=>current.some(f=>String(f.player_id)===String(id))?current:[data,...current]);
     }
