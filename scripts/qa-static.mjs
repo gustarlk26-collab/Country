@@ -139,7 +139,7 @@ assert.ok(app.includes("const fallbackStats=bio?.stats||{}"), 'Perfil deve usar 
 assert.ok(app.includes('if(targetName)return candidateName===targetName') && app.includes('if(targetName)return rowName===targetName'), 'Perfil deve conciliar IDs ESPN e NBA Stats pelo nome e franquia antes de comparar IDs de provedores diferentes.');
 assert.ok(app.includes("normalizePlayerKey(f.player_name)===normalizePlayerKey(name)"), 'Favoritos devem reconhecer o mesmo atleta mesmo com IDs diferentes entre fontes.');
 assert.ok(app.includes("'name:'+normalizePlayerKey(f.player_name)"), 'Estado visual dos favoritos deve ser consistente em todas as páginas.');
-assert.ok(app.includes('candidate.team.abbreviation===targetTeam'), 'Conciliação por nome deve respeitar a equipe quando disponível.');
+assert.ok(app.includes("(!targetTeam||!candidateTeam||candidateTeam===targetTeam)") && app.includes("(!targetTeam||!rowTeam||rowTeam===targetTeam)"), 'Conciliação por nome deve respeitar a equipe quando disponível.');
 assert.ok(app.includes("const profileAdvancedRow=advancedRow||advancedKeys.some(key=>advancedBase[key]!=null)?advancedBase:null"), 'Perfil deve aproveitar métricas avançadas ESPN quando a fonte principal não retornar valores.');
 assert.ok(app.includes("selectedProfile.advanced||null"), 'Atualizações periódicas não podem apagar o fallback do perfil.');
 
