@@ -433,3 +433,5 @@ assert.ok(app.includes("lang==='en'?'options':lang==='es'?'opciones':'opções'"
 
 assert.ok(app.includes("onClickCapture={e=>{const button=e.target?.closest?.('button');if(button&&soundEnabled)playUiSound(button.classList.contains('feature-tile')||button.closest('.nav-group')?'navigate':'tap');}}"), 'Efeitos sonoros opcionais devem cobrir botões e navegação em todas as páginas.');
 assert.ok(app.includes("if(enabling)playUiSound('success',true)") && app.includes("const [soundEnabled,setSoundEnabled]=useState(false)"), 'Som deve continuar desligado por padrão e confirmar a ativação apenas após ação do usuário.');
+
+assert.ok(styles.includes('button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible'), 'Campos de texto devem ter foco de teclado visível para acessibilidade.');
