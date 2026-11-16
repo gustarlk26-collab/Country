@@ -173,7 +173,7 @@ async function nbaLiveBoxscore(gameId) {
 }
 async function nbaHistoricalBoxscore(gameId) {
   const id=String(gameId);
-  if(!/^\\d{10}$/.test(id))throw new Error('ID NBA inválido para box score histórico.');
+  if(!/^\d{10}$/.test(id))throw new Error('ID NBA inválido para box score histórico.');
   const response=await fetch(`${NBA_STATS}/boxscoretraditionalv3?${new URLSearchParams({
     GameID:id,EndPeriod:'10',EndRange:'0',RangeType:'0',StartPeriod:'0',StartRange:'0'
   })}`,{headers:NBA_HEADERS,signal:AbortSignal.timeout(12000)});
