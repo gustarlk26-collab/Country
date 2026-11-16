@@ -966,3 +966,20 @@ button:disabled{cursor:not-allowed;filter:saturate(.55);transform:none!important
 button:active,.feature-tile:active{transform:scale(.985)}
 @keyframes courtsideLivePulse{0%{box-shadow:0 0 0 0 rgba(232,83,92,.42);opacity:1}75%{box-shadow:0 0 0 7px rgba(232,83,92,0);opacity:.82}100%{box-shadow:0 0 0 0 rgba(232,83,92,0);opacity:1}}
 @media(prefers-reduced-motion:reduce){.live i,.status-live:before{animation:none!important}button:active,.feature-tile:active{transform:none!important}}
+
+
+/* Performance pass: reduce expensive paint work on touch devices across every route. */
+@media(max-width:900px){
+ .layout{background-attachment:scroll}
+ .layout:before{background-attachment:scroll;mix-blend-mode:normal}
+ .panel,.metric-card,.feature-tile,.team-card,.leader-card,.auth-card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ .feature-hub:before{animation:none!important}
+}
+@media(hover:none), (max-width:650px){
+ .sidebar nav button:hover,.panel:hover,.metric-card:hover,.feature-tile:hover{transform:none}
+ .panel,.metric-card,.feature-tile,.team-card,.leader-card{animation-duration:.22s}
+ .metric-card:hover,.feature-tile:hover{box-shadow:inherit}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
