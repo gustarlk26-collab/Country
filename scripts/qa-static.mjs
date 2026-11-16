@@ -301,3 +301,4 @@ assert.ok(app.includes('Array.from({length:81},(_,i)=>{const y=2026-i;'), 'Arqui
 assert.ok(server.includes('Number(match[1])<1946'), 'API histórica deve rejeitar temporadas anteriores à fundação da NBA.');
 
 assert.ok(app.includes('const historicRequestRef=useRef(0)') && app.includes('const request=++historicRequestRef.current') && app.includes('if(request!==historicRequestRef.current)return') && app.includes('if(request===historicRequestRef.current)setHistoricBusy(false)'), 'Consultas históricas antigas não podem sobrescrever filtros recentes nem encerrar o carregamento da consulta atual.');
+assert.ok(app.includes("if(page==='historicstats')loadHistoricStats()"), 'A página de estatísticas históricas deve consultar automaticamente a temporada selecionada ao ser aberta.');
