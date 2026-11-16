@@ -459,3 +459,7 @@ assert.ok(app.includes("apiResponseCache.delete(key);apiResponseCache.set(key,ca
 assert.ok(server.includes("cache.delete(key);\n    cache.set(key, hit);") && server.includes("while (cache.size > 500) cache.delete(cache.keys().next().value)"), 'Cache do backend deve atualizar a ordem LRU e remover entradas antigas sem ordenar o mapa inteiro.');
 assert.ok(packageManifest.dependencies?.compression && server.includes("import compression from 'compression';") && server.includes("app.use(compression({ threshold: 1024 }))"), 'Respostas maiores da API devem usar compressão HTTP.');
 assert.ok(server.includes("max-age=31536000, immutable") && server.includes("res.setHeader('Cache-Control', 'no-cache')") && server.includes("index: false"), 'Assets versionados podem ser armazenados por longo prazo, mas o HTML deve sempre verificar a versão atual.');
+
+const franchiseMetricsLoader = app.slice(app.indexOf('const loadTeamStats=async'), app.indexOf('const loadTeamRoster=async'));
+assert.ok(franchiseMetricsLoader.includes("api('/api/team-stats')") && !franchiseMetricsLoader.includes('cache:false'), 'Páginas que compartilham estatísticas de franquias devem reutilizar o cache recente ao abrir; a atualização periódica ao vivo permanece separada.');
+assert.ok(app.includes("api('/api/team-stats',{cache:false})"), 'A atualização periódica das estatísticas de franquias deve continuar buscando dados novos em vez de depender do cache de navegação.');
