@@ -1476,6 +1476,20 @@ app.get('/api/standings', async (_req, res) => {
 });
 
 const limiter = new Map();
-app.use(express.static(distPath));
-app.get('*', (req, res, next) => { if (req.path.startsWith('/api/')) return next(); res.sendFile(path.join(distPath, 'index.html')); });
+app.use(express.static(distPath, {
+  index: false,
+  setHeaders(res, filePath) {
+    // Vite coloca arquivos com hash em /assets: podem ser reutilizados por um ano.
+    if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+  }
+}));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 app.listen(PORT, '0.0.0.0', () => console.log(`Courtside Family ativo na porta ${PORT}`));
