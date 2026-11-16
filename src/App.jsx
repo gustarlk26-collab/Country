@@ -140,7 +140,48 @@ export default function App(){
  useEffect(()=>()=>{if(audioContextRef.current){audioContextRef.current.close().catch(()=>{});audioContextRef.current=null;}if(toastTimerRef.current){window.clearTimeout(toastTimerRef.current);toastTimerRef.current=null;}},[]);
  const loadSettings=useCallback(async()=>{const request=++settingsRequestRef.current;settingsSaveRequestRef.current+=1;setSettingsSaving(false);const userId=session?.user?.id;if(!supabase||!userId){setSettingsLoaded(false);return;}setSettingsLoaded(false);setLang('pt');setTheme('dark');try{const {data,error:e}=await supabase.from('user_settings').select('*').eq('user_id',userId).maybeSingle();if(request!==settingsRequestRef.current)return;if(e)throw e;setLang(data?.language||'pt');setTheme(data?.theme||'dark');}catch(e){if(request===settingsRequestRef.current)setError('Não foi possível carregar suas configurações: '+(e.message||'erro de conexão'));}finally{if(request===settingsRequestRef.current)setSettingsLoaded(true);}},[session]);
  const loadFavorites=useCallback(async()=>{const request=++favoritesRequestRef.current,userId=session?.user?.id;if(!supabase||!userId){setFavorites([]);return;}try{const {data,error:e}=await supabase.from('favorites').select('*').order('created_at',{ascending:false});if(request!==favoritesRequestRef.current||session?.user?.id!==userId)return;if(e)throw e;setFavorites(data||[]);}catch(error){if(request===favoritesRequestRef.current&&session?.user?.id===userId)setError('Não foi possível carregar seus favoritos: '+(error?.message||'falha de conexão com o Supabase.'));}},[session]);
- const loadCore=useCallback(async({force=false}={})=>{const request=++coreRequestRef.current;setBusy(true);setError('');try{const [tm,gm]=await Promise.allSettled([api('/api/teams',{cache:!force}),api(`/api/games?start=${from}&end=${to}${force?'&refresh=1':''}`,{cache:!force})]);if(request!==coreRequestRef.current)return;const failures=[];if(tm.status==='fulfilled')setTeams(Array.isArray(tm.value?.data)?tm.value.data:[]);else failures.push('Times: '+(tm.reason?.message||'indisponíveis'));if(gm.status==='fulfilled'){const incoming=Array.isArray(gm.value?.data)?gm.value.data:[];setGames(current=>{const sameGame=(left,right)=>{if(!left||!right)return false;const leftId=String(left.id??''),rightId=String(right.id??'');if(leftId&&rightId&&leftId===rightId)return true;return Boolean(left.date&&left.date===right.date&&left.home_team?.abbreviation&&left.home_team.abbreviation===right.home_team?.abbreviation&&left.visitor_team?.abbreviation&&left.visitor_team.abbreviation===right.visitor_team?.abbreviation);};const merged=incoming.map(game=>{const previous=current.find(item=>sameGame(item,game));if(!previous)return game;if(['in_progress','final'].includes(previous.status_state))return {...game,...previous};return {...previous,...game};});current.filter(item=>['in_progress','final'].includes(item.status_state)&&!merged.some(game=>sameGame(item,game))).forEach(item=>merged.push(item));return merged.sort((x,y)=>new Date(x.datetime||x.date)-new Date(y.datetime||y.date));});setGamesLoaded(true);}else failures.push('Calendário: '+(gm.reason?.message||'indisponível'));if(tm.status==='fulfilled'||gm.status==='fulfilled')setLastSync(new Date());if(failures.length)setError(failures.join(' · '));}catch(e){if(request===coreRequestRef.current)setError(e.message||'Não foi possível carregar os dados iniciais.');}finally{if(request===coreRequestRef.current)setBusy(false);}},[api,from,to]);
+ const loadCore=useCallback(async({force=false}={})=>{
+  const request=++coreRequestRef.current;
+  setBusy(true);
+  setError('');
+  const failures=[];
+  const teamsTask=api('/api/teams',{cache:!force}).then(result=>{
+    if(request!==coreRequestRef.current)return;
+    setTeams(Array.isArray(result?.data)?result.data:[]);
+    setLastSync(new Date());
+  }).catch(error=>{
+    if(request===coreRequestRef.current)failures.push('Times: '+(error?.message||'indisponíveis'));
+  });
+  const gamesTask=api(`/api/games?start=${from}&end=${to}${force?'&refresh=1':''}`,{cache:!force}).then(result=>{
+    if(request!==coreRequestRef.current)return;
+    const incoming=Array.isArray(result?.data)?result.data:[];
+    setGames(current=>{
+      const sameGame=(left,right)=>{
+        if(!left||!right)return false;
+        const leftId=String(left.id??''),rightId=String(right.id??'');
+        if(leftId&&rightId&&leftId===rightId)return true;
+        return Boolean(left.date&&left.date===right.date&&left.home_team?.abbreviation&&left.home_team.abbreviation===right.home_team.abbreviation&&left.visitor_team?.abbreviation&&left.visitor_team.abbreviation===right.visitor_team.abbreviation);
+      };
+      const merged=incoming.map(game=>{
+        const previous=current.find(item=>sameGame(item,game));
+        if(!previous)return game;
+        if(['in_progress','final'].includes(previous.status_state))return {...game,...previous};
+        return {...previous,...game};
+      });
+      current.filter(item=>['in_progress','final'].includes(item.status_state)&&!merged.some(game=>sameGame(item,game))).forEach(item=>merged.push(item));
+      return merged.sort((x,y)=>new Date(x.datetime||x.date)-new Date(y.datetime||y.date));
+    });
+    setGamesLoaded(true);
+    setLastSync(new Date());
+  }).catch(error=>{
+    if(request===coreRequestRef.current)failures.push('Calendário: '+(error?.message||'indisponível'));
+  });
+  await Promise.all([teamsTask,gamesTask]);
+  if(request===coreRequestRef.current){
+    if(failures.length)setError(failures.join(' · '));
+    setBusy(false);
+  }
+},[api,from,to]);
  useEffect(()=>{if(session){loadSettings();loadFavorites();loadCore();}else{favoritesRequestRef.current++;setFavorites([]);}},[session,loadSettings,loadFavorites,loadCore]);
  useEffect(()=>{
   if(!session||!['overview','games','livecenter','customcalendar','boxscore'].includes(page))return;
