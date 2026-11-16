@@ -8,6 +8,7 @@ const styles = read('src/styles.css');
 const worker = read('public/sw.js');
 const schema = read('supabase/schema.sql');
 const manifest = read('public/manifest.webmanifest');
+const html = read('index.html');
 const arena = read('public/courtside-arena.svg');
 const render = read('render.yml');
 const teamMetaBlock = server.match(/const TEAM_META = \{([\s\S]*?)\n\};/);
@@ -362,3 +363,6 @@ assert.ok(server.includes("const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '
 assert.ok(server.includes("app.set('trust proxy', 1)") && server.indexOf("app.set('trust proxy', 1)") < server.indexOf("app.use('/api/', rateLimit"), 'Rate limit precisa identificar o IP real do cliente atrás do proxy do Render.');
 
 assert.ok(worker.includes("courtside-shell-v4") && worker.includes("'/courtside-arena.svg'"), 'Service worker deve atualizar o cache e disponibilizar o fundo da arena também no modo offline.');
+
+assert.ok(html.includes('rel="preconnect" href="https://fonts.googleapis.com"') && html.includes('og:title') && !styles.startsWith('@import url('), 'Fontes externas devem ter preconnect no documento e metadados de compartilhamento sem @import bloqueante no CSS.');
+assert.ok(app.includes("meta.setAttribute('content',theme==='light'?'#e9eef4':'#081426')"), 'A cor da barra do navegador deve acompanhar o tema claro/escuro selecionado.');
