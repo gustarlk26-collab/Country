@@ -233,6 +233,7 @@ setSelectedProfile({...mergedRow,player,team:mergedRow.team||p.team,advanced:pro
   if(page==='evolution')loadAverages(0);
   if(['history','playercards'].includes(page))loadAverages(averagePeriod);
   if(['records','historicstats'].includes(page)&&!recordLeaders.length)loadRecords();
+  if(page==='historicstats')loadHistoricStats();
   if(page==='news'||page==='injuries'){setBusy(true);const endpoint=page==='news'?'/api/news':'/api/injuries';api(endpoint).then(r=>{if(page==='news')setFeatureNews(r.data||[]);else setFeatureInjuries(r.data||[]);}).catch(e=>setError(e.message)).finally(()=>setBusy(false));}
 },[page,session,teamA]);
  const maybeShowFatherWelcome=async(user)=>{if(String(user?.email||'').trim().toLowerCase()!=='dickalex84@gmail.com'||user?.user_metadata?.courtside_father_welcome_seen===true)return;const {error:e}=await supabase.auth.updateUser({data:{courtside_father_welcome_seen:true}});if(e)throw e;setFatherWelcome(true);};
