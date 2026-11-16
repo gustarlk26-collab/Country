@@ -384,3 +384,5 @@ assert.ok(app.includes("const loadCore=useCallback(async({force=false}={})=>{con
 
 assert.ok(server.includes("const forceRefresh = String(req.query.refresh || '') === '1'") && server.includes("forceRefresh ? await espnGames(start, end)") && server.includes("forceRefresh ? await nbaCdnGames(start, end)"), 'Atualização manual do calendário deve poder ignorar o cache do servidor nas fontes ESPN e NBA CDN.');
 assert.ok(app.includes("setLiveRefreshTick(value=>value+1)") && app.includes("},[session,api,page,liveRefreshTick]);") && app.includes("force?'&refresh=1':''"), 'O botão Atualizar deve disparar também uma nova consulta do placar ao vivo, sem aguardar o intervalo automático.');
+
+assert.ok(worker.includes("if(request.mode==='navigate')return caches.match('/')") && worker.includes('return Response.error()'), 'Service worker deve usar o HTML offline somente para navegação; recursos CSS/JS/imagens ausentes não podem receber HTML como resposta.');
