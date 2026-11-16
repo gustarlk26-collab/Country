@@ -307,3 +307,5 @@ assert.ok(app.includes("if(page==='historicstats')loadHistoricStats()"), 'A pág
 assert.ok(server.includes("score:['in','post'].includes(String(competition.status?.type?.state||event.status?.type?.state||'pre').toLowerCase())?finiteNumberOrNull(side.score):null"), 'Confrontos diretos não podem exibir placar ou saldo em partidas ainda não iniciadas, mesmo que a ESPN envie zero no calendário.');
 
 assert.ok(server.includes("'/schedule?season=' + seasonYear + '&seasontype=2'"), 'Confrontos diretos devem solicitar explicitamente a temporada regular à ESPN, sem misturar pré-temporada ou playoffs.');
+
+assert.ok(server.includes("const winsValue = finiteNumberOrNull(stats.wins), lossesValue = finiteNumberOrNull(stats.losses)") && server.includes("Number.isSafeInteger(value)&&value>=0?value:null"), 'Classificação NBA/ESPN deve rejeitar campanhas vazias, booleanas ou inválidas em vez de exibir zeros falsos.');
