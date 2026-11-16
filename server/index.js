@@ -1364,7 +1364,7 @@ app.get('/api/team-stats',async(_req,res)=>{
     if(!base.length&&!advanced.length&&!fallback.length&&!gameRows.length)throw new Error('Nenhuma fonte retornou estatísticas de franquias.');
     // The comparison is always exactly the 30 NBA franchises. ESPN abbreviations must never be
     // added as extra IDs: doing so duplicated every team when the standings fallback was present.
-    const ids=new Set([...Object.keys(TEAM_META),...baseById.keys(),...advById.keys()]);
+    const ids=Object.keys(TEAM_META);
     const data=[...ids].map(id=>{
       const teamId=Number(id),meta=TEAM_META[teamId],row=baseById.get(id)||{},adv=advById.get(id)||{},games=gameFallback.get(id)||{};
       const abbreviation=row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||meta?.[0]||'';
