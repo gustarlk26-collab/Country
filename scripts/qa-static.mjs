@@ -241,7 +241,7 @@ const anchors = [...app.matchAll(/<a\b[^>]*>/g)].map(match => match[0]);
 assert.ok(anchors.every(tag => /\bhref\s*=/.test(tag)), 'Existe link sem destino.');
 
 
-assert.ok(server.includes('function dedupeGamePlayers(rows)') && server.includes('else if (previous.team !== team) { byId.delete(id); conflicts.add(id); }') && server.includes('const uniqueRows = dedupeGamePlayers(rows);') && server.includes('const uniqueData = dedupeGamePlayers(data.filter'), 'Box scores devem remover IDs duplicados associados a equipes diferentes, sem escolher uma equipe arbitrariamente.');
+assert.ok(server.includes('function dedupeGamePlayers(rows)') && server.includes('else if (previous.team !== team) { byId.delete(id); conflicts.add(id); }') && server.includes('const uniqueRows = dedupeGamePlayers(rows);') && /const uniqueData\s*=\s*dedupeGamePlayers\(data\.filter/.test(server), 'Box scores devem remover IDs duplicados associados a equipes diferentes, sem escolher uma equipe arbitrariamente.');
 assert.ok(server.includes('score: scoreboardScore(team.score, summaryStatus)') && server.includes('map(period => scoreboardScore(period?.score, summaryStatus))'), 'Parciais NBA Live devem rejeitar placares negativos, fracionários ou inválidos sem convertê-los em zero.');
 assert.ok(server.includes('map(line => scoreboardScore(line.displayValue ?? line.value, summaryStatus))'), 'Parciais ESPN devem rejeitar placares negativos, fracionários ou inválidos sem convertê-los em zero.');
 assert.ok(app.includes("p<=4?`Q${p}`:`OT${p-4}`"), 'Tela de parciais deve identificar corretamente todas as prorrogações, inclusive OT3 e posteriores.');
