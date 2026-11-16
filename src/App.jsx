@@ -38,7 +38,7 @@ export default function App(){
  const playerRequestRef=useRef(0);
  const profileRequestRef=useRef(0);
  const teamStatsRequestRef=useRef(0);
- const rankingsRequestRef=useRef(0),mvpRequestRef=useRef(0),recordsRequestRef=useRef(0),advancedRequestRef=useRef(0),standingsRequestRef=useRef(0);
+ const rankingsRequestRef=useRef(0),mvpRequestRef=useRef(0),recordsRequestRef=useRef(0),advancedRequestRef=useRef(0),standingsRequestRef=useRef(0),newsRequestRef=useRef(0),injuriesRequestRef=useRef(0);
  useEffect(()=>{boxGameRef.current=boxGame;},[boxGame]);
  useEffect(()=>{if(page!=='boxscore')boxRequestRef.current+=1;},[page]);
  useEffect(()=>{try{localStorage.setItem('courtside-fantasy-roster',JSON.stringify(fantasyIds));}catch{}},[fantasyIds]);
@@ -194,8 +194,8 @@ useEffect(()=>{
        if(['teamanalytics','lineups','rotation'].includes(page)){const r=await api('/api/teams/'+encodeURIComponent(teamA)+'/roster');if(!active)return;setTeamRoster(r.data||[]);}
       if(['mvp','mvpRace'].includes(page)){const request=++mvpRequestRef.current;const r=await api('/api/mvp');if(!active||request!==mvpRequestRef.current)return;setMvp(r);}
       if(['records','historicstats'].includes(page)){const request=++recordsRequestRef.current;const r=await api('/api/records');if(!active||request!==recordsRequestRef.current)return;setRecordLeaders(Array.isArray(r.data)?r.data:[]);}
-      if(page==='injuries'){const r=await api('/api/injuries');if(!active)return;setFeatureInjuries(r.data||[]);}
-      if(page==='news'){const r=await api('/api/news');if(!active)return;setFeatureNews(r.data||[]);}
+      if(page==='injuries'){const request=++injuriesRequestRef.current;const r=await api('/api/injuries');if(!active||request!==injuriesRequestRef.current)return;setFeatureInjuries(Array.isArray(r.data)?r.data:[]);}
+      if(page==='news'){const request=++newsRequestRef.current;const r=await api('/api/news');if(!active||request!==newsRequestRef.current)return;setFeatureNews(Array.isArray(r.data)?r.data:[]);}
       if(page==='advanced'){const request=++advancedRequestRef.current;const r=await api('/api/advanced?last=0');if(!active||request!==advancedRequestRef.current)return;setAdvanced(Array.isArray(r.data)?r.data:[]);}
       if(page==='profile'&&selectedProfile?.player?.id){const [base,adv]=await Promise.all([api('/api/averages?last=0'),api('/api/advanced?last=0').catch(error=>({data:[],error}))]);if(!active)return;if(adv.error)setError('Métricas avançadas do perfil indisponíveis: '+(adv.error.message||'fonte temporariamente indisponível')+'. As médias básicas foram preservadas.');setProfileLeagueAverages(base.data||[]);const targetName=[selectedProfile.player?.first_name,selectedProfile.player?.last_name].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase(),targetTeam=selectedProfile.team?.abbreviation||'';const matches=row=>String(row.player?.id)===String(selectedProfile.player.id)||(targetName&&[row.player?.first_name,row.player?.last_name].filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase()===targetName&&(!targetTeam||!row.team?.abbreviation||row.team.abbreviation===targetTeam));const current=(base.data||[]).find(matches);const advancedCurrent=(adv.data||[]).find(matches)||null;if(current)setSelectedProfile({...current,player:selectedProfile.player,team:current.team||selectedProfile.team,advanced:advancedCurrent||selectedProfile.advanced});setProfileAdvanced(advancedCurrent||selectedProfile.advanced||null);}
       if(page==='quarters'&&quarterGameId){const request=++quarterSummaryRequestRef.current;const r=await api('/api/games/'+encodeURIComponent(quarterGameId)+'/summary');if(!active||request!==quarterSummaryRequestRef.current)return;setQuarterSummary(r.data||null);}
@@ -228,6 +228,7 @@ setSelectedProfile({...mergedRow,player,team:mergedRow.team||p.team,advanced:pro
  const openBox=async(g)=>{const request=++boxRequestRef.current;setBoxGame(g);setBoxStats([]);setPage('boxscore');setError('');if(g.status_state==='scheduled'){setBusy(false);return;}setBusy(true);try{const r=await api(`/api/games/${encodeURIComponent(g.id)}/stats`,{cache:false});if(request!==boxRequestRef.current)return;setBoxStats(r.data||[]);}catch(e){if(request===boxRequestRef.current)setError(e.message);}finally{if(request===boxRequestRef.current)setBusy(false);}};
  useEffect(()=>{
   if(!session)return;
+  let active=true;
   setError('');
   if(page==='players'&&!players.length)loadPlayers(true);
   if(page==='profile'&&!selectedProfile){if(!players.length)loadPlayers(true);if(!averages.length)loadAverages(0);}
@@ -246,7 +247,8 @@ setSelectedProfile({...mergedRow,player,team:mergedRow.team||p.team,advanced:pro
   if(['history','playercards'].includes(page))loadAverages(averagePeriod);
   if(['records','historicstats'].includes(page)&&!recordLeaders.length)loadRecords();
   if(page==='historicstats')loadHistoricStats();
-  if(page==='news'||page==='injuries'){setBusy(true);const endpoint=page==='news'?'/api/news':'/api/injuries';api(endpoint).then(r=>{if(page==='news')setFeatureNews(r.data||[]);else setFeatureInjuries(r.data||[]);}).catch(e=>setError(e.message)).finally(()=>setBusy(false));}
+  if(page==='news'||page==='injuries'){const isNews=page==='news',request=isNews?++newsRequestRef.current:++injuriesRequestRef.current;const requestRef=isNews?newsRequestRef:injuriesRequestRef;setBusy(true);const endpoint=isNews?'/api/news':'/api/injuries';api(endpoint).then(r=>{if(!active||request!==requestRef.current)return;if(isNews)setFeatureNews(Array.isArray(r.data)?r.data:[]);else setFeatureInjuries(Array.isArray(r.data)?r.data:[]);}).catch(e=>{if(active&&request===requestRef.current)setError(e.message);}).finally(()=>{if(active&&request===requestRef.current)setBusy(false);});}
+return()=>{active=false;if(page==='news')newsRequestRef.current++;if(page==='injuries')injuriesRequestRef.current++;};
 },[page,session,teamA]);
  const maybeShowFatherWelcome=async(user)=>{if(String(user?.email||'').trim().toLowerCase()!=='dickalex84@gmail.com'||user?.user_metadata?.courtside_father_welcome_seen===true)return;const {error:e}=await supabase.auth.updateUser({data:{courtside_father_welcome_seen:true}});if(e)throw e;setFatherWelcome(true);};
  const doAuth=async(e)=>{e.preventDefault();if(!supabase){setAuthMsg('Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no Render.');return;}setAuthBusy(true);setAuthMsg('');try{if(authMode==='login'){const {data,error:e}=await supabase.auth.signInWithPassword({email,password});if(e)throw e;await maybeShowFatherWelcome(data.user);}else{const {data,error:e}=await supabase.auth.signUp({email,password});if(e)throw e;if(data.session&&data.user)await maybeShowFatherWelcome(data.user);setAuthMsg(data.session?'Conta criada e conectada.':'Conta criada. Confira seu e-mail para confirmar o cadastro.');}}catch(e){setAuthMsg(e.message);}finally{setAuthBusy(false);}};
