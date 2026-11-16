@@ -986,7 +986,7 @@ async function espnTeamSchedule(abbreviation, seasonYear) {
       const sides = competitors.map(side => ({
         abbreviation:canonicalTeamAbbr(side.team?.abbreviation||side.team?.shortDisplayName||''),
         name:side.team?.displayName||side.team?.name||'',
-        score:finiteNumberOrNull(side.score),
+        score:['in','post'].includes(String(competition.status?.type?.state||event.status?.type?.state||'pre').toLowerCase())?finiteNumberOrNull(side.score):null,
         homeAway:side.homeAway
       }));
       return [{id:String(event.id||competition.id||''),date:event.date||competition.date||'',
