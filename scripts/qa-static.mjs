@@ -299,3 +299,5 @@ assert.ok(app.includes("label:'Pontos por jogo',key:'pts'") && app.includes("lab
 
 assert.ok(app.includes('Array.from({length:81},(_,i)=>{const y=2026-i;'), 'Arquivo histórico deve incluir todas as temporadas desde 1946-47.');
 assert.ok(server.includes('Number(match[1])<1946'), 'API histórica deve rejeitar temporadas anteriores à fundação da NBA.');
+
+assert.ok(app.includes('const [historicRequestRef]=useRef(0)') && app.includes('const request=++historicRequestRef.current') && app.includes('if(request!==historicRequestRef.current)return') && app.includes('if(request===historicRequestRef.current)setHistoricBusy(false)'), 'Consultas históricas antigas não podem sobrescrever filtros recentes nem encerrar o carregamento da consulta atual.');
