@@ -700,7 +700,7 @@ app.get('/api/teams', (_req, res) => {
 });
 
 app.get('/api/players', async (req, res) => {
-  const normalizePlayerSearch = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\\s+/g, ' ').trim();
+  const normalizePlayerSearch = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
   const search = normalizePlayerSearch(req.query.search);
   const page = Math.max(1, Number(req.query.page || req.query.cursor) || 1);
   try {
