@@ -389,3 +389,5 @@ assert.ok(worker.includes("if(request.mode==='navigate')return caches.match('/')
 
 assert.ok(app.includes('const TEAM_LOGO_IDS={ATL:1610612737') && app.includes("https://cdn.nba.com/logos/nba/'+teamId+'/global/L/logo.svg") && app.includes('className="game-team-logo"') && app.includes('loading="lazy"'), 'Cartões de jogos devem usar escudos oficiais NBA com carregamento tardio e fallback visual.');
 assert.ok(styles.includes('.game-matchup-teams') && styles.includes('.game-team-logo') && styles.includes('@media(max-width:650px){.game-matchup-teams'), 'Escudos dos times devem manter alinhamento e tamanho responsivo em telas pequenas.');
+
+assert.ok(app.includes("TEAM_LOGO_IDS[team.abbreviation]?'https://cdn.nba.com/logos/nba/'+TEAM_LOGO_IDS[team.abbreviation]") && app.includes("TEAM_LOGO_IDS[teamA]?'https://cdn.nba.com/logos/nba/'+TEAM_LOGO_IDS[teamA]"), 'Central dos times e análise da franquia devem usar o mesmo diretório de escudos oficiais da NBA que os cartões de jogos.');
