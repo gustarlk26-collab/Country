@@ -607,7 +607,7 @@ app.get('/api/players/:id/bio',async(req,res)=>{
   try{
     const id=String(req.params.id);
     if(!/^\d{1,12}$/.test(id))return res.status(400).json({error:'ID de jogador inválido.'});
-    const requestedName=String(req.query.name||'').trim().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+    const requestedName=String(req.query.name||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
     const requestedTeamCandidate=canonicalTeamAbbr(String(req.query.team||'').trim());
     const requestedTeam=Object.values(TEAM_META).some(meta=>meta[0]===requestedTeamCandidate)?requestedTeamCandidate:'';
     let roster=[];
@@ -615,7 +615,7 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       try{roster=await espnTeamRoster(requestedTeam);}catch(teamError){console.warn('ESPN roster lookup failed for '+requestedTeam+': '+teamError.message);}
     }
     if(!roster.length)roster=await cached('espn:active-players',espnPlayers,30*60*1000);
-    const normalizeName=value=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const normalizeName=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
     // O parâmetro :id vem da NBA Stats; ele não pertence ao espaço de IDs da ESPN.
     // Nunca comparar IDs de provedores diferentes: resolva a ficha pelo nome e pela franquia.
     const nameMatches=requestedName?roster.filter(item=>
