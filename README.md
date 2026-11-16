@@ -56,7 +56,7 @@ Configure no serviço Render:
 
 - Build Command: `npm install --no-audit --no-fund && npm run build && npm run test:qa && node --check server/index.js`
 - Start Command: `npm start`
-- Node: 20 ou superior
+- Node: 22 LTS
 
 Após configurar as variáveis, faça **Manual Deploy → Deploy latest commit** no Render.
 
