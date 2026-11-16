@@ -12,6 +12,7 @@ const PORT = Number(process.env.PORT) || 10000;
 const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const FAMILY_EMAILS = (process.env.FAMILY_EMAILS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '').split(',').map(value => value.trim()).filter(Boolean);
 const CACHE_MS = Number(process.env.API_CACHE_MS) || 90000;
 const cache = new Map();
 const pending = new Map();
@@ -47,7 +48,8 @@ const NBA_HEADERS = {
 
 app.disable('x-powered-by');
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-// A API usa Bearer token (não cookies); refletir a origem permite o frontend no domínio principal e domínios de preview sem bloquear preflight. A autorização continua aplicada por requireFamily.\napp.use(cors({ origin: true, credentials: false, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Authorization','Content-Type'] }));
+app.set('trust proxy', 1); // Render fica atrás de um proxy; usa o IP do cliente para limitar requisições corretamente.
+app.use(cors({ origin(origin, callback) { if (!origin) return callback(null, true); return callback(null, ALLOWED_ORIGINS.includes(origin)); }, credentials: false, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Authorization','Content-Type'] }));
 app.use(express.json({ limit: '32kb' }));
 app.use('/api/', rateLimit({ windowMs: 60_000, limit: 90, standardHeaders: 'draft-7', legacyHeaders: false }));
 
