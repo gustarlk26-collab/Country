@@ -316,6 +316,7 @@ assert.ok(server.includes("'/schedule?season=' + seasonYear + '&seasontype=2'"),
 
 assert.ok(server.includes("const winsValue = finiteNumberOrNull(stats.wins), lossesValue = finiteNumberOrNull(stats.losses)") && server.includes("Number.isSafeInteger(value)&&value>=0?value:null"), 'Classificação NBA/ESPN deve rejeitar campanhas vazias, booleanas ou inválidas em vez de exibir zeros falsos.');
 
+assert.ok(server.includes('const wins=count(row.W)??(games.decided?games.wins:null)??count(standing.wins)') && server.includes('const losses=count(row.L)??(games.decided?games.losses:null)??count(standing.losses)') && server.includes('const winPct=percentage(row.W_PCT)??percentage(standing.win_pct)'), 'Comparador deve usar campanha ESPN validada quando NBA Stats e Game Finder não fornecerem vitórias, derrotas ou aproveitamento.');
 assert.ok(server.includes("const count=value=>{const parsed=number(value);return parsed!=null&&Number.isSafeInteger(parsed)&&parsed>=0?parsed:null;}") && server.includes("const wins=count(row.W)??(games.decided?games.wins:null)"), 'Estatísticas de franquias devem aceitar GP, vitórias e derrotas somente como contagens inteiras não negativas.');
 
 assert.ok(server.includes("const positive = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>0?parsed:null; }") && (server.match(/gamesPlayed: positive\(r\.GP\)/g)||[]).length>=2, 'Endpoints de médias básicas e avançadas precisam declarar seu validador positivo local antes de converter GP; chamadas sem helper causariam ReferenceError.');
