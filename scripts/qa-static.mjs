@@ -466,3 +466,6 @@ assert.ok(app.includes("api('/api/team-stats',{cache:false})"), 'A atualização
 
 
 assert.ok(app.includes("const finalGames=useMemo(()=>sortedGames.filter") && app.includes("const teamRowsAlpha=useMemo(()=>alphaTeams.map") && app.includes("[alphaTeams,finalGames,sortedGames]"), 'Cálculos compartilhados de campanha, forma, sequência e calendário dos times devem ser memorizados para evitar recomputação em cada renderização.');
+
+
+assert.ok(app.includes("const alphaTeamStats=useMemo(()=>teamStats.slice().sort") && app.includes("const selectedTeamStats=useMemo(()=>teamStats.find") , 'Listagem e seleção de métricas das franquias devem evitar ordenações e buscas repetidas a cada renderização.');
