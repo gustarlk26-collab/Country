@@ -751,13 +751,14 @@ app.get('/api/games', async (req, res) => {
     if (!start || !end || start > end) return res.status(400).json({ error: 'Período inválido. Escolha datas válidas e confira se “De” não é posterior a “Até”.' });
     const span = Math.floor((Date.parse(end + 'T00:00:00Z') - Date.parse(start + 'T00:00:00Z')) / 86400000) + 1;
     if (span > 90) return res.status(400).json({ error: 'Consulte no máximo 90 dias por vez.' });
+    const forceRefresh = String(req.query.refresh || '') === '1';
     try {
-      const data = await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 20 * 1000);
+      const data = forceRefresh ? await espnGames(start, end) : await cached(`espn-games:${start}:${end}`, () => espnGames(start, end), 20 * 1000);
       res.set('Cache-Control', 'private, max-age=60');
       return res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN scoreboard' });
     } catch (espnError) {
       try {
-        const data = await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 30 * 1000);
+        const data = forceRefresh ? await nbaCdnGames(start, end) : await cached(`cdn-games:${start}:${end}`, () => nbaCdnGames(start, end), 30 * 1000);
         res.set('Cache-Control', 'private, max-age=60');
         return res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA CDN schedule', fallback: true });
       } catch (cdnError) {
