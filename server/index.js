@@ -1357,12 +1357,13 @@ app.get('/api/team-stats',async(_req,res)=>{
       const standing=standingsByAbbr.get(abbreviation)||{};
       const number=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
       const nonNegative=value=>{const parsed=number(value);return parsed!=null&&parsed>=0?parsed:null;};
+      const count=value=>{const parsed=number(value);return parsed!=null&&Number.isSafeInteger(parsed)&&parsed>=0?parsed:null;};
       const positive=value=>{const parsed=number(value);return parsed!=null&&parsed>0?parsed:null;};
       const percentage=value=>{const parsed=number(value);return parsed!=null&&parsed>=0&&parsed<=1?parsed:null;};
       const average=(total,count)=>count>0?total/count:null;
-      const gp=nonNegative(row.GP)??(games.gp||null);
-      const wins=nonNegative(row.W)??(games.decided?games.wins:null);
-      const losses=nonNegative(row.L)??(games.decided?games.losses:null);
+      const gp=count(row.GP)??(games.gp||null);
+      const wins=count(row.W)??(games.decided?games.wins:null);
+      const losses=count(row.L)??(games.decided?games.losses:null);
       const winPct=percentage(row.W_PCT??standing.win_pct)??(games.decided>0&&wins!=null&&losses!=null?wins/(wins+losses):null);
       const stat=(official,field)=>nonNegative(official)??average(games[field],games.counts?.[field]||0);
       const fgPct=percentage(row.FG_PCT)??(games.counts?.fga>0?games.fgm/games.fga:null);
