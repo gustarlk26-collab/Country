@@ -807,54 +807,84 @@ async function espnLiveGames() {
       display_clock: validGameClock(statusInfo.displayClock, period),
       home_team: { id: Number(home.team.id), abbreviation: canonicalTeamAbbr(home.team.abbreviation), full_name: home.team.displayName || home.team.name || '' },
       visitor_team: { id: Number(away.team.id), abbreviation: canonicalTeamAbbr(away.team.abbreviation), full_name: away.team.displayName || away.team.name || '' },
-      home_team_score: finiteNumberOrNull(home.score),
-      visitor_team_score: finiteNumberOrNull(away.score)
+      home_team_score: scoreboardScore(home.score, state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled'),
+      visitor_team_score: scoreboardScore(away.score, state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled')
     }];
   }).sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
 }
 
+async function nbaLiveScoreboard(today) {
+  const response = await fetch('https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json', {
+    headers: NBA_HEADERS, signal: AbortSignal.timeout(12000)
+  });
+  if (!response.ok) throw new Error('NBA Live CDN HTTP ' + response.status);
+  const body = await response.json();
+  return (body?.scoreboard?.games || []).map(game => {
+    const home = game.homeTeam || {}, away = game.awayTeam || {};
+    const state = Number(game.gameStatus);
+    const statusState = state === 3 ? 'final' : state === 2 ? 'in_progress' : 'scheduled';
+    const period = validPeriod(game.period);
+    const datetime = game.gameTimeUTC || '';
+    const localDate = saoPauloDate(datetime) || today;
+    if (localDate !== today && state !== 2) return null;
+    if (!/^\\d{10}$/.test(String(game.gameId || '')) || !home.teamTricode || !away.teamTricode) return null;
+    return {
+      id: String(game.gameId), date: localDate, datetime,
+      status: game.gameStatusText || (state === 3 ? 'Final' : state === 2 ? 'Em andamento' : 'Agendado'),
+      status_state: statusState,
+      period, period_label: periodLabel(period),
+      display_clock: statusState === 'in_progress' && period != null ? validGameClock(game.gameClock, period) : null,
+      home_team: { id: home.teamId, abbreviation: canonicalTeamAbbr(home.teamTricode), full_name: home.teamName || home.teamCity || '' },
+      visitor_team: { id: away.teamId, abbreviation: canonicalTeamAbbr(away.teamTricode), full_name: away.teamName || away.teamCity || '' },
+      home_team_score: scoreboardScore(home.score, statusState),
+      visitor_team_score: scoreboardScore(away.score, statusState)
+    };
+  }).filter(Boolean);
+}
+
 app.get('/api/games/live', async (_req, res) => {
   const today = saoPauloDate(new Date().toISOString());
-  try {
-    const data = await cached('espn-live-games:' + today, espnLiveGames, 8000);
-    if (data.length) {
-      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-      return res.json({ data, updatedAt: new Date().toISOString(), source: 'ESPN daily scoreboard' });
+  const [espnResult, nbaResult] = await Promise.allSettled([
+    cached('espn-live-games:' + today, espnLiveGames, 8000),
+    nbaLiveScoreboard(today)
+  ]);
+  if (espnResult.status === 'rejected' && nbaResult.status === 'rejected') {
+    return res.status(503).json({ error: 'Placar ao vivo indisponível. ESPN: ' + espnResult.reason.message + ' NBA Live CDN: ' + nbaResult.reason.message });
+  }
+  const espnData = espnResult.status === 'fulfilled' && Array.isArray(espnResult.value) ? espnResult.value : [];
+  const nbaData = nbaResult.status === 'fulfilled' && Array.isArray(nbaResult.value) ? nbaResult.value : [];
+  const merged = new Map(espnData.map(game => [String(game.id), game]));
+  const sameGame = (left, right) => {
+    if (String(left.id || '') === String(right.id || '')) return true;
+    return Boolean(left.date && left.date === right.date &&
+      left.home_team?.abbreviation && left.home_team.abbreviation === right.home_team?.abbreviation &&
+      left.visitor_team?.abbreviation && left.visitor_team.abbreviation === right.visitor_team?.abbreviation);
+  };
+  for (const game of nbaData) {
+    const match = [...merged.entries()].find(([, existing]) => sameGame(existing, game));
+    if (!match) {
+      merged.set(String(game.id), game);
+      continue;
     }
-    throw new Error('ESPN não retornou partidas para a data local; consultando a fonte alternativa.');
-  } catch (espnError) {
-    try {
-      const response = await fetch('https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json', {
-        headers: NBA_HEADERS, signal: AbortSignal.timeout(12000)
+    const [oldId, existing] = match;
+    merged.delete(oldId);
+    if (game.status_state === 'in_progress' || game.status_state === 'final') {
+      merged.set(String(game.id), {
+        ...existing, ...game,
+        home_team_score: game.home_team_score ?? existing.home_team_score,
+        visitor_team_score: game.visitor_team_score ?? existing.visitor_team_score
       });
-      if (!response.ok) throw new Error('NBA Live CDN HTTP ' + response.status);
-      const body = await response.json();
-      const data = (body?.scoreboard?.games || []).map(game => {
-        const home = game.homeTeam || {}, away = game.awayTeam || {};
-        const state = Number(game.gameStatus);
-        const period = validPeriod(game.period);
-        const datetime = game.gameTimeUTC || '';
-        const localDate = saoPauloDate(datetime) || today;
-        if (localDate !== today && state !== 2) return null;
-        if (!/^\d{10}$/.test(String(game.gameId || '')) || !home.teamTricode || !away.teamTricode) return null;
-        return {
-          id: String(game.gameId), date: localDate, datetime,
-          status: game.gameStatusText || (state === 3 ? 'Final' : state === 2 ? 'Em andamento' : 'Agendado'),
-          status_state: state === 3 ? 'final' : state === 2 ? 'in_progress' : 'scheduled',
-          period, period_label: periodLabel(period),
-          display_clock: validGameClock(game.gameClock, period),
-          home_team: { id: home.teamId, abbreviation: home.teamTricode || '', full_name: home.teamName || home.teamCity || '' },
-          visitor_team: { id: away.teamId, abbreviation: away.teamTricode || '', full_name: away.teamName || away.teamCity || '' },
-          home_team_score: finiteNumberOrNull(home.score),
-          visitor_team_score: finiteNumberOrNull(away.score)
-        };
-      }).filter(Boolean);
-      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-      return res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Live CDN scoreboard', fallback: true });
-    } catch (cdnError) {
-      return res.status(503).json({ error: 'Placar ao vivo indisponível. ESPN: ' + espnError.message + ' NBA CDN: ' + cdnError.message });
+    } else {
+      merged.set(String(game.id), { ...game, ...existing });
     }
   }
+  const data = [...merged.values()].sort((a, b) => new Date(a.datetime || a.date) - new Date(b.datetime || b.date));
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  return res.json({
+    data, updatedAt: new Date().toISOString(),
+    source: espnResult.status === 'fulfilled' && nbaResult.status === 'fulfilled' ? 'ESPN + NBA Live CDN' : espnResult.status === 'fulfilled' ? 'ESPN daily scoreboard' : 'NBA Live CDN scoreboard',
+    fallback: espnResult.status === 'rejected' || nbaResult.status === 'rejected'
+  });
 });
 
 async function nbaLivePeriodSummary(gameId) {
