@@ -273,6 +273,7 @@ assert.ok(styles.includes('@keyframes courtsideRise') && styles.includes('.conte
 assert.ok(styles.includes('@keyframes liveBeacon') && styles.includes('.metric-card:after'), 'Jogos ao vivo e cards de métricas devem ter efeitos visuais dedicados.');
 assert.ok(styles.includes('prefers-reduced-motion:reduce') && styles.includes('.layout:after,.content > *,.live i{animation:none!important}'), 'Novos efeitos devem respeitar preferência por movimento reduzido.');
 
+assert.ok(server.split(String.raw`replace(/[\u0300-\u036f]/g`).length===3, 'Perfil deve normalizar nomes removendo apenas marcas diacríticas, sem apagar letras do nome.');
 assert.ok(server.includes("const requestedTeamCandidate=canonicalTeamAbbr(String(req.query.team||'').trim())") && server.includes("espnTeamRoster(requestedTeam)"), 'Perfil deve resolver o atleta pelo elenco ESPN da franquia selecionada e validar códigos agregados.');
 assert.ok(app.includes("&team='+encodeURIComponent(targetTeam)") && app.includes('Biografia do jogador indisponível na ESPN'), 'Perfil deve enviar a franquia e exibir falhas da biografia sem ocultá-las.');
 assert.ok(styles.includes('photo-1560553814-060afcd8904a') && styles.includes('background-attachment:fixed'), 'Layout deve usar fotografia real de arena como fundo.');
