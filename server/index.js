@@ -1377,9 +1377,9 @@ app.get('/api/team-stats',async(_req,res)=>{
       const percentage=value=>{const parsed=number(value);return parsed!=null&&parsed>=0&&parsed<=1?parsed:null;};
       const average=(total,count)=>count>0?total/count:null;
       const gp=count(row.GP)??(games.gp||null);
-      const wins=count(row.W)??(games.decided?games.wins:null);
-      const losses=count(row.L)??(games.decided?games.losses:null);
-      const winPct=percentage(row.W_PCT??standing.win_pct)??(games.decided>0&&wins!=null&&losses!=null?wins/(wins+losses):null);
+      const wins=count(row.W)??(games.decided?games.wins:null)??count(standing.wins);
+      const losses=count(row.L)??(games.decided?games.losses:null)??count(standing.losses);
+      const winPct=percentage(row.W_PCT)??percentage(standing.win_pct)??(games.decided>0&&wins!=null&&losses!=null?wins/(wins+losses):null);
       const stat=(official,field)=>nonNegative(official)??average(games[field],games.counts?.[field]||0);
       const fgPct=percentage(row.FG_PCT)??(games.counts?.fga>0?games.fgm/games.fga:null);
       const fg3Pct=percentage(row.FG3_PCT)??(games.counts?.fg3a>0?games.fg3m/games.fg3a:null);
