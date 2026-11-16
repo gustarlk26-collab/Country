@@ -47,6 +47,12 @@ const routes = [...server.matchAll(/app\.(get|post|put|delete|patch)\(['"]([^'"]
 assert.ok(routes.includes('GET /api/games/live'), 'Endpoint de placar ao vivo ausente.');
 assert.equal(teamAbbrs.length, 30, 'Diretório NBA deve conter as 30 franquias.');
 assert.equal(new Set(teamAbbrs).size, 30, 'Diretório de franquias contém abreviações duplicadas.');
+const logoBlock = app.match(/const TEAM_LOGO_IDS=\{([^}]+)\}/)?.[1] || '';
+const logoEntries = [...logoBlock.matchAll(/([A-Z]{3}):(\d+)/g)].map(match => [match[1], Number(match[2])]);
+assert.equal(logoEntries.length, 30, 'Diretório de escudos oficiais deve conter as 30 franquias.');
+assert.deepEqual(logoEntries.map(([abbr]) => abbr).sort(), teamAbbrs.slice().sort(), 'Escudos devem cobrir exatamente as 30 abreviações oficiais.');
+for (const [abbr, id] of logoEntries) assert.ok(new RegExp('(?:^|[,\\{])' + id + ':\\[\\'' + abbr + '\\'').test(teamMetaBlock?.[1] || ''), 'ID do escudo não corresponde à franquia ' + abbr);
+
 assert.ok(server.includes("app.get('/api/team-stats'") && server.includes("NBA Stats base") && server.includes("NBA Stats advanced"), 'Comparador de franquias deve consumir estatísticas oficiais da NBA.');
 assert.ok(server.includes("team-stats-gamefinder:") && server.includes("data.length!==30") && server.includes("NBA Stats game finder (médias calculadas dos jogos oficiais)"), 'Comparador deve consolidar dados oficiais e retornar exatamente as 30 franquias, sem duplicações.');
 assert.ok(server.includes('const ids=Object.keys(TEAM_META);') && !server.includes('new Set([...Object.keys(TEAM_META),...baseById.keys(),...advById.keys()])'), 'Comparador deve limitar a saída às 30 franquias conhecidas e ignorar IDs inesperados das fontes.');
