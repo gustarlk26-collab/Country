@@ -182,7 +182,8 @@ async function nbaHistoricalBoxscore(gameId) {
   const game=body?.boxScoreTraditional||body?.boxscoreTraditional;
   if(!game)throw new Error('NBA Stats não publicou o box score V3 desta partida.');
   const numberOrNull=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
-  const nonNegative=value=>{const parsed=numberOrNull(value);return parsed!=null&&parsed>=0?parsed:null;};
+  const nonNegative=value=>{const parsed=numberOrNull(value);return parsed!=null&&Number.isSafeInteger(parsed)&&parsed>=0?parsed:null;};
+  const attemptPair=(made,attempted)=>{const m=nonNegative(made),a=nonNegative(attempted);return m!=null&&a!=null&&m>a?{made:null,attempted:null}:{made:m,attempted:a};};
   const teams=[game.homeTeam,game.awayTeam];
   const data=teams.filter(team=>team&&Number.isSafeInteger(Number(team.teamId))&&Number(team.teamId)>0&&/^[A-Z]{3}$/.test(String(team.teamTricode||''))).flatMap(team=>(Array.isArray(team.players)?team.players:[]).filter(player=>player&&Number.isSafeInteger(Number(player.personId))&&Number(player.personId)>0&&String(player.nameI||player.name||[player.firstName,player.familyName].filter(Boolean).join(' ')).trim()).map(player=>{
     const stats=player.statistics||{};
@@ -190,13 +191,13 @@ async function nbaHistoricalBoxscore(gameId) {
     const played=player.played===true||minutesAsNumber(min)>0;
     if(!played)return null;
     const name=String(player.nameI||player.name||[player.firstName,player.familyName].filter(Boolean).join(' ')).trim();
-    const fgMade=nonNegative(stats.fieldGoalsMade),fgAttempted=nonNegative(stats.fieldGoalsAttempted);
-    const threeMade=nonNegative(stats.threePointersMade),threeAttempted=nonNegative(stats.threePointersAttempted);
+    const fg=attemptPair(stats.fieldGoalsMade,stats.fieldGoalsAttempted),three=attemptPair(stats.threePointersMade,stats.threePointersAttempted),free=attemptPair(stats.freeThrowsMade,stats.freeThrowsAttempted);
+    const fgMade=fg.made,fgAttempted=fg.attempted,threeMade=three.made,threeAttempted=three.attempted;
     const row={
       id:Number(player.personId),player:{id:Number(player.personId),first_name:String(player.firstName||name.split(' ').slice(0,-1).join(' ')),last_name:String(player.familyName||name.split(' ').slice(-1)[0]||''),position:player.position||''},
       team:{id:Number(team.teamId),abbreviation:team.teamTricode,full_name:[team.teamCity,team.teamName].filter(Boolean).join(' ')},
       min,pts:nonNegative(stats.points),reb:nonNegative(stats.reboundsTotal),ast:nonNegative(stats.assists),stl:nonNegative(stats.steals),blk:nonNegative(stats.blocks),
-      fgm:fgMade,fga:fgAttempted,ftm:nonNegative(stats.freeThrowsMade),fta:nonNegative(stats.freeThrowsAttempted),
+      fgm:fgMade,fga:fgAttempted,ftm:free.made,fta:free.attempted,
       oreb:nonNegative(stats.reboundsOffensive),dreb:nonNegative(stats.reboundsDefensive),pf:nonNegative(stats.foulsPersonal),
       fg_pct:shootingPct(fgMade,fgAttempted),fg3_pct:shootingPct(threeMade,threeAttempted),turnover:nonNegative(stats.turnovers)
     };
