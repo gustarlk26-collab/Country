@@ -51,7 +51,8 @@ const logoBlock = app.match(/const TEAM_LOGO_IDS=\{([^}]+)\}/)?.[1] || '';
 const logoEntries = [...logoBlock.matchAll(/([A-Z]{3}):(\d+)/g)].map(match => [match[1], Number(match[2])]);
 assert.equal(logoEntries.length, 30, 'Diretório de escudos oficiais deve conter as 30 franquias.');
 assert.deepEqual(logoEntries.map(([abbr]) => abbr).sort(), teamAbbrs.slice().sort(), 'Escudos devem cobrir exatamente as 30 abreviações oficiais.');
-for (const [abbr, id] of logoEntries) assert.ok(new RegExp('(?:^|[,\\{])' + id + ':\\[\\'' + abbr + '\\'').test(teamMetaBlock?.[1] || ''), 'ID do escudo não corresponde à franquia ' + abbr);
+const officialTeamIds = Object.fromEntries([...(teamMetaBlock?.[1] || '').matchAll(/(\\d+):\\['([A-Z]{3})'/g)].map(match => [match[2], Number(match[1])]));
+for (const [abbr, id] of logoEntries) assert.equal(id, officialTeamIds[abbr], 'ID do escudo não corresponde à franquia ' + abbr);
 
 assert.ok(server.includes("app.get('/api/team-stats'") && server.includes("NBA Stats base") && server.includes("NBA Stats advanced"), 'Comparador de franquias deve consumir estatísticas oficiais da NBA.');
 assert.ok(server.includes("team-stats-gamefinder:") && server.includes("data.length!==30") && server.includes("NBA Stats game finder (médias calculadas dos jogos oficiais)"), 'Comparador deve consolidar dados oficiais e retornar exatamente as 30 franquias, sem duplicações.');
