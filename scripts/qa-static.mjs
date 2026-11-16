@@ -412,3 +412,16 @@ for (let index = 0; index < asyncRouteMatches.length; index++) {
 }
 
 assert.ok(app.includes("const audioContextRef=useRef(null),toastTimerRef=useRef(null)") && app.includes("if(toastTimerRef.current)window.clearTimeout(toastTimerRef.current)") && app.includes("window.clearTimeout(toastTimerRef.current);toastTimerRef.current=null;"), 'Notificações sucessivas devem reiniciar o mesmo timer e limpar o timeout ao desmontar o app.');
+
+
+const asyncApiRoutes = [...server.matchAll(/app\.(?:get|post|put|patch|delete)\(['"][^'"]+['"],\s*async/g)];
+assert.equal(asyncApiRoutes.length, 19, 'Quantidade de rotas assíncronas mudou; revise a cobertura de tratamento de erros.');
+for (let index = 0; index < asyncApiRoutes.length; index++) {
+  const start = asyncApiRoutes[index].index;
+  const end = index + 1 < asyncApiRoutes.length ? asyncApiRoutes[index + 1].index : server.length;
+  const routeBlock = server.slice(start, end);
+  assert.match(routeBlock, /\btry\s*\{/, 'Rota assíncrona sem bloco try: ' + asyncApiRoutes[index][0]);
+  assert.match(routeBlock, /\bcatch\s*\(/, 'Rota assíncrona sem tratamento catch: ' + asyncApiRoutes[index][0]);
+}
+assert.ok(styles.includes('.layout.light:before') && styles.includes('.layout.light:after') && styles.includes('.layout.light .feature-hub'), 'Tema claro precisa de tratamento próprio para fundo e painel principal.');
+assert.ok(arena.includes('<svg') && styles.includes("url('/courtside-arena.svg')"), 'A arte original da arena deve existir e estar referenciada pelo tema.');
