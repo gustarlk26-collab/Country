@@ -463,3 +463,6 @@ assert.ok(server.includes("max-age=31536000, immutable") && server.includes("res
 const franchiseMetricsLoader = app.slice(app.indexOf('const loadTeamStats=async'), app.indexOf('const loadTeamRoster=async'));
 assert.ok(franchiseMetricsLoader.includes("api('/api/team-stats')") && !franchiseMetricsLoader.includes('cache:false'), 'Páginas que compartilham estatísticas de franquias devem reutilizar o cache recente ao abrir; a atualização periódica ao vivo permanece separada.');
 assert.ok(app.includes("api('/api/team-stats',{cache:false})"), 'A atualização periódica das estatísticas de franquias deve continuar buscando dados novos em vez de depender do cache de navegação.');
+
+
+assert.ok(app.includes("const finalGames=useMemo(()=>sortedGames.filter") && app.includes("const teamRowsAlpha=useMemo(()=>alphaTeams.map") && app.includes("[alphaTeams,finalGames,sortedGames]"), 'Cálculos compartilhados de campanha, forma, sequência e calendário dos times devem ser memorizados para evitar recomputação em cada renderização.');
