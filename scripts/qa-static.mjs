@@ -425,3 +425,5 @@ for (let index = 0; index < asyncApiRoutes.length; index++) {
 }
 assert.ok(styles.includes('.layout.light:before') && styles.includes('.layout.light:after') && styles.includes('.layout.light .feature-hub'), 'Tema claro precisa de tratamento próprio para fundo e painel principal.');
 assert.ok(arena.includes('<svg') && styles.includes("url('/courtside-arena.svg')"), 'A arte original da arena deve existir e estar referenciada pelo tema.');
+
+assert.ok(styles.includes('.layout{isolation:isolate}') && styles.includes('.layout:before{') && styles.includes("url('/courtside-arena.svg')"), 'Camadas ilustradas da arena devem permanecer visíveis dentro do contexto de empilhamento do aplicativo.');
