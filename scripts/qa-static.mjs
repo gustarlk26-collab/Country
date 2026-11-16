@@ -56,10 +56,10 @@ assert.ok(app.includes("!['win_pct','fg_pct','fg3_pct','off_rating','def_rating'
 assert.ok(app.includes("if(!Array.isArray(r.data)||!r.data.length)throw new Error('A fonte não retornou estatísticas de franquias.')"), 'Comparador não deve tratar resposta vazia como comparação válida.');
 
 for (const abbr of teamAbbrs) assert.ok(new RegExp('(?:^|[,\\{])' + abbr + ':').test(espnTeamMap), 'ID ESPN ausente para franquia: ' + abbr);
-assert.ok(server.includes("if (data.length) {"), 'Placar vazio da ESPN deve acionar a fonte alternativa.');
+assert.ok(server.includes("const [espnResult, nbaResult] = await Promise.allSettled([") && server.includes("if (espnResult.status === 'rejected' && nbaResult.status === 'rejected')") && server.includes('const merged = new Map(espnData.map(game => [String(game.id), game]));'), 'Placar ao vivo deve combinar ESPN e NBA Live e só falhar quando ambas as fontes falharem.');
 assert.ok(server.includes("if (!succeeded) throw new Error('ESPN não respondeu ao placar diário.')"), 'Placar ao vivo deve aproveitar datas ESPN válidas e só falhar quando nenhuma consulta responder.');
 assert.ok(server.includes('NBA Live CDN scoreboard'), 'Fonte alternativa do placar ao vivo deve estar identificada.');
-assert.ok(server.includes('home_team_score: finiteNumberOrNull(home.score)') && server.includes('visitor_team_score: finiteNumberOrNull(away.score)'), 'Placar alternativo deve rejeitar valores numéricos inválidos.');
+assert.ok(server.includes("home_team_score: scoreboardScore(home.score, state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled')") && server.includes("visitor_team_score: scoreboardScore(away.score, state === 'post' ? 'final' : state === 'in' ? 'in_progress' : 'scheduled')"), 'Placar ESPN deve rejeitar valores inválidos e não tratar pontuação de partida agendada como placar real.');
 assert.ok(server.includes('score: scoreboardScore(team.score, summaryStatus)') && server.includes('map(period => scoreboardScore(period?.score, summaryStatus))') && server.includes('map(line => scoreboardScore(line.displayValue ?? line.value, summaryStatus))'), 'Resumos por período NBA Live e ESPN devem rejeitar pontuações inválidas sem produzir NaN ou zero fictício.');
 assert.ok(app.includes("if(g.status_state==='scheduled'){setBusy(false);return;}") && app.includes("setBoxGame(g);setBoxStats([]);setPage('boxscore');setError('');"), 'Box score não deve consultar estatísticas antes do início de uma partida agendada; deve mostrar o estado pré-jogo correto.');
 assert.ok(routes.includes('GET /api/games/:id/stats'), 'Endpoint de box score ausente.');
@@ -158,6 +158,7 @@ assert.ok(app.includes("if(['in_progress','final'].includes(previous.status_stat
 assert.ok(app.includes("clockUnavailable:'Relógio oficial indisponível'") && app.includes("const clock=live?(g.display_clock?"), 'Jogos ao vivo sem relógio validado devem informar a indisponibilidade em vez de exibir um minuto incorreto.');
 assert.ok(app.includes('const settingsRequestRef=useRef(0)') && app.includes('if(request!==settingsRequestRef.current)return') && app.includes("setLang(data?.language||'pt');setTheme(data?.theme||'dark')"), 'Configurações não podem ser sobrescritas por respostas atrasadas de outro usuário e devem aplicar padrões quando não houver registro.');
 assert.ok(app.includes('settingsSaving') && app.includes('disabled={!settingsLoaded||settingsSaving}') && app.includes('setSettingsSaving(true)'), 'Salvar configurações deve aguardar o carregamento e impedir envios duplicados.');
+assert.ok(app.includes('settingsSaveRequestRef.current+=1;setSettingsSaving(false)') && app.includes('settingsSaveRequestRef.current+=1;setSettingsSaving(false);setSettingsLoaded(false)'), 'Trocar ou encerrar a sessão deve cancelar o estado visual de salvamento anterior.');
 assert.ok(app.includes('setLiveUnavailable(true)'), 'Falhas do feed ao vivo devem ser identificadas na interface.');
 assert.ok(app.includes('live-warning'), 'A interface deve diferenciar visualmente o feed indisponível.');
 assert.ok(app.includes('g.display_clock'), 'Relógio da partida não é exibido no cartão.');
