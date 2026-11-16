@@ -172,33 +172,39 @@ async function nbaLiveBoxscore(gameId) {
   return uniqueRows;
 }
 async function nbaHistoricalBoxscore(gameId) {
-  const seasonCode = Number(String(gameId).slice(3, 5));
-  const season = Number.isFinite(seasonCode) && seasonCode > 0
-    ? `${2000 + seasonCode}-${String(2001 + seasonCode).slice(-2)}`
-    : seasonFor();
-  const gameType = String(gameId).slice(0, 3);
-  const seasonType = gameType === '004' ? 'Playoffs' : gameType === '001' ? 'Pre Season' : gameType === '003' ? 'All Star' : 'Regular Season';
-  const sets = await nba('boxscoretraditionalv2', {
-    GameID: gameId, LeagueID: '00', Season: season, SeasonType: seasonType,
-    StartPeriod: 0, EndPeriod: 10, StartRange: 0, EndRange: 0, RangeType: 0
-  });
-  const rows = sets[0] || [];
-  if (!rows.length) throw new Error('A NBA não retornou estatísticas para esta partida.');
-  const played = rows.filter(p => minutesAsNumber(p.MIN) > 0);
-  const data = played.map(p => {
-    const row = {
-      id: p.PLAYER_ID,
-      player: { id: p.PLAYER_ID, first_name: String(p.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(p.PLAYER_NAME || '').split(' ').slice(-1)[0] },
-      team: { id: p.TEAM_ID, abbreviation: p.TEAM_ABBREVIATION, full_name: p.TEAM_NAME },
-      min: p.MIN, pts: p.PTS ?? null, reb: p.REB ?? null, ast: p.AST ?? null, stl: p.STL ?? null, blk: p.BLK ?? null,
-      fgm:p.FGM??null,fga:p.FGA??null,ftm:p.FTM??null,fta:p.FTA??null,oreb:p.OREB??null,dreb:p.DREB??null,pf:p.PF??null,
-      fg_pct: shootingPct(p.FGM, p.FGA), fg3_pct: shootingPct(p.FG3M, p.FG3A), turnover: p.TOV ?? null
+  const id=String(gameId);
+  if(!/^\\d{10}$/.test(id))throw new Error('ID NBA inválido para box score histórico.');
+  const response=await fetch(`${NBA_STATS}/boxscoretraditionalv3?${new URLSearchParams({
+    GameID:id,EndPeriod:'10',EndRange:'0',RangeType:'0',StartPeriod:'0',StartRange:'0'
+  })}`,{headers:NBA_HEADERS,signal:AbortSignal.timeout(12000)});
+  if(!response.ok)throw new Error(`NBA Stats BoxScoreTraditionalV3 HTTP ${response.status}.`);
+  const body=await response.json();
+  const game=body?.boxScoreTraditional||body?.boxscoreTraditional;
+  if(!game)throw new Error('NBA Stats não publicou o box score V3 desta partida.');
+  const numberOrNull=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
+  const nonNegative=value=>{const parsed=numberOrNull(value);return parsed!=null&&parsed>=0?parsed:null;};
+  const teams=[game.homeTeam,game.awayTeam];
+  const data=teams.filter(team=>team&&Number.isSafeInteger(Number(team.teamId))&&Number(team.teamId)>0&&/^[A-Z]{3}$/.test(String(team.teamTricode||''))).flatMap(team=>(Array.isArray(team.players)?team.players:[]).filter(player=>player&&Number.isSafeInteger(Number(player.personId))&&Number(player.personId)>0&&String(player.nameI||player.name||[player.firstName,player.familyName].filter(Boolean).join(' ')).trim()).map(player=>{
+    const stats=player.statistics||{};
+    const min=stats.minutes??null;
+    const played=player.played===true||minutesAsNumber(min)>0;
+    if(!played)return null;
+    const name=String(player.nameI||player.name||[player.firstName,player.familyName].filter(Boolean).join(' ')).trim();
+    const fgMade=nonNegative(stats.fieldGoalsMade),fgAttempted=nonNegative(stats.fieldGoalsAttempted);
+    const threeMade=nonNegative(stats.threePointersMade),threeAttempted=nonNegative(stats.threePointersAttempted);
+    const row={
+      id:Number(player.personId),player:{id:Number(player.personId),first_name:String(player.firstName||name.split(' ').slice(0,-1).join(' ')),last_name:String(player.familyName||name.split(' ').slice(-1)[0]||''),position:player.position||''},
+      team:{id:Number(team.teamId),abbreviation:team.teamTricode,full_name:[team.teamCity,team.teamName].filter(Boolean).join(' ')},
+      min,pts:nonNegative(stats.points),reb:nonNegative(stats.reboundsTotal),ast:nonNegative(stats.assists),stl:nonNegative(stats.steals),blk:nonNegative(stats.blocks),
+      fgm:fgMade,fga:fgAttempted,ftm:nonNegative(stats.freeThrowsMade),fta:nonNegative(stats.freeThrowsAttempted),
+      oreb:nonNegative(stats.reboundsOffensive),dreb:nonNegative(stats.reboundsDefensive),pf:nonNegative(stats.foulsPersonal),
+      fg_pct:shootingPct(fgMade,fgAttempted),fg3_pct:shootingPct(threeMade,threeAttempted),turnover:nonNegative(stats.turnovers)
     };
-    row.game_score = gameScore(row);
+    row.game_score=gameScore(row);
     return row;
-  });
-  const uniqueData = dedupeGamePlayers(data.filter(row => Number.isSafeInteger(Number(row.id)) && Number(row.id) > 0 && String(row.player?.first_name || row.player?.last_name || '').trim()));
-  if (!uniqueData.length) throw new Error('A NBA não retornou atletas válidos com minutos jogados para esta partida.');
+  })).filter(Boolean);
+  const uniqueData=dedupeGamePlayers(data.filter(row=>Number.isSafeInteger(row.id)&&row.id>0&&String(row.player?.first_name||row.player?.last_name||'').trim()));
+  if(!uniqueData.length)throw new Error('NBA Stats não retornou atletas válidos com minutos jogados para esta partida.');
   return uniqueData;
 }
 async function nbaGameIdFromEspn(eventId) {
