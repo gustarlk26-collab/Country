@@ -29,6 +29,7 @@ for (const key of features) assert.ok(navKeys.includes(key), 'Funcionalidade for
 
 const renderedPages = new Set([...app.matchAll(/page\s*===?\s*['"]([^'"]+)['"]/g)].map(match => match[1]));
 for (const key of features) assert.ok(renderedPages.has(key), 'Página sem condição de renderização: ' + key);
+for (const key of navKeys) assert.ok(renderedPages.has(key), 'Item de navegação sem tela implementada: ' + key);
 assert.ok(app.includes("{p.gamesPlayed??'N/D'} jogos"), 'Evolução não deve inventar zero para jogos ausentes.');
 assert.ok(app.includes("String(v).trim()===''"), 'Interface deve rejeitar strings vazias ou com espaços em vez de convertê-las em zero.');
 assert.ok(app.includes('rosterRequestRef.current') && app.includes('if(request!==rosterRequestRef.current)return;'), 'Elenco deve impedir que uma resposta antiga sobrescreva o time atualmente selecionado.');
