@@ -1226,7 +1226,7 @@ app.get('/api/historicstats', async (req, res) => {
   const seasonType=String(req.query.type||'Regular Season').trim();
   const perMode=String(req.query.mode||'PerGame').trim();
   const match=season.match(/^(19[4-9][0-9]|20[0-9]{2})-(\d{2})$/);
-  if(!match||Number(match[2])!==(Number(match[1])+1)%100||Number(match[1])>Number(seasonFor().slice(0,4))) {
+  if(!match||Number(match[1])<1946||Number(match[2])!==(Number(match[1])+1)%100||Number(match[1])>Number(seasonFor().slice(0,4))) {
     return res.status(400).json({error:'Temporada inválida. Use o formato AAAA-AA e uma temporada já iniciada.'});
   }
   if(!['Regular Season','Playoffs'].includes(seasonType)||!['PerGame','Totals'].includes(perMode)) {
