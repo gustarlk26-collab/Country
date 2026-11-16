@@ -977,7 +977,7 @@ async function espnTeamSchedule(abbreviation, seasonYear) {
   const teamId = ESPN_TEAM_IDS[abbreviation];
   if (!teamId) throw new Error('ID ESPN da franquia não encontrado.');
   try {
-    const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/' + teamId + '/schedule?season=' + seasonYear);
+    const body = await espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/' + teamId + '/schedule?season=' + seasonYear + '&seasontype=2');
     const events = body.events || body.schedule?.events || [];
     const parsed = events.flatMap(event => {
       const competition = event.competitions?.[0];
