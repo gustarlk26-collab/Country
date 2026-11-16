@@ -863,3 +863,54 @@ img{max-width:100%}
  .layout.light .table-wrap{max-width:100%;overscroll-behavior-x:contain}
 }
 @media(max-width:390px){.layout.light .top-right .secondary{padding:8px 9px;font-size:11px}}
+
+
+/* Courtside UI polish — consistent focus, responsive surfaces and readable controls */
+:root{color-scheme:dark}
+button,input,select,textarea{font:inherit}
+button{ -webkit-tap-highlight-color:transparent }
+:focus-visible{outline:3px solid rgba(91,183,255,.9);outline-offset:3px}
+.layout{isolation:isolate}
+.content{width:100%;min-width:0}
+.panel,.metric-card,.feature-tile,.team-feature-card,.team-card,.leader-card{min-width:0}
+.panel{backdrop-filter:blur(12px)}
+.table-wrap{overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:rgba(112,159,202,.45) transparent}
+.table-wrap::-webkit-scrollbar{height:8px}
+.table-wrap::-webkit-scrollbar-thumb{background:rgba(112,159,202,.42);border-radius:99px}
+table{font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;z-index:1;background:var(--panel)}
+input,select,textarea{max-width:100%;min-height:42px}
+button:disabled{cursor:not-allowed;filter:saturate(.55);transform:none!important}
+.alert{line-height:1.55}
+.live{font-variant-numeric:tabular-nums}
+.layout.light{color-scheme:light}
+.layout.light .panel{background:linear-gradient(145deg,rgba(248,250,251,.96),rgba(235,240,244,.96));backdrop-filter:blur(12px)}
+.layout.light .feature-tile small,.layout.light .muted,.layout.light .subline{color:#5d6e80}
+.layout.light .profile-tabs button,.layout.light .game-tabs button{background:#e5ebf0;color:#344b60;border-color:#cbd7e1}
+.layout.light .profile-tabs button.active,.layout.light .game-tabs button.active{background:linear-gradient(110deg,#1685ee,#1763ce);color:#fff;border-color:transparent}
+.layout.light input,.layout.light select,.layout.light textarea{background:#f7f9fa;color:#253344;border-color:#c8d4df}
+.layout.light th{background:#edf1f4}
+@media(min-width:1500px){.content{padding-left:38px;padding-right:38px}.cards{gap:18px}.panel{padding:26px}}
+@media(max-width:950px){.sidebar{z-index:9}.main{min-width:0}.table-wrap table{min-width:640px}}
+@media(max-width:650px){
+ .sidebar{padding-top:max(9px,env(safe-area-inset-top))}
+ .topbar{gap:10px}
+ .content{padding-left:clamp(10px,3vw,16px);padding-right:clamp(10px,3vw,16px)}
+ .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .metric-card{min-width:0;overflow-wrap:anywhere}
+ .panel-head{align-items:flex-start;flex-wrap:wrap}
+ .panel-head h2{font-size:15px}
+ .filters>*{min-width:0;max-width:100%}
+ .filters label{flex:1 1 135px}
+ .filters input,.filters select{width:100%;min-width:0}
+ .search-field{min-width:0;width:100%}
+ .search-field input{width:100%;min-width:0}
+ .table-wrap{margin-right:-2px}
+ .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .team-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .team-hero{gap:12px;padding:15px}
+ .team-hero img{width:72px;height:72px}
+ .team-hero h2{font-size:19px}
+ .team-leaders{grid-template-columns:1fr}
+}
+@media(max-width:380px){.feature-grid,.cards{grid-template-columns:1fr}.game-row{grid-template-columns:minmax(0,1fr) 78px}.metric-card b{font-size:18px}}
