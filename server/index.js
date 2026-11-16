@@ -700,12 +700,13 @@ app.get('/api/teams', (_req, res) => {
 });
 
 app.get('/api/players', async (req, res) => {
-  const search = String(req.query.search || '').trim().toLowerCase();
+  const normalizePlayerSearch = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\\s+/g, ' ').trim();
+  const search = normalizePlayerSearch(req.query.search);
   const page = Math.max(1, Number(req.query.page || req.query.cursor) || 1);
   try {
     // A lista ESPN é carregada uma vez e mantida em cache por 30 minutos.
     const all = await cached('espn:active-players', espnPlayers, 30 * 60 * 1000);
-    const filtered = all.filter(p => !search || `${p.first_name} ${p.last_name}`.toLowerCase().includes(search));
+    const filtered = all.filter(p => !search || normalizePlayerSearch(`${p.first_name} ${p.last_name}`).includes(search));
     res.set('Cache-Control', 'private, max-age=60');
     res.json({
       data: filtered.slice((page - 1) * 100, page * 100),
@@ -717,7 +718,7 @@ app.get('/api/players', async (req, res) => {
       const rows = (await cached(`players:${seasonFor()}`, () => nba('commonallplayers', {
         LeagueID: '00', Season: seasonFor(), IsOnlyCurrentSeason: '1'
       }), 12 * 60 * 60 * 1000))[0] || [];
-      const filtered = rows.filter(p => Number(p.ROSTERSTATUS) === 1 && (!search || String(p.DISPLAY_FIRST_LAST || '').toLowerCase().includes(search)));
+      const filtered = rows.filter(p => Number(p.ROSTERSTATUS) === 1 && (!search || normalizePlayerSearch(p.DISPLAY_FIRST_LAST).includes(search)));
       const data = filtered.slice((page - 1) * 100, page * 100).map(p => ({
         id: p.PERSON_ID, first_name: String(p.DISPLAY_FIRST_LAST || '').split(' ').slice(0,-1).join(' '),
         last_name: String(p.DISPLAY_FIRST_LAST || '').split(' ').slice(-1)[0],
