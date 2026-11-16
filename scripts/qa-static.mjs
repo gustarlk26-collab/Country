@@ -371,6 +371,8 @@ assert.ok(arena.includes('<svg') && arena.includes('viewBox="0 0 1800 1200"') &&
 assert.ok(styles.includes("url('/courtside-arena.svg')") && styles.includes('@keyframes courtsideEnter') && styles.includes('@keyframes courtsideGlow'), 'O tema deve usar o fundo original e animações próprias de interface.');
 assert.ok(app.includes('soundEnabled') && app.includes('AudioContextClass') && app.includes('aria-pressed={soundEnabled}') && app.includes('onClickCapture={e=>{const button=e.target?.closest?.(\'button\')'), 'Efeitos sonoros devem ser opcionais, sintetizados localmente e aplicados aos controles com acessibilidade.');
 
+assert.ok(!server.includes("'N/D'") && server.includes("date:game.date?String(game.date).slice(0,10):null"), 'Datas ausentes no backend devem permanecer nulas, nunca virar texto fictício.');
+
 assert.ok(server.includes("const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '').split(',')") && server.includes("app.use(cors({ origin(origin, callback)") && server.includes("ALLOWED_ORIGINS.includes(origin)"), 'CORS deve estar ativo e aceitar somente as origens explicitamente configuradas.');
 assert.ok(server.includes("app.set('trust proxy', 1)") && server.indexOf("app.set('trust proxy', 1)") < server.indexOf("app.use('/api/', rateLimit"), 'Rate limit precisa identificar o IP real do cliente atrás do proxy do Render.');
 
