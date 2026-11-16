@@ -400,6 +400,9 @@ assert.ok(app.includes("TEAM_LOGO_IDS[team.abbreviation]?'https://cdn.nba.com/lo
 assert.ok(styles.includes('@keyframes courtsideLivePulse') && styles.includes('.live i,.status-live:before') && styles.includes('@media(prefers-reduced-motion:reduce){.live i,.status-live:before'), 'Indicadores de partida ao vivo devem pulsar discretamente e respeitar movimento reduzido.');
 
 const liveRouteBlock = server.slice(server.indexOf("app.get('/api/games/live'"), server.indexOf('async function nbaLivePeriodSummary'));
+assert.ok(liveRouteBlock.includes("combined.display_clock = game.display_clock ?? existing.display_clock ?? null") && liveRouteBlock.includes("combined.period = game.period ?? existing.period ?? null") && liveRouteBlock.includes("combined.period_label = game.period_label || existing.period_label || ''"), 'Snapshot NBA Live sem relógio ou período não deve apagar o relógio oficial válido da ESPN durante jogo em andamento.');
+assert.ok(liveRouteBlock.includes("else {\n        // Um jogo encerrado nunca pode herdar o relógio antigo da ESPN.\n        combined.display_clock = null;"), 'Partida finalizada não pode herdar relógio de jogo em andamento.');
+
 assert.ok(liveRouteBlock.includes('  try {') && liveRouteBlock.includes('Falha ao consolidar o placar ao vivo:'), 'Erros inesperados ao combinar ESPN e NBA Live devem retornar JSON 503 controlado, sem rejeição não tratada no Express.');
 
 const asyncRouteMatches = [...server.matchAll(/app\.(?:get|post|put|patch|delete)\(['"][^'"]+['"],\s*async/g)];
