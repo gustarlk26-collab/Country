@@ -375,3 +375,5 @@ assert.ok(app.includes("const loadNewsNew=")===false && app.includes("newsReques
 assert.ok(app.includes("return()=>{active=false;if(page==='news')newsRequestRef.current++;if(page==='injuries')injuriesRequestRef.current++;};"), 'A saída das páginas de notícias/lesões deve invalidar requisições pendentes.');
 
 assert.ok(!app.includes("onChange={e=>{setTeamA(e.target.value);loadTeamRoster(e.target.value);}}") && app.includes("if(['teamanalytics','lineups','rotation'].includes(page))loadTeamRoster(teamA);"), 'Trocar a franquia deve disparar apenas o carregamento centralizado do elenco, sem chamadas duplicadas no evento e no efeito.');
+
+assert.ok(app.includes("const favoritesRequestRef=useRef(0)") && app.includes("request!==favoritesRequestRef.current||session?.user?.id!==userId") && app.includes("else{favoritesRequestRef.current++;setFavorites([]);}"), 'Favoritos devem ser isolados por sessão e respostas pendentes da conta anterior não podem reaparecer após logout ou troca de usuário.');
