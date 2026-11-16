@@ -548,12 +548,15 @@ async function espnStandings() {
     const team = entry.team || {};
     const stats = Object.fromEntries((entry.stats || []).map(x => [x.name, x.value]));
     const meta = Object.values(TEAM_META).find(x => x[0] === team.abbreviation);
-    const rawWinPct = stats.winPercent ?? stats.win_pct ?? null;
-    const winPct = rawWinPct == null || rawWinPct === '' ? null : Number(rawWinPct);
+    const rawWinPct = finiteNumberOrNull(stats.winPercent ?? stats.win_pct);
+    const winPct = rawWinPct != null && rawWinPct >= 0 && rawWinPct <= 1 ? rawWinPct : null;
+    const winsValue = finiteNumberOrNull(stats.wins), lossesValue = finiteNumberOrNull(stats.losses);
+    const wins = winsValue != null && Number.isSafeInteger(winsValue) && winsValue >= 0 ? winsValue : null;
+    const losses = lossesValue != null && Number.isSafeInteger(lossesValue) && lossesValue >= 0 ? lossesValue : null;
     return {
       team: { id: Number(team.id), full_name: team.displayName || team.name || '', name: team.displayName || team.name || '',
         abbreviation: canonicalTeamAbbr(team.abbreviation || ''), conference: group.name || group.abbreviation || meta?.[2] || '' },
-      wins: stats.wins ?? null, losses: stats.losses ?? null,
+      wins, losses,
       win_pct: Number.isFinite(winPct) && winPct >= 0 && winPct <= 1 ? winPct : null
     };
   }));
@@ -1387,7 +1390,8 @@ app.get('/api/standings', async (_req, res) => {
     if (!rows.length) throw new Error('NBA Stats não retornou dados da classificação.');
     const data = rows.map(r => ({
       team: { id: r.TeamID, full_name: r.TeamName, name: r.TeamName, abbreviation: TEAM_META[Number(r.TeamID)]?.[0] || r.TeamAbbreviation, conference: r.Conference || TEAM_META[Number(r.TeamID)]?.[2] },
-      wins: r.WINS, losses: r.LOSSES,
+      wins: (()=>{const value=finiteNumberOrNull(r.WINS);return value!=null&&Number.isSafeInteger(value)&&value>=0?value:null;})(),
+      losses: (()=>{const value=finiteNumberOrNull(r.LOSSES);return value!=null&&Number.isSafeInteger(value)&&value>=0?value:null;})(),
       win_pct: r.WIN_PCT == null || r.WIN_PCT === '' || !Number.isFinite(Number(r.WIN_PCT)) || Number(r.WIN_PCT) < 0 || Number(r.WIN_PCT) > 1 ? null : Number(r.WIN_PCT)
     }));
     res.json({ data });
