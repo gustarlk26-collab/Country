@@ -453,3 +453,9 @@ assert.ok(app.includes('if(session){loadSettings();loadFavorites();loadCore();}'
 assert.ok(app.includes('const API_RESPONSE_CACHE_TTL_MS = 45000;') && app.includes('Date.now()-cached.at<API_RESPONSE_CACHE_TTL_MS'), 'Navegação entre páginas deve reaproveitar respostas recentes por 45 segundos para reduzir consultas repetidas.');
 assert.ok(app.includes("api('/api/games/live',{cache:false})") && app.includes("{cache:false})"), 'O cache de navegação não pode substituir consultas explicitamente atualizadas de dados ao vivo.');
 assert.ok(app.includes('if(apiInflight.has(key))return apiInflight.get(key);'), 'Chamadas GET simultâneas para o mesmo recurso devem compartilhar a mesma requisição em andamento.');
+
+const packageManifest = JSON.parse(read('package.json'));
+assert.ok(app.includes("apiResponseCache.delete(key);apiResponseCache.set(key,cached)") && app.includes("while(apiResponseCache.size>120)apiResponseCache.delete(apiResponseCache.keys().next().value)"), 'Cache do frontend deve usar LRU limitado para reutilizar consultas frequentes sem crescer indefinidamente.');
+assert.ok(server.includes("cache.delete(key);\n    cache.set(key, hit);") && server.includes("while (cache.size > 500) cache.delete(cache.keys().next().value)"), 'Cache do backend deve atualizar a ordem LRU e remover entradas antigas sem ordenar o mapa inteiro.');
+assert.ok(packageManifest.dependencies?.compression && server.includes("import compression from 'compression';") && server.includes("app.use(compression({ threshold: 1024 }))"), 'Respostas maiores da API devem usar compressão HTTP.');
+assert.ok(server.includes("max-age=31536000, immutable") && server.includes("res.setHeader('Cache-Control', 'no-cache')") && server.includes("index: false"), 'Assets versionados podem ser armazenados por longo prazo, mas o HTML deve sempre verificar a versão atual.');
