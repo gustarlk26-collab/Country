@@ -313,6 +313,7 @@ assert.ok(app.includes('Array.from({length:81},(_,i)=>{const y=2026-i;'), 'Arqui
 assert.ok(server.includes('Number(match[1])<1946'), 'API histórica deve rejeitar temporadas anteriores à fundação da NBA.');
 
 assert.ok(app.includes('const historicRequestRef=useRef(0)') && app.includes('const request=++historicRequestRef.current') && app.includes('if(request!==historicRequestRef.current)return') && app.includes('if(request===historicRequestRef.current)setHistoricBusy(false)'), 'Consultas históricas antigas não podem sobrescrever filtros recentes nem encerrar o carregamento da consulta atual.');
+assert.ok(app.includes('const averagesRequestRef=useRef(0)') && app.includes('const request=++averagesRequestRef.current;setBusy(true)') && app.includes('if(request!==averagesRequestRef.current)return') && app.includes('if(request===averagesRequestRef.current)setBusy(false)') && app.includes('Array.isArray(r.data)?r.data:[]'), 'Trocas rápidas de período nas médias não podem exibir resposta antiga, encerrar o loading atual ou gravar resposta fora do formato esperado.');
 assert.ok(app.includes("else setGames(current=>current.filter(game=>gameLocalDate(game)!==dateNow(0)))"), 'Feed ao vivo vazio e válido deve remover jogos antigos da data local, sem confundir ausência de partidas com falha de rede.');
 assert.ok(app.includes("if(page==='historicstats')loadHistoricStats()"), 'A página de estatísticas históricas deve consultar automaticamente a temporada selecionada ao ser aberta.');
 
