@@ -1244,8 +1244,10 @@ app.get('/api/historicstats', async (req, res) => {
         Month:'0',Period:'0',GameScope:'',PlayerExperience:'',PlayerPosition:'',StarterBench:''
       }))[0]||[];
       const number=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
-      return rows.filter(row=>Number.isSafeInteger(Number(row.PLAYER_ID))&&Number(row.PLAYER_ID)>0&&String(row.PLAYER_NAME||'').trim()&&number(row.GP)>0)
-        .map(row=>({player_id:Number(row.PLAYER_ID),player_name:String(row.PLAYER_NAME),team:row.TEAM_ABBREVIATION||null,games:number(row.GP),minutes:number(row.MIN),pts:number(row.PTS),reb:number(row.REB),ast:number(row.AST),stl:number(row.STL),blk:number(row.BLK),fg_pct:number(row.FG_PCT),fg3_pct:number(row.FG3_PCT),ft_pct:number(row.FT_PCT)}))
+      const nonNegative=value=>{const parsed=number(value);return parsed!=null&&parsed>=0?parsed:null;};
+      const percentage=value=>{const parsed=number(value);return parsed!=null&&parsed>=0&&parsed<=1?parsed:null;};
+      return rows.filter(row=>Number.isSafeInteger(Number(row.PLAYER_ID))&&Number(row.PLAYER_ID)>0&&String(row.PLAYER_NAME||'').trim()&&Number.isSafeInteger(number(row.GP))&&number(row.GP)>0)
+        .map(row=>({player_id:Number(row.PLAYER_ID),player_name:String(row.PLAYER_NAME),team:row.TEAM_ABBREVIATION||null,games:nonNegative(row.GP),minutes:nonNegative(row.MIN),pts:nonNegative(row.PTS),reb:nonNegative(row.REB),ast:nonNegative(row.AST),stl:nonNegative(row.STL),blk:nonNegative(row.BLK),fg_pct:percentage(row.FG_PCT),fg3_pct:percentage(row.FG3_PCT),ft_pct:percentage(row.FT_PCT)}))
         .sort((a,b)=>(b.pts??-Infinity)-(a.pts??-Infinity)||a.player_name.localeCompare(b.player_name,'en'));
     },6*60*60*1000);
     res.json({data,season,seasonType,perMode,totalPlayers:data.length,source:'NBA Stats LeagueDashPlayerStats',updatedAt:new Date().toISOString()});
