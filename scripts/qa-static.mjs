@@ -153,7 +153,11 @@ assert.ok(app.includes("Sem partidas no período"), 'Ferramentas de forma devem 
 
 assert.ok(app.includes("api('/api/games/live',{cache:false})"), 'Frontend não consulta o placar ao vivo sem cache.');
 assert.ok(app.includes('window.setInterval(refreshLive,15000)'), 'Atualização automática do placar não está configurada para 15 segundos.');
-assert.ok(app.includes('home_team_score:updated.home_team_score??current.home_team_score') && app.includes('visitor_team_score:updated.visitor_team_score??current.visitor_team_score'), 'Box score deve preservar placares válidos durante atualizações parciais.');
+assert.ok(app.includes('byId.set(String(game.id),{...previous,...game})') && !app.includes('home_team_score:game.home_team_score??previous.home_team_score'), 'O feed ao vivo não pode preservar placares antigos quando a fonte atual não confirma um valor novo.');
+assert.ok(app.includes("if(['in_progress','final'].includes(previous.status_state)&&game.status_state!=='final')return {...game,...previous}") && app.includes("current.filter(item=>['in_progress','final'].includes(item.status_state)"), 'A resposta atrasada do calendário não pode sobrescrever nem remover um estado ao vivo mais recente.');
+assert.ok(app.includes("clockUnavailable:'Relógio oficial indisponível'") && app.includes("const clock=live?(g.display_clock?"), 'Jogos ao vivo sem relógio validado devem informar a indisponibilidade em vez de exibir um minuto incorreto.');
+assert.ok(app.includes('const settingsRequestRef=useRef(0)') && app.includes('if(request!==settingsRequestRef.current)return') && app.includes("setLang(data?.language||'pt');setTheme(data?.theme||'dark')"), 'Configurações não podem ser sobrescritas por respostas atrasadas de outro usuário e devem aplicar padrões quando não houver registro.');
+assert.ok(app.includes('settingsSaving') && app.includes('disabled={!settingsLoaded||settingsSaving}') && app.includes('setSettingsSaving(true)'), 'Salvar configurações deve aguardar o carregamento e impedir envios duplicados.');
 assert.ok(app.includes('setLiveUnavailable(true)'), 'Falhas do feed ao vivo devem ser identificadas na interface.');
 assert.ok(app.includes('live-warning'), 'A interface deve diferenciar visualmente o feed indisponível.');
 assert.ok(app.includes('g.display_clock'), 'Relógio da partida não é exibido no cartão.');
@@ -177,6 +181,8 @@ assert.equal((server.match(/fg_pct:\s*shootingPct\(/g)||[]).length, 3, 'Todos os
 assert.ok(server.includes('home_team_score: finiteNumberOrNull(home.score)'), 'Pontuação da casa deve aceitar somente números oficiais válidos.');
 assert.ok(server.includes("if (date !== today && state !== 'in') return []"), 'Partidas ao vivo após meia-noite devem continuar visíveis no horário local.');
 assert.ok(server.includes('if (localDate !== today && state !== 2) return null'), 'Fallback NBA Live deve preservar jogos que seguem ao vivo após meia-noite.');
+assert.ok(server.includes('async function nbaLiveScoreboard(today)') && server.includes('nbaLiveScoreboard(today)') && server.includes("source: espnResult.status === 'fulfilled' && nbaResult.status === 'fulfilled' ? 'ESPN + NBA Live CDN'") && server.includes("game.status_state === 'in_progress' || game.status_state === 'final'"), 'Placar ao vivo deve consultar NBA Live CDN a cada atualização e combinar estado, período, relógio e placar com o calendário ESPN.');
+assert.ok(server.includes("display_clock: statusState === 'in_progress' && period != null ? validGameClock(game.gameClock, period) : null") && server.includes('scoreboardScore(home.score, statusState)'), 'Relógio e placar do NBA Live devem ser validados pela situação real da partida antes de chegar à interface.');
 assert.ok(server.includes("const today = saoPauloDate(new Date().toISOString())"), 'Calendário CDN deve usar a data local de São Paulo.');
 assert.ok(server.includes("cached('nba:season-schedule'"), 'Calendário oficial da NBA deve ser armazenado em cache para reduzir chamadas externas.');
 assert.equal((server.match(/cached\('nba:season-schedule'/g)||[]).length, 3, 'Calendário NBA deve compartilhar o mesmo cache no calendário, no confronto direto e na resolução de IDs.');
