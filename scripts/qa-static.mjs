@@ -442,3 +442,7 @@ assert.ok(favoriteHandler.includes('session?.user?.id!==userId') && favoriteHand
 
 const signOutHandler = app.slice(app.indexOf('const signOut=async()=>{'), app.indexOf('const favIds='));
 assert.ok(signOutHandler.includes('try{') && signOutHandler.includes('catch(error)') && signOutHandler.includes('Não foi possível encerrar a sessão:'), 'Falhas de rede ao sair da conta devem ser capturadas e informadas ao usuário.');
+
+const favoritesLoader = app.slice(app.indexOf('const loadFavorites=useCallback'), app.indexOf('const loadCore=useCallback'));
+assert.ok(favoritesLoader.includes('try{') && favoritesLoader.includes('catch(error)') && favoritesLoader.includes('request===favoritesRequestRef.current&&session?.user?.id===userId'), 'Falhas ao carregar favoritos devem ser capturadas e nunca sobrescrever o estado de outra sessão.');
+assert.ok(app.includes('if(session){loadSettings();loadFavorites();loadCore();}'), 'O carregamento de favoritos deve delegar o tratamento de erros ao próprio carregador protegido por sessão.');
