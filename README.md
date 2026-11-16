@@ -45,7 +45,7 @@ Configure no serviço Render:
 | `VITE_SUPABASE_URL` | Mesma URL do projeto Supabase, usada pelo frontend |
 | `VITE_SUPABASE_ANON_KEY` | Mesma chave pública/anon, usada pelo frontend |
 | `FAMILY_EMAILS` | E-mails autorizados separados por vírgula |
-| `CORS_ORIGIN` | Domínio do app no Render |
+| `CORS_ORIGIN` | Origens permitidas separadas por vírgula (ex.: domínio principal e preview autorizado) |
 | `API_CACHE_MS` | Cache em milissegundos (opcional; padrão 90000) |
 
 **Remova `BALLDONTLIE_API_KEY` do Render:** o backend não usa mais essa variável. Nunca coloque chaves secretas em variáveis `VITE_*` nem envie segredos pelo chat.
@@ -63,6 +63,8 @@ Após configurar as variáveis, faça **Manual Deploy → Deploy latest commit**
 ## Segurança
 
 - As rotas `/api/*` exigem token Supabase válido.
+- CORS só libera origens listadas em `CORS_ORIGIN`; requisições same-origin continuam funcionando.
+- O rate limit usa o IP do cliente encaminhado pelo proxy do Render.
 - `FAMILY_EMAILS` restringe o acesso aos membros da família.
 - Favoritos e preferências devem permanecer isolados por RLS.
 - A chave pública Supabase é destinada ao cliente; a segurança depende das políticas RLS.
