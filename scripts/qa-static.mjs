@@ -30,7 +30,7 @@ for (const key of features) assert.ok(navKeys.includes(key), 'Funcionalidade for
 const renderedPages = new Set([...app.matchAll(/page\s*===?\s*['"]([^'"]+)['"]/g)].map(match => match[1]));
 for (const key of features) assert.ok(renderedPages.has(key), 'Página sem condição de renderização: ' + key);
 for (const key of navKeys) assert.ok(renderedPages.has(key), 'Item de navegação sem tela implementada: ' + key);
-assert.ok(app.includes("{p.gamesPlayed??'N/D'} jogos"), 'Evolução não deve inventar zero para jogos ausentes.');
+assert.ok(app.includes("{p.gamesPlayed??'Não disponível'} jogos"), 'Evolução não deve inventar zero para jogos ausentes.');
 assert.ok(app.includes('const numberFormatCache=new Map()') && app.includes('numberFormatter(numberLocale,d).format(Number(value))'), 'As páginas devem reutilizar formatadores numéricos para reduzir trabalho repetido durante renderizações.');
 assert.ok(styles.includes('@media(max-width:900px)') && styles.includes('backdrop-filter:none!important') && styles.includes('.feature-hub:before{animation:none!important}'), 'O layout deve reduzir filtros e animações custosas em telas menores.');
 assert.ok(server.includes("cached('nba-live-scoreboard:' + today, () => nbaLiveScoreboard(today), 5000)"), 'O placar NBA Live deve deduplicar chamadas simultâneas sem armazenar dados por muito tempo.');
@@ -142,7 +142,7 @@ assert.ok(app.includes('candidate.team.abbreviation===targetTeam'), 'Conciliaç�
 assert.ok(app.includes("const profileAdvancedRow=advancedRow||advancedKeys.some(key=>advancedBase[key]!=null)?advancedBase:null"), 'Perfil deve aproveitar métricas avançadas ESPN quando a fonte principal não retornar valores.');
 assert.ok(app.includes("selectedProfile.advanced||null"), 'Atualizações periódicas não podem apagar o fallback do perfil.');
 
-assert.ok(app.includes("x[propMetric]!=null&&x[propMetric]!==''&&Number.isFinite(Number(x[propMetric]))") && app.includes("Number.isFinite(v)?fmt(v):'N/D'") && app.includes('Nenhum atleta ou número foi estimado.'), 'Props devem listar somente jogadores com valor oficial válido para a métrica escolhida, preservar zeros reais e explicar quando não há dados.');
+assert.ok(app.includes("x[propMetric]!=null&&x[propMetric]!==''&&Number.isFinite(Number(x[propMetric]))") && app.includes("Number.isFinite(v)?fmt(v):'Não disponível'") && app.includes('Nenhum atleta ou número foi estimado.'), 'Props devem listar somente jogadores com valor oficial válido para a métrica escolhida, preservar zeros reais e explicar quando não há dados.');
 assert.ok(app.includes("const fantasyScore=p=>{const values=[p?.pts,p?.reb,p?.ast,p?.stl,p?.blk,p?.turnover];if(values.some(value=>value==null||value===''||!Number.isFinite(Number(value))))return null"), 'Fantasy não pode pontuar estatísticas ausentes como zero.');
 assert.ok(app.includes('scores.length===fantasyIds.length&&scores.every(score=>score!=null)'), 'Total fantasy só pode aparecer quando todos os atletas selecionados têm dados completos.');
 assert.ok(app.includes('].filter(column=>rows.some(row=>row[column.key]!=null))'), 'Evolução do jogador deve ocultar colunas sem dados oficiais.');
@@ -178,14 +178,14 @@ assert.ok(app.includes('settingsSaveRequestRef.current+=1;setSettingsSaving(fals
 assert.ok(app.includes('setLiveUnavailable(true)'), 'Falhas do feed ao vivo devem ser identificadas na interface.');
 assert.ok(app.includes('live-warning'), 'A interface deve diferenciar visualmente o feed indisponível.');
 assert.ok(app.includes('g.display_clock'), 'Relógio da partida não é exibido no cartão.');
-assert.ok(app.includes("pt:'Aguardando atualização',en:'Waiting for update',es:'Esperando actualización'"), 'Rodapé deve informar estado inicial sem exibir N/D.');
-assert.ok(app.includes("s?.min==null?'N/D':fmt(s.min)") && app.includes("s?.pts==null?'N/D':fmt(s.pts)"), 'Elenco em rotação deve identificar explicitamente estatísticas não retornadas, sem células vazias ou zeros falsos.');
+assert.ok(app.includes("pt:'Aguardando atualização',en:'Waiting for update',es:'Esperando actualización'"), 'Rodapé deve informar estado inicial sem exibir Não disponível.');
+assert.ok(app.includes("s?.min==null?'Não disponível':fmt(s.min)") && app.includes("s?.pts==null?'Não disponível':fmt(s.pts)"), 'Elenco em rotação deve identificar explicitamente estatísticas não retornadas, sem células vazias ou zeros falsos.');
 assert.ok(app.includes("return team[row.key]==null?'Sem dado':fmt(team[row.key],1)") && app.includes("return 'Sem dados'"), 'Comparação de franquias deve sinalizar métricas ausentes sem inventar números.');
 assert.ok(app.includes("(p.position||p.jersey)&&<small>"), 'Ficha do elenco deve ocultar metadados não publicados.');
 assert.ok(server.includes('display_clock:'), 'Backend não entrega o relógio da partida.');
 assert.ok(server.includes('validGameClock(g.gameClock, g.period)') && server.includes('validGameClock(game.gameClock, period)'), 'Feeds principal e alternativo devem validar o relógio antes de exibi-lo, considerando o período.');
 assert.ok(server.includes('function finiteNumberOrNull(value)'), 'Placar não pode transformar texto não numérico em NaN.');
-assert.ok(server.includes('Number.isInteger(m) && Number.isInteger(a) && m >= 0 && a > 0 && m <= a ? m / a : null'), 'Percentuais devem rejeitar conversões negativas, fracionárias ou maiores que tentativas e manter N/D quando ausentes.');
+assert.ok(server.includes('Number.isInteger(m) && Number.isInteger(a) && m >= 0 && a > 0 && m <= a ? m / a : null'), 'Percentuais devem rejeitar conversões negativas, fracionárias ou maiores que tentativas e manter Não disponível quando ausentes.');
 assert.ok(server.includes('return made <= attempted ? { made, attempted } : { made: null, attempted: null };'), 'Parser de box score deve rejeitar conversões maiores que o total de tentativas.');
 assert.ok(server.includes('function validatedAttemptPair(made, attempted)') && server.includes("validatedAttemptPair(fgParsed.made ?? pick('FGM'), fgParsed.attempted ?? pick('FGA'))"), 'Parser ESPN deve validar campos separados de arremessos de quadra.');
 assert.ok(server.includes("validatedAttemptPair(ftParsed.made ?? pick('FTM'), ftParsed.attempted ?? pick('FTA'))"), 'Parser ESPN deve validar campos separados de lance livre.');
@@ -228,7 +228,7 @@ assert.ok(server.includes('row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||meta?.[
 assert.ok(server.includes('if(!base.length&&!advanced.length&&!fallback.length&&!gameRows.length)throw new Error') && server.includes('const ids=Object.keys(TEAM_META);') && !server.includes('new Set([...Object.keys(TEAM_META),...baseById.keys(),...advById.keys()])') && server.includes('data.length!==30'), 'Comparador deve preservar exatamente as 30 franquias conhecidas e falhar quando nenhuma fonte retornar dados.');
 assert.ok(app.includes("team[row.key]==null?'Sem dado':fmt(team[row.key],1)") && app.includes("x.wins==null||x.losses==null?'Sem dado':x.wins+'–'+x.losses"), 'Comparador de franquias deve identificar métricas e campanhas ausentes sem deixar células vazias ou inventar números.');
 assert.ok(app.includes("teamA===teamB?<p className=\"franchise-warning\">A comparação está pausada: selecione duas franquias diferentes.</p>:teamStatsBusy&&!teamStats.length?") , 'Comparador deve interromper a tabela quando a mesma franquia estiver selecionada nos dois lados.');
-assert.ok(app.includes("page==='defense'&&(()=>{const rows=alphaTeamStats.filter(x=>[x.def_rating,x.net_rating,x.stl,x.blk].some(value=>value!=null))") && app.includes('<th>DEF RTG</th>') && app.includes("x.def_rating==null?'N/D':fmt(x.def_rating,1)") && app.includes("x.net_rating==null?'N/D':fmt(x.net_rating,1)"), 'Análise defensiva deve ordenar as franquias e exibir somente métricas reais retornadas, sem transformar campos ausentes em zero.');
+assert.ok(app.includes("page==='defense'&&(()=>{const rows=alphaTeamStats.filter(x=>[x.def_rating,x.net_rating,x.stl,x.blk].some(value=>value!=null))") && app.includes('<th>DEF RTG</th>') && app.includes("x.def_rating==null?'Não disponível':fmt(x.def_rating,1)") && app.includes("x.net_rating==null?'Não disponível':fmt(x.net_rating,1)"), 'Análise defensiva deve ordenar as franquias e exibir somente métricas reais retornadas, sem transformar campos ausentes em zero.');
 assert.ok(app.includes("label:'Rating defensivo',key:'def_rating'") && app.includes("label:'Roubos por jogo',key:'stl'") && app.includes("label:'Tocos por jogo',key:'blk'") && app.includes("team[row.key]==null?'Sem dado':fmt(team[row.key],1)"), 'Comparador deve identificar ratings defensivos, roubos e tocos ausentes com rótulos honestos.');
 
 assert.ok(server.includes("if (!rows.length) throw new Error('NBA Stats não retornou dados da classificação.')"), 'Classificação vazia da NBA Stats deve acionar o fallback ESPN.');
@@ -252,8 +252,8 @@ assert.ok(server.includes("rawStatus === 'ppd' ? 'Adiado'"), 'Fallback NBA CDN d
 assert.ok(server.includes("rawStatus.includes('cancel') ? 'Cancelado'"), 'Fallback NBA CDN deve preservar partidas canceladas.');
 assert.ok(app.includes("rawStatus.includes('cancel')?copy.cancelled"), 'Partidas canceladas devem manter o status correto.');
 assert.ok(app.includes("noScore:'Placar indisponível'"), 'Cards de jogos finalizados sem score devem explicar a ausência de dado.');
-assert.ok(app.includes("{p.gamesPlayed??'N/D'} jogos"), 'Cards de atletas não podem transformar jogos disputados ausentes em zero.');
-assert.ok(app.includes("vs:'VS'"), 'Jogos agendados devem mostrar VS em vez de estatística fictícia ou N/D.');
+assert.ok(app.includes("{p.gamesPlayed??'Não disponível'} jogos"), 'Cards de atletas não podem transformar jogos disputados ausentes em zero.');
+assert.ok(app.includes("vs:'VS'"), 'Jogos agendados devem mostrar VS em vez de estatística fictícia ou Não disponível.');
 
 assert.ok(app.includes("cache:cacheGet?fetchOptions.cache:'no-store'"), 'Atualização forçada ainda pode usar cache HTTP do navegador.');
 
@@ -320,7 +320,7 @@ assert.ok(styles.includes('.layout.light .shot-chart') && styles.includes('.layo
 
 assert.ok(app.includes('homeRecord:home.length?') && app.includes("x.homeRecord||'Sem dados na amostra'") && app.includes("x.totalRecord||'Sem partidas finalizadas'"), 'Casa e fora não pode transformar ausência de jogos finalizados em campanha 0–0.');
 assert.ok(app.includes("streak:streakKind?(streakCount<0?recent.length:streakCount):null"), 'Sequências sem jogos não podem ser exibidas como sequência numérica zero.');
-assert.ok(app.includes("s?.min==null?'N/D':fmt(s.min)") && app.includes("s?.pts==null?'N/D':fmt(s.pts)"), 'Rotação não pode deixar células vazias quando a estatística individual não foi retornada.');
+assert.ok(app.includes("s?.min==null?'Não disponível':fmt(s.min)") && app.includes("s?.pts==null?'Não disponível':fmt(s.pts)"), 'Rotação não pode deixar células vazias quando a estatística individual não foi retornada.');
 
 assert.ok(app.includes("page==='playerprops'&&(()=>{const eligible=alphaAverages.filter(x=>x[propMetric]!=null&&x[propMetric]!==''&&Number.isFinite(Number(x[propMetric])))") && app.includes("valid=Number.isFinite(v)&&propLine!==''&&Number.isFinite(line)&&line>=0") && app.includes('<input type="number" min="0" step="0.5" value={propLine}') && app.includes('Média por jogo da temporada regular, consultada na NBA Stats.') && app.includes('não estima probabilidade nem recomenda aposta.'), 'Análise de props deve comparar uma linha com média oficial válida, sem estimar probabilidades ou tratar ausências como zero.');
 assert.ok(app.includes("supabase.from('user_settings').upsert({user_id:userId,language,theme:selectedTheme,updated_at:new Date().toISOString()})") && app.includes("const request=++settingsSaveRequestRef.current,userId=session.user.id,language=lang,selectedTheme=theme") && schema.includes('create table if not exists public.user_settings') && schema.includes('create policy "settings_select_own"') && schema.includes('create policy "settings_insert_own"') && schema.includes('create policy "settings_update_own"'), 'Configurações devem persistir idioma e tema por usuário com políticas RLS de leitura, inclusão e atualização.');
