@@ -183,6 +183,10 @@ assert.ok(server.includes("if (date !== today && state !== 'in') return []"), 'P
 assert.ok(server.includes('if (localDate !== today && state !== 2) return null'), 'Fallback NBA Live deve preservar jogos que seguem ao vivo após meia-noite.');
 assert.ok(server.includes('async function nbaLiveScoreboard(today)') && server.includes('nbaLiveScoreboard(today)') && server.includes("source: espnResult.status === 'fulfilled' && nbaResult.status === 'fulfilled' ? 'ESPN + NBA Live CDN'") && server.includes("game.status_state === 'in_progress' || game.status_state === 'final'"), 'Placar ao vivo deve consultar NBA Live CDN a cada atualização e combinar estado, período, relógio e placar com o calendário ESPN.');
 assert.ok(server.includes("display_clock: statusState === 'in_progress' && period != null ? validGameClock(game.gameClock, period) : null") && server.includes('scoreboardScore(home.score, statusState)'), 'Relógio e placar do NBA Live devem ser validados pela situação real da partida antes de chegar à interface.');
+assert.ok(server.includes("if (!/^\\\\d{10}$/.test(String(game.gameId || ''))"), 'NBA Live deve validar o ID numérico de dez dígitos com regex de dígitos, sem filtrar todos os jogos.');
+assert.ok(app.includes("api(`/api/games/${encodeURIComponent(g.id)}/stats`,{cache:false})"), 'A abertura manual do box score deve ignorar o cache local para não exibir estatísticas antigas.');
+assert.ok(app.includes("boxGame?.status_state==='in_progress'?' · '+(boxGame?.display_clock?formatGameClock(boxGame.display_clock):'Relógio oficial indisponível')"), 'Box score deve exibir o período e o relógio oficial validado da partida ao vivo.');
+
 assert.ok(server.includes("const today = saoPauloDate(new Date().toISOString())"), 'Calendário CDN deve usar a data local de São Paulo.');
 assert.ok(server.includes("cached('nba:season-schedule'"), 'Calendário oficial da NBA deve ser armazenado em cache para reduzir chamadas externas.');
 assert.equal((server.match(/cached\('nba:season-schedule'/g)||[]).length, 3, 'Calendário NBA deve compartilhar o mesmo cache no calendário, no confronto direto e na resolução de IDs.');
