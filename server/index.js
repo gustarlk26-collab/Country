@@ -860,7 +860,7 @@ app.get('/api/games/live', async (_req, res) => {
   const today = saoPauloDate(new Date().toISOString());
   const [espnResult, nbaResult] = await Promise.allSettled([
     cached('espn-live-games:' + today, espnLiveGames, 8000),
-    nbaLiveScoreboard(today)
+    cached('nba-live-scoreboard:' + today, () => nbaLiveScoreboard(today), 5000)
   ]);
   if (espnResult.status === 'rejected' && nbaResult.status === 'rejected') {
     return res.status(503).json({ error: 'Placar ao vivo indisponível. ESPN: ' + espnResult.reason.message + ' NBA Live CDN: ' + nbaResult.reason.message });
