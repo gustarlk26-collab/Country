@@ -264,6 +264,7 @@ return()=>{active=false;if(page==='news')newsRequestRef.current++;if(page==='inj
   const mutationKey=userId+':'+id,mutationToken=Symbol('favorite');
   if(favoriteMutationRef.current.has(mutationKey))return;
   favoriteMutationRef.current.set(mutationKey,mutationToken);
+  favoritesRequestRef.current+=1; // Invalida apenas uma leitura de favoritos iniciada antes desta mutação.
   const name=p.name||[p.first_name||p.player?.first_name||'',p.last_name||p.player?.last_name||''].filter(Boolean).join(' ');
   const existing=favorites.filter(f=>String(f.player_id)===String(id)||normalizePlayerKey(f.player_name)===normalizePlayerKey(name));
   try{
