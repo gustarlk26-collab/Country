@@ -43,6 +43,7 @@ export default function App(){
  const shotRequestRef=useRef(0);
  const rosterRequestRef=useRef(0);
  const playerRequestRef=useRef(0);
+ const playerLoadedSearchRef=useRef('');
  const profileRequestRef=useRef(0);
  const teamStatsRequestRef=useRef(0);
  const rankingsRequestRef=useRef(0),mvpRequestRef=useRef(0),recordsRequestRef=useRef(0),advancedRequestRef=useRef(0),standingsRequestRef=useRef(0),newsRequestRef=useRef(0),injuriesRequestRef=useRef(0);
@@ -274,7 +275,7 @@ useEffect(()=>{
   },60000);
   return()=>{active=false;window.clearInterval(timer);};
 },[session,api,page,averagePeriod,quarterGameId,selectedProfile,teamA]);
- const loadPlayers=async(reset=false)=>{const requestId=++playerRequestRef.current;setBusy(true);setError('');try{const qs=new URLSearchParams();qs.set('search',playerSearch);if(!reset&&playerCursor)qs.set('cursor',playerCursor);const result=await api(`/api/players?${qs}`);if(requestId!==playerRequestRef.current)return;setPlayers(old=>reset?result.data||[]:[...old,...(result.data||[])]);setPlayerCursor(result.meta?.next_cursor||null);}catch(e){if(requestId===playerRequestRef.current)setError(e.message);}finally{if(requestId===playerRequestRef.current)setBusy(false);}};
+ const loadPlayers=async(reset=false)=>{const requestId=++playerRequestRef.current;const query=playerSearch.trim();const append=!reset&&Boolean(playerCursor)&&query===playerLoadedSearchRef.current;if(!append)playerLoadedSearchRef.current=query;setBusy(true);setError('');try{const qs=new URLSearchParams();qs.set('search',query);if(append)qs.set('cursor',playerCursor);const result=await api(`/api/players?${qs}`);if(requestId!==playerRequestRef.current)return;const incoming=Array.isArray(result.data)?result.data:[];setPlayers(old=>append?[...old,...incoming]:incoming);setPlayerCursor(result.meta?.next_cursor||null);}catch(e){if(requestId===playerRequestRef.current)setError(e.message);}finally{if(requestId===playerRequestRef.current)setBusy(false);}};
  const loadRankings=async()=>{const request=++rankingsRequestRef.current;setBusy(true);setError('');try{const r=await api('/api/rankings/recent?days=45');if(request!==rankingsRequestRef.current)return;setRanking(r.data||[]);}catch(e){if(request===rankingsRequestRef.current)setError(e.message);}finally{if(request===rankingsRequestRef.current)setBusy(false);}};
  const loadAverages=async(period=averagePeriod)=>{const request=++averagesRequestRef.current;setBusy(true);setError('');try{const r=await api('/api/averages?last='+encodeURIComponent(period));if(request!==averagesRequestRef.current)return;setAverages(Array.isArray(r.data)?r.data:[]);setAveragePeriod(String(period));}catch(e){if(request===averagesRequestRef.current){setError(e.message||'Não foi possível carregar as médias.');setAverages([]);}}finally{if(request===averagesRequestRef.current)setBusy(false);}};
  const loadMvp=async()=>{const request=++mvpRequestRef.current;setBusy(true);setError('');try{const r=await api('/api/mvp');if(request!==mvpRequestRef.current)return;setMvp(r);}catch(e){if(request===mvpRequestRef.current){setError(e.message);setMvp(null);}}finally{if(request===mvpRequestRef.current)setBusy(false);}}; 
