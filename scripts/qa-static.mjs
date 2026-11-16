@@ -360,3 +360,5 @@ assert.ok(app.includes('soundEnabled') && app.includes('AudioContextClass') && a
 
 assert.ok(server.includes("const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '').split(',')") && server.includes("app.use(cors({ origin(origin, callback)") && server.includes("ALLOWED_ORIGINS.includes(origin)"), 'CORS deve estar ativo e aceitar somente as origens explicitamente configuradas.');
 assert.ok(server.includes("app.set('trust proxy', 1)") && server.indexOf("app.set('trust proxy', 1)") < server.indexOf("app.use('/api/', rateLimit"), 'Rate limit precisa identificar o IP real do cliente atrás do proxy do Render.');
+
+assert.ok(worker.includes("courtside-shell-v4") && worker.includes("'/courtside-arena.svg'"), 'Service worker deve atualizar o cache e disponibilizar o fundo da arena também no modo offline.');
