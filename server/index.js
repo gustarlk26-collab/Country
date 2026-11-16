@@ -54,15 +54,21 @@ app.use(express.json({ limit: '32kb' }));
 app.use('/api/', rateLimit({ windowMs: 60_000, limit: 90, standardHeaders: 'draft-7', legacyHeaders: false }));
 
 function cached(key, fn, ttl = CACHE_MS) {
+  const now = Date.now();
   const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < ttl) return Promise.resolve(hit.value);
+  if (hit && now - hit.at < ttl) {
+    // Map mantém a ordem de inserção: mover o hit para o fim implementa LRU
+    // sem ordenar centenas de entradas a cada inserção.
+    cache.delete(key);
+    cache.set(key, hit);
+    return Promise.resolve(hit.value);
+  }
+  if (hit) cache.delete(key);
   if (pending.has(key)) return pending.get(key);
   const request = Promise.resolve().then(fn).then(value => {
+    cache.delete(key);
     cache.set(key, { at: Date.now(), value });
-    if (cache.size > 500) {
-      const oldest = [...cache.entries()].sort((a,b) => a[1].at - b[1].at).slice(0,100);
-      oldest.forEach(([k]) => cache.delete(k));
-    }
+    while (cache.size > 500) cache.delete(cache.keys().next().value);
     return value;
   }).finally(() => pending.delete(key));
   pending.set(key, request);
