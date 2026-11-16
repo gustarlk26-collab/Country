@@ -1266,23 +1266,27 @@ app.get('/api/records', async (_req, res) => {
     const categories = [
       ['PTS','Pontos'],['REB','Rebotes'],['AST','Assistências'],['STL','Roubos'],['BLK','Tocos']
     ];
-    const data = await cached('nba-all-time-record-leaders', async () => Promise.all(categories.map(async ([category,label]) => {
-      const sets = await nba('leagueleaders', {
-        LeagueID:'00', PerMode:'Totals', Scope:'S', Season:'All Time',
-        SeasonType:'Regular Season', StatCategory:category
+    const data = await cached('nba-all-time-record-leaders', async () => {
+      const sets = await nba('alltimeleadersgrids', {
+        LeagueID:'00',PerMode:'Totals',SeasonType:'Regular Season',TopX:'10'
       });
-      const rows = sets[0] || [];
-      const leaders = rows.map(row => {
-        const rawValue = row[category] ?? row.VALUE;
-        const value = rawValue == null || typeof rawValue === 'boolean' || String(rawValue).trim() === '' || !Number.isFinite(Number(rawValue)) ? null : Number(rawValue);
-        return { player_id: row.PLAYER_ID, player_name: row.PLAYER || row.PLAYER_NAME || null, value, team: row.TEAM };
-      }).filter(row => row.value != null && row.player_name).slice(0, 10);
-      return { category, label, leaders };
-    })), 12 * 60 * 60 * 1000);
-    res.json({ data, source:'NBA Stats all-time league leaders', updatedAt:new Date().toISOString() });
+      if(!Array.isArray(sets)||!sets.length)throw new Error('NBA Stats não retornou os conjuntos de líderes de carreira.');
+      return categories.map(([category,label]) => {
+        const rows=sets.find(group=>Array.isArray(group)&&group.some(row=>row&&Object.prototype.hasOwnProperty.call(row,category)))||[];
+        const leaders=rows.map(row=>{
+          const id=Number(row.PLAYER_ID),raw=row[category];
+          const value=raw==null||typeof raw==='boolean'||String(raw).trim()===''||!Number.isSafeInteger(Number(raw))||Number(raw)<0?null:Number(raw);
+          const playerName=String(row.PLAYER_NAME||'').trim();
+          return {player_id:Number.isSafeInteger(id)&&id>0?id:null,player_name:playerName||null,value,team:null};
+        }).filter(row=>row.player_id!=null&&row.player_name&&row.value!=null)
+          .sort((a,b)=>b.value-a.value||a.player_name.localeCompare(b.player_name,'en')).slice(0,10);
+        return {category,label,leaders};
+      });
+    },12*60*60*1000);
+    if(!data.some(category=>category.leaders.length))throw new Error('NBA Stats não retornou líderes válidos de carreira.');
+    res.json({data,source:'NBA Stats AllTimeLeadersGrids',updatedAt:new Date().toISOString()});
   } catch (e) { res.status(e.status || 503).json({ error:'Recordes históricos temporariamente indisponíveis: '+e.message }); }
 });
-
 app.get('/api/news', async (_req, res) => {
   try {
     const body = await cached('espn:news', () => espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news'), 5 * 60 * 1000);
