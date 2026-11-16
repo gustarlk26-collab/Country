@@ -439,3 +439,6 @@ assert.ok(styles.includes('button:focus-visible,a:focus-visible,select:focus-vis
 const favoriteHandler = app.slice(app.indexOf('const toggleFavorite=async(p)=>{'), app.indexOf('const signOut=async()=>'));
 assert.ok(favoriteHandler.includes('try{') && favoriteHandler.includes('catch(error)') && favoriteHandler.includes('Não foi possível atualizar este favorito:'), 'Falhas de rede no salvamento ou remoção de favoritos devem ser tratadas e mostradas sem rejeições não tratadas.');
 assert.ok(favoriteHandler.includes('session?.user?.id!==userId') && favoriteHandler.includes('request!==favoritesRequestRef.current'), 'Operações de favoritos antigas não podem atualizar a sessão de outro usuário.');
+
+const signOutHandler = app.slice(app.indexOf('const signOut=async()=>{'), app.indexOf('const favIds='));
+assert.ok(signOutHandler.includes('try{') && signOutHandler.includes('catch(error)') && signOutHandler.includes('Não foi possível encerrar a sessão:'), 'Falhas de rede ao sair da conta devem ser capturadas e informadas ao usuário.');
