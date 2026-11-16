@@ -916,6 +916,7 @@ button:disabled{cursor:not-allowed;filter:saturate(.55);transform:none!important
 
 
 /* COURTSIDE ARENA — original illustrated arena atmosphere and motion system */
+.layout{isolation:isolate}
 .layout:before{
  inset:0 0 0 250px;opacity:.30;mix-blend-mode:screen;
  background-image:linear-gradient(180deg,rgba(5,15,29,.08),rgba(5,15,29,.38)),url('/courtside-arena.svg');
