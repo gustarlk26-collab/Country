@@ -386,3 +386,6 @@ assert.ok(server.includes("const forceRefresh = String(req.query.refresh || '') 
 assert.ok(app.includes("setLiveRefreshTick(value=>value+1)") && app.includes("},[session,api,page,liveRefreshTick]);") && app.includes("force?'&refresh=1':''"), 'O botão Atualizar deve disparar também uma nova consulta do placar ao vivo, sem aguardar o intervalo automático.');
 
 assert.ok(worker.includes("if(request.mode==='navigate')return caches.match('/')") && worker.includes('return Response.error()'), 'Service worker deve usar o HTML offline somente para navegação; recursos CSS/JS/imagens ausentes não podem receber HTML como resposta.');
+
+assert.ok(app.includes('const TEAM_LOGO_IDS={ATL:1610612737') && app.includes("https://cdn.nba.com/logos/nba/' + teamId + '/global/L/logo.svg") && app.includes('className="game-team-logo"') && app.includes('loading="lazy"'), 'Cartões de jogos devem usar escudos oficiais NBA com carregamento tardio e fallback visual.');
+assert.ok(styles.includes('.game-matchup-teams') && styles.includes('.game-team-logo') && styles.includes('@media(max-width:650px){.game-matchup-teams'), 'Escudos dos times devem manter alinhamento e tamanho responsivo em telas pequenas.');
