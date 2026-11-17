@@ -381,7 +381,7 @@ assert.ok(server.includes("score:['in','post'].includes(String(competition.statu
 assert.ok(server.includes("'/schedule?season=' + seasonYear + '&seasontype=2'"), 'Confrontos diretos devem solicitar explicitamente a temporada regular à ESPN, sem misturar pré-temporada ou playoffs.');
 assert.ok(server.includes("Promise.allSettled([espnTeamSchedule(team,seasonYear),espnTeamSchedule(opponent,seasonYear)])") && server.includes("if(!hasPair(merged))") && server.includes("headtohead:'+team+':'+opponent+':'+season"), 'Confrontos diretos devem tolerar falha 502/503 da ESPN e consultar o calendário oficial NBA CDN antes de falhar.');
 assert.ok(server.includes("if(hasPair(fromNba))return fromNba;") && server.includes("const hasPair=items=>") && server.includes("if(!hasPair(merged))throw new Error"), 'Confrontos diretos devem priorizar um único calendário oficial NBA CDN e usar ESPN somente como fallback.');
-assert.ok(server.includes("const winPct=validPct(r.WIN_PCT)??validPct(fallback.win_pct)??(wins!=null&&losses!=null&&wins+losses>0?wins/(wins+losses):null);"), 'Playoffs devem calcular aproveitamento a partir de vitórias e derrotas oficiais validadas quando a fonte omitir WIN_PCT.');
+assert.ok(server.includes("const winPct=validPct(r.WIN_PCT)??validPct(fallback.win_pct)??validPct(scheduleFallback.win_pct)??(wins!=null&&losses!=null&&wins+losses>0?wins/(wins+losses):null);"), 'Playoffs devem calcular aproveitamento a partir de vitórias e derrotas oficiais validadas quando a fonte omitir WIN_PCT.');
 assert.ok(server.includes("const staleWindow = ttl >= 60_000 ? 6 * 60 * 60 * 1000 : 0;") && server.includes("return stale.value;"), 'Falhas temporárias das fontes devem preservar o último cache válido de dados não voláteis para evitar páginas vazias.');
 
 
