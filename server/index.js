@@ -1791,4 +1791,8 @@ app.get('*', (req, res, next) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(distPath, 'index.html'));
 });
-app.listen(PORT, '0.0.0.0', () => console.log(`Courtside Family ativo na porta ${PORT}`));
+const httpServer = app.listen(PORT, '0.0.0.0', () => console.log(`Courtside Family ativo na porta ${PORT}`));
+// Render's proxy uses persistent connections. Keep Node's keep-alive window
+// longer than the proxy's reuse interval to avoid intermittent ECONNRESET/502.
+httpServer.keepAliveTimeout = 65_000;
+httpServer.headersTimeout = 66_000;
