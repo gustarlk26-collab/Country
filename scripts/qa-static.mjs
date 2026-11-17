@@ -131,7 +131,7 @@ assert.ok(server.includes("overview.statistics||overview.stats?.statistics"), 'F
 assert.ok(server.includes("/athletes/'+player.espn_id+'/stats'"), 'Fallback ESPN deve consultar estatísticas detalhadas da temporada.');
 assert.ok(server.includes('statsPayload.categories||statsPayload.statCategories'), 'Fallback detalhado deve mapear categorias e rótulos reais da ESPN.');
 assert.ok(server.includes("categoryKey==='total'||categoryKey==='totals'") && server.includes('if(categoryKey===\'total\'||categoryKey===\'totals\')continue;'), 'Perfil por jogo deve ignorar categorias ESPN explicitamente identificadas como totais da temporada.');
-assert.ok(server.includes("source:Object.keys(detailedStats).length?'ESPN athlete profile + season statistics'"), 'Perfil deve informar a fonte estatística que realmente retornou dados.');
+assert.ok(server.includes("source:Object.keys(detailedStats).length?'ESPN athlete profile + season statistics'") && server.includes("if(!nameMatches.length&&requestedName&&requestedTeam)") && server.includes("cached('espn:active-players',espnPlayers,30*60*1000)"), 'Perfil deve informar a fonte estatística e buscar no diretório global se o roster atual não localizar o atleta.');
 assert.ok(server.includes('Array.isArray(rawCategories)?rawCategories:Object.values(rawCategories)'), 'Parser ESPN deve tolerar payload de categorias em array ou objeto.');
 assert.ok(app.includes("adv.error)setError('Métricas avançadas do perfil indisponíveis:") && app.includes('As médias básicas foram preservadas.'), 'Falhas ao atualizar métricas avançadas do perfil devem ser comunicadas sem ocultar as médias básicas.');
 assert.ok(app.includes('A partida ainda não começou. As estatísticas individuais aparecem após a publicação do box score.') && app.includes('Atualizar box score') && app.includes('A fonte ainda não publicou as estatísticas individuais desta partida.'), 'Box score deve distinguir jogo agendado, estatísticas ainda não publicadas e permitir nova consulta.');
@@ -259,7 +259,7 @@ assert.ok(app.includes("vs:'VS'"), 'Jogos agendados devem mostrar VS em vez de e
 assert.ok(app.includes("cache:cacheGet?fetchOptions.cache:'no-store'"), 'Atualização forçada ainda pode usar cache HTTP do navegador.');
 
 assert.ok(styles.includes('@media'), 'Regras responsivas não encontradas.');
-assert.ok(app.includes("e.currentTarget.src='/court-icon.svg'"), 'Imagens de atletas devem ter fallback local quando a CDN falhar.');
+assert.ok(app.includes("e.currentTarget.src='/court-icon.svg'") && app.includes('profile-hero-headshot') && app.includes('1040x760') && app.includes('decoding="async"'), 'Imagens de atletas devem usar retrato em alta resolução, alinhamento de rosto e fallback local.');
 assert.ok(!app.includes("style.visibility='hidden'"), 'Falha de headshot não deve deixar espaços vazios na interface.');
 assert.ok(styles.includes('prefers-reduced-motion'), 'Preferência de movimento reduzido não respeitada.');
 assert.ok(worker.includes("url.pathname.startsWith('/api/')"), 'Service worker deve deixar respostas da API fora do cache offline.');
