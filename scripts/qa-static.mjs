@@ -493,3 +493,12 @@ assert.ok(app.includes("const finalGames=useMemo(()=>sortedGames.filter") && app
 
 
 assert.ok(app.includes("const alphaTeamStats=useMemo(()=>teamStats.slice().sort") && app.includes("const selectedTeamStats=useMemo(()=>teamStats.find") , 'Listagem e seleção de métricas das franquias devem evitar ordenações e buscas repetidas a cada renderização.');
+
+assert.ok(server.includes('// ESPN event IDs are not NBA game IDs. Resolve the exact fixture by date') && server.includes('try{return await nbaLiveBoxscore(nbaId);}') && server.includes('try{return await nbaHistoricalBoxscore(nbaId);}') && server.includes('try{return await espnBoxscore(id);}'), 'Box score deve preferir estatísticas oficiais NBA completas e manter ESPN como fallback.');
+assert.ok(server.includes('net_rating:number(adv.NET_RATING)??(number(adv.OFF_RATING)!=null&&number(adv.DEF_RATING)!=null?'), 'NET RTG pode ser calculado somente pela diferença entre OFF RTG e DEF RTG oficiais.');
+assert.ok(server.includes('needsOfficialScores') && server.includes('officialGames.find') && server.includes('home.score=finiteNumberOrNull(match.homeTeamScore)'), 'Confrontos diretos devem completar placares finais ausentes com o calendário oficial NBA, cruzando data e duas franquias.');
+assert.ok(server.includes("statusTranslations={'out':'Fora'") && server.includes("status:statusTranslations[statusKey]||rawStatus"), 'Status comuns de lesões e desfalques devem ser traduzidos para português preservando o texto original.');
+assert.ok(app.includes('},120000);') && app.includes('const timer=window.setInterval(refreshLive,15000)'), 'Dados da página ativa devem atualizar automaticamente e o placar ao vivo deve consultar em intervalo curto.');
+assert.ok(app.includes('const totals=complete?roster.reduce(') && app.includes('Pontos médios do elenco') && app.includes('Rebotes médios'), 'Fantasy deve calcular automaticamente os totais de pontos, rebotes, assistências e pontuação do elenco quando os dados estão completos.');
+assert.ok(app.includes('className="boxscore-team"') && app.includes('mini-team-logo') && app.includes('a.espncdn.com/i/headshots/nba/players/full/'), 'Box score, análise de times e Fantasy devem mostrar escudos e usar fallback de fotos ESPN nos elencos.');
+assert.ok(app.includes('Como ler: NET RTG = OFF RTG') && app.includes('Prioriza Net Rating oficial')===false, 'Power Ranking deve explicar o significado das métricas e o critério de ordenação.');
