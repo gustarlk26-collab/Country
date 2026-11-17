@@ -93,6 +93,7 @@ assert.ok(server.includes("'NBA Live CDN boxscore'"), 'A origem alternativa dos 
 assert.ok(server.includes("const summaryStatus = game.gameStatus === 1 ? 'scheduled' : 'in_progress';") && server.includes("const summaryStatus = competition.status?.type?.state === 'pre' ? 'scheduled' : 'in_progress';"), 'Resumo por período deve respeitar partidas agendadas nas fontes NBA Live e ESPN.');
 assert.ok(server.includes('scoreboardScore(team.score, summaryStatus)') && server.includes('scoreboardScore(line.displayValue ?? line.value, summaryStatus)'), 'Placar e parciais de partidas agendadas não podem exibir zeros não publicados.');
 assert.ok(server.includes("app.use('/api', requireFamily)"), 'Proteção das rotas da API ausente.');
+assert.ok(server.includes("const httpServer = app.listen(PORT, '0.0.0.0'") && server.includes('httpServer.keepAliveTimeout = 65_000;') && server.includes('httpServer.headersTimeout = 66_000;'), 'Servidor Node deve manter keep-alive e headers timeout compatíveis com o proxy do Render para reduzir resets 502.');
 assert.ok(server.indexOf("app.get('/api/health'") < server.indexOf("app.use('/api', requireFamily)"), 'Health check deve continuar acessível ao Render antes da autenticação familiar.');
 const routeKeys = [...server.matchAll(/app\.(get|post|put|delete|patch)\(['"]([^'"]+)/g)].map(match => match[1].toUpperCase() + ' ' + match[2]);
 assert.ok(routeKeys.length >= 20, 'A API parece ter perdido rotas.');
