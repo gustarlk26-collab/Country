@@ -1589,3 +1589,99 @@ box-shadow:inset -20px -22px 34px rgba(48,12,0,.48),inset 10px 10px 24px rgba(25
 @media(max-width:850px){.hero-basketball-stage{right:0;width:clamp(145px,28vw,230px);opacity:.92}.home-hero-player{opacity:.72}}
 @media(max-width:560px){.hero-basketball-stage{width:124px;right:-5px;top:24%;opacity:.7}.home-hero-player{opacity:.38}.home-hero-copy{max-width:78%}}
 @media(prefers-reduced-motion:reduce){.hero-basketball,.hero-basketball-orbit,.hero-basketball-shadow{animation:none!important}}
+
+
+/* Courtside hero refinement: focus on the player, not a floating object */
+.home-hero{
+  min-height:390px;
+  background:
+    radial-gradient(ellipse at 76% 42%,rgba(46,145,225,.30),transparent 38%),
+    radial-gradient(ellipse at 88% 100%,rgba(20,91,158,.24),transparent 42%),
+    linear-gradient(112deg,#07172a 0%,#102d4b 54%,#08172a 100%);
+}
+.home-hero:before{
+  content:"";position:absolute;z-index:0;inset:0;pointer-events:none;opacity:.24;
+  background:
+    linear-gradient(90deg,transparent 49.8%,rgba(135,197,246,.18) 50%,transparent 50.2%),
+    radial-gradient(ellipse at 78% 115%,transparent 0 29%,rgba(123,190,241,.26) 29.2% 29.5%,transparent 29.8%),
+    repeating-linear-gradient(115deg,transparent 0 72px,rgba(116,184,239,.035) 73px 74px);
+  mask-image:linear-gradient(90deg,transparent 18%,#000 65%);
+}
+.home-hero-copy{z-index:4;width:min(62%,680px)}
+.home-hero-player{
+  z-index:2;right:1%;width:min(46%,560px);
+  filter:drop-shadow(0 0 34px rgba(45,145,230,.16));
+}
+.home-hero-player:before{
+  content:"";position:absolute;z-index:-1;right:12%;bottom:4%;width:72%;height:72%;
+  border-radius:50%;background:radial-gradient(circle,rgba(58,151,231,.30),rgba(39,113,184,.12) 46%,transparent 72%);
+  filter:blur(18px);
+}
+.home-hero-player img{
+  object-position:center bottom;filter:drop-shadow(0 18px 34px rgba(0,0,0,.55));
+  mask-image:linear-gradient(to bottom,#000 0%,#000 88%,transparent 100%);
+}
+.home-player-name{z-index:1;right:2%;bottom:14px;color:rgba(220,239,255,.22);text-shadow:0 2px 18px rgba(0,0,0,.4)}
+.home-player-number{right:7%;top:7%;color:rgba(220,239,255,.075)}
+.home-hero-glow{right:19%;bottom:-48%;width:430px;height:430px;background:rgba(36,130,215,.19)}
+/* A more deliberate depth system across the dashboard */
+.panel,.metric-card,.leader-card,.team-card,.home-section-card,.feature-tile{
+  transform:translateZ(0);
+  box-shadow:0 10px 28px rgba(0,0,0,.13),inset 0 1px rgba(255,255,255,.025);
+}
+.home-section-card{position:relative;overflow:hidden}
+.home-section-card:before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:linear-gradient(115deg,transparent 20%,rgba(118,190,255,.10) 48%,transparent 72%);
+  transform:translateX(-35%);transition:opacity .25s,transform .5s;
+}
+.home-section-card:hover:before{opacity:1;transform:translateX(25%)}
+@media(max-width:850px){
+  .home-hero{min-height:350px;padding:32px 28px}
+  .home-hero-copy{width:64%}
+  .home-hero-player{right:-3%;width:48%;opacity:.78}
+}
+@media(max-width:650px){
+  .content{padding:12px}
+  .home-hero{
+    min-height:510px;padding:26px 20px 210px;border-radius:18px;
+    align-items:flex-start;
+    background:
+      radial-gradient(ellipse at 72% 84%,rgba(34,121,197,.30),transparent 42%),
+      linear-gradient(155deg,#081a2e 0%,#102e4d 58%,#071426 100%);
+  }
+  .home-hero-copy{width:100%;max-width:100%;z-index:4}
+  .home-hero h2{font-size:clamp(34px,9vw,48px);letter-spacing:-1.5px;line-height:1}
+  .home-hero-copy>p{max-width:360px;font-size:14px;line-height:1.55}
+  .home-hero-actions{gap:10px;margin-top:18px;align-items:stretch}
+  .home-hero-actions .primary{min-height:44px;padding:11px 13px}
+  .hero-secondary{padding:10px 2px}
+  .home-hero-proof{gap:18px;margin-top:19px}
+  .home-hero-player{
+   right:0;bottom:0;width:min(78%,350px);height:56%;
+    opacity:.82;align-items:flex-end;justify-content:flex-end;
+  }
+  .home-hero-player img{height:115%;width:100%;object-position:center bottom}
+  .home-player-name{right:12px;bottom:9px;font-size:22px}
+  .home-player-number{right:10%;top:0;font-size:100px}
+  .home-hero-glow{right:8%;bottom:-24%;width:260px;height:260px}
+  .home-section-heading{align-items:flex-start}
+  .home-section-heading h2{font-size:19px}
+  .home-section-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .home-section-card{min-height:94px;padding:11px;gap:8px}
+  .home-section-icon{width:34px;height:34px;flex-basis:34px}
+  .home-section-card b{font-size:12px}
+  .home-section-card small{font-size:10px;line-height:1.35}
+}
+@media(max-width:390px){
+  .home-hero{min-height:535px;padding:23px 16px 205px}
+  .home-hero-actions{flex-direction:column;align-items:flex-start}
+  .home-hero-actions .primary{width:100%;justify-content:center}
+  .home-hero-proof{gap:13px;font-size:9px}
+  .home-hero-player{width:88%;height:48%;opacity:.72}
+  .home-section-grid{grid-template-columns:1fr}
+  .home-section-card{min-height:76px}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-section-card:before{transition:none}
+}
