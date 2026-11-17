@@ -1182,7 +1182,7 @@ app.get('/api/fantasy/gamelogs',async(req,res)=>{
       const games=rows.map(row=>{
         const pts=number(row.PTS),reb=number(row.REB),ast=number(row.AST),stl=number(row.STL),blk=number(row.BLK),turnover=number(row.TOV);
         const complete=[pts,reb,ast,stl,blk,turnover].every(value=>value!=null&&value>=0);
-        return {game_id:String(row.Game_ID||row.GAME_ID||''),date:row.GAME_DATE||null,matchup:String(row.MATCHUP||''),result:String(row.WL||''),minutes:row.MIN??null,pts,reb,ast,stl,blk,turnover,
+        return {game_id:String(row.Game_ID||row.GAME_ID||''),date:row.GAME_DATE||null,matchup:String(row.MATCHUP||''),result:String(row.WL||''),min:row.MIN??null,minutes:row.MIN??null,pts,reb,ast,stl,blk,turnover,
           fantasy_points:complete?Number((pts+1.2*reb+1.5*ast+3*stl+3*blk-turnover).toFixed(2)):null};
       }).filter(game=>game.game_id&&game.date).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
       return {player:{id,first_name:String(rows[0]?.PLAYER_NAME||'').split(' ').slice(0,-1).join(' '),last_name:String(rows[0]?.PLAYER_NAME||'').split(' ').slice(-1)[0]||''},games};
