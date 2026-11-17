@@ -343,7 +343,7 @@ assert.ok(app.includes('const teamStatsRequestRef=useRef(0)') && app.includes('c
 assert.ok(recordsEndpoint.includes('Object.prototype.hasOwnProperty.call(row,category)') && recordsEndpoint.includes("'NBA Stats AllTimeLeadersGrids'"), 'Recordes históricos devem localizar cada categoria no conjunto correto e identificar a fonte oficial.');
 assert.ok(app.includes("label:'Pontos por jogo',key:'pts'") && app.includes("label:'Rebotes por jogo',key:'reb'") && app.includes("label:'Tocos por jogo',key:'blk'") && app.includes('Estes rankings não representam vencedores de MVP'), 'Central de prêmios não pode apresentar líderes de pontos/tocos como vencedores de prêmios oficiais.');
 
-assert.ok(app.includes('Array.from({length:81},(_,i)=>{const y=2026-i;'), 'Arquivo histórico deve incluir todas as temporadas desde 1946-47.');
+assert.ok(app.includes('Array.from({length:81},(_,i)=>{const y=currentSeasonStartYear()-i;') && app.includes('seasonLabel(y)'), 'Arquivo histórico deve incluir todas as temporadas desde 1946-47 com ano-base dinâmico.');
 assert.ok(server.includes('Number(match[1])<1946'), 'API histórica deve rejeitar temporadas anteriores à fundação da NBA.');
 
 assert.ok(app.includes('const historicRequestRef=useRef(0)') && app.includes('const request=++historicRequestRef.current') && app.includes('if(request!==historicRequestRef.current)return') && app.includes('if(request===historicRequestRef.current)setHistoricBusy(false)'), 'Consultas históricas antigas não podem sobrescrever filtros recentes nem encerrar o carregamento da consulta atual.');
