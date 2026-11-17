@@ -19,7 +19,24 @@
       "src": "/court-icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/court-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": [
+    "sports",
+    "entertainment"
+  ],
+  "prefer_related_applications": false
 }
