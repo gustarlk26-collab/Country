@@ -1734,10 +1734,6 @@ async function nbaScheduleStandings(season=seasonFor()) {
     return {team:{id:Number(id),abbreviation:meta[0],full_name:meta[1],name:meta[1],conference:meta[2],division:meta[3]},
       wins:record.wins,losses:record.losses,win_pct:record.gp?record.wins/record.gp:null,playoff_rank:null};
   });
-  for(const conference of ['East','West']){
-    const ordered=data.filter(row=>row.team.conference===conference).sort((a,b)=>(b.win_pct??-1)-(a.win_pct??-1)||b.wins-a.wins||a.losses-b.losses);
-    ordered.forEach((row,index)=>{row.playoff_rank=index+1;});
-  }
   return data;
 }
 
@@ -1763,10 +1759,10 @@ app.get('/api/standings', async (_req, res) => {
     // standings response hide franchises that ESPN still reports (for example UTA).
     const data=Object.values(TEAM_META).map(meta=>{
       const abbreviation=meta[0],r=nbaByAbbr.get(abbreviation)||{},fallback=espnByAbbr.get(abbreviation)||{};
-      if(!Object.keys(r).length&&!fallback.team)return null;
+      const scheduleFallback=scheduleByAbbr.get(abbreviation)||{};
+      if(!Object.keys(r).length&&!fallback.team&&!scheduleFallback.team)return null;
       const rank=finiteNumberOrNull(r.PlayoffRank);
       const teamId=Object.keys(TEAM_META).find(id=>TEAM_META[id][0]===abbreviation);
-      const scheduleFallback=scheduleByAbbr.get(abbreviation)||{};
       const fullName=r.TeamName||fallback.team?.full_name||scheduleFallback.team?.full_name||meta[1];
       const wins=validCount(r.WINS)??validCount(fallback.wins)??validCount(scheduleFallback.wins);
       const losses=validCount(r.LOSSES)??validCount(fallback.losses)??validCount(scheduleFallback.losses);
