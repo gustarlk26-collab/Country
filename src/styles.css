@@ -1685,3 +1685,119 @@ box-shadow:inset -20px -22px 34px rgba(48,12,0,.48),inset 10px 10px 24px rgba(25
 @media(prefers-reduced-motion:reduce){
   .home-section-card:before{transition:none}
 }
+
+
+/* FINAL COURTSIDE PRESENTATION — composed motion, arena lighting and auth */
+.home-hero-player img{
+  animation: none!important;
+  transform: none!important;
+  will-change:auto;
+}
+.home-hero-player{overflow:visible}
+.hero-basketball-stage{
+  position:absolute;z-index:5;right:5.5%;bottom:8%;top:auto;
+  width:clamp(76px,9vw,112px);aspect-ratio:1;
+  perspective:700px;pointer-events:none;
+  filter:drop-shadow(0 12px 16px rgba(0,0,0,.42));
+  animation:ballBadgeFloat 4.8s ease-in-out infinite;
+}
+.hero-basketball{
+  position:absolute;inset:8%;border-radius:50%;overflow:hidden;
+  background:
+    radial-gradient(ellipse at 30% 22%,rgba(255,226,173,.95),transparent 24%),
+    radial-gradient(circle at 35% 32%,#ffb34f 0%,#ed8128 43%,#b64c13 78%,#65240a 100%);
+  box-shadow:inset -9px -11px 18px rgba(43,13,0,.52),inset 5px 5px 13px rgba(255,226,176,.48),0 0 24px rgba(245,135,47,.22);
+  animation:ballBadgeTurn 11s linear infinite;
+}
+.hero-basketball:before,.hero-basketball:after{
+  content:"";position:absolute;inset:-5%;border:3px solid rgba(50,24,13,.94);border-radius:50%;
+}
+.hero-basketball:before{transform:scaleX(.42)}
+.hero-basketball:after{transform:rotate(90deg) scaleX(.42)}
+.basketball-seam{position:absolute;z-index:2;display:block;background:rgba(47,22,12,.95);border-radius:50%}
+.basketball-seam-vertical{width:3px;height:112%;left:50%;top:-6%;transform:translateX(-50%) rotate(42deg)}
+.basketball-seam-horizontal{height:3px;width:112%;left:-6%;top:50%;transform:translateY(-50%) rotate(42deg)}
+.basketball-seam-diagonal{display:none}
+.basketball-highlight{position:absolute;inset:5% 14% 58%;z-index:3;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.36),transparent);filter:blur(5px)}
+.hero-basketball-shadow{
+  position:absolute;left:20%;right:20%;bottom:-5%;height:10%;border-radius:50%;
+  background:rgba(0,0,0,.55);filter:blur(8px);
+  animation:ballBadgeShadow 4.8s ease-in-out infinite;
+}
+@keyframes ballBadgeTurn{from{transform:rotateY(0) rotateZ(-8deg)}to{transform:rotateY(360deg) rotateZ(352deg)}}
+@keyframes ballBadgeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes ballBadgeShadow{0%,100%{transform:scaleX(1);opacity:.5}50%{transform:scaleX(.78);opacity:.28}}
+/* Replace slow character bobbing with restrained cinematic lighting */
+.home-hero-player:after{
+  content:"";position:absolute;inset:12% 4% 0 18%;pointer-events:none;
+  background:linear-gradient(110deg,transparent 32%,rgba(173,220,255,.13) 48%,transparent 62%);
+  transform:translateX(-120%);animation:playerRimLight 8s ease-in-out infinite;
+}
+@keyframes playerRimLight{0%,62%,100%{transform:translateX(-120%);opacity:0}72%{opacity:.8}90%{transform:translateX(120%);opacity:0}}
+/* Login: premium arena tunnel without interfering with form usability */
+.auth-page{
+  position:relative;isolation:isolate;overflow:hidden;
+  background:
+   radial-gradient(ellipse at 50% 12%,rgba(37,132,215,.28),transparent 36%),
+   radial-gradient(ellipse at 8% 92%,rgba(18,83,151,.22),transparent 34%),
+   linear-gradient(145deg,#050d19 0%,#0a1c31 48%,#071426 100%);
+}
+.auth-page:before{
+  content:"";position:absolute;z-index:-1;inset:-20%;
+  background:
+   repeating-linear-gradient(115deg,transparent 0 74px,rgba(127,190,245,.045) 75px 76px),
+   radial-gradient(ellipse at 50% 50%,transparent 0 35%,rgba(79,160,232,.12) 35.2% 35.5%,transparent 35.8% 49%,rgba(79,160,232,.08) 49.2% 49.5%,transparent 49.8%);
+  transform:perspective(700px) rotateX(58deg) scale(1.35);
+  transform-origin:center 72%;animation:authArenaDrift 18s ease-in-out infinite alternate;
+}
+.auth-page:after{
+  content:"";position:absolute;z-index:-1;top:9%;left:50%;width:min(74vw,620px);aspect-ratio:1;
+  transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(circle,rgba(40,139,226,.16),rgba(28,97,166,.06) 44%,transparent 70%);
+  filter:blur(10px);animation:authHalo 7s ease-in-out infinite;
+}
+@keyframes authArenaDrift{from{translate:-1% 0}to{translate:1% -2%}}
+@keyframes authHalo{0%,100%{opacity:.65;scale:.94}50%{opacity:1;scale:1.06}}
+.auth-card{
+  position:relative;z-index:1;width:min(100%,440px);padding:clamp(24px,5vw,36px);
+  border:1px solid rgba(119,185,239,.25);border-radius:22px;
+  background:linear-gradient(150deg,rgba(17,39,64,.94),rgba(7,21,38,.97));
+  box-shadow:0 28px 90px rgba(0,0,0,.48),0 0 48px rgba(33,126,205,.13),inset 0 1px rgba(255,255,255,.08);
+  backdrop-filter:blur(18px);animation:authCardEnter .75s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes authCardEnter{from{opacity:0;transform:translateY(18px) scale(.975);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+.auth-card .brand{padding:0 0 18px;border-bottom:1px solid rgba(130,184,231,.14)}
+.auth-card .brand-icon{box-shadow:0 0 0 6px rgba(49,142,220,.09),0 8px 28px rgba(29,133,235,.4)}
+.auth-card h1{font-size:clamp(27px,6vw,32px);letter-spacing:-.8px;margin:23px 0 8px}
+.auth-card form{gap:17px}
+.auth-card form label{display:grid;gap:8px;color:#d6e8f8;font-size:12px;font-weight:700}
+.auth-card input{
+  min-height:48px;padding:12px 14px;border-radius:11px;
+  border:1px solid rgba(127,171,211,.25);background:rgba(4,15,28,.7);
+  color:#f4f8ff;transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.auth-card input:focus{outline:none;border-color:#48a9f5;box-shadow:0 0 0 3px rgba(55,151,230,.16);background:rgba(5,20,37,.95)}
+.auth-card .primary{
+  min-height:49px;border-radius:11px;
+  background:linear-gradient(105deg,#1682e8,#36a8f6 55%,#176bd0);
+  box-shadow:0 9px 26px rgba(17,112,205,.28);
+  transition:transform .2s,filter .2s,box-shadow .2s;
+}
+.auth-card .primary:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 13px 32px rgba(17,112,205,.38)}
+.auth-card .link-button{font-weight:700}
+.auth-card .auth-foot{border-color:rgba(130,184,231,.14)}
+@media(max-width:650px){
+ .auth-page{min-height:100svh;padding:18px 14px}
+ .auth-card{width:100%;max-width:430px;padding:24px 20px;border-radius:18px}
+ .hero-basketball-stage{width:72px;right:13px;bottom:10%;opacity:.96}
+ .home-hero-player img{animation:none!important;transform:none!important}
+ .home-hero-player:after{animation:none;display:none}
+}
+@media(max-width:390px){
+ .auth-card{padding:22px 17px}
+ .hero-basketball-stage{width:62px;right:10px;bottom:8%}
+}
+@media(prefers-reduced-motion:reduce){
+ .hero-basketball-stage,.hero-basketball,.hero-basketball-shadow,.home-hero-player:after,
+ .auth-page:before,.auth-page:after,.auth-card{animation:none!important}
+}
