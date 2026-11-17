@@ -55,6 +55,7 @@ const logoBlock = app.match(/const TEAM_LOGO_IDS=\{([^}]+)\}/)?.[1] || '';
 const logoEntries = [...logoBlock.matchAll(/([A-Z]{3}):(\d+)/g)].map(match => [match[1], Number(match[2])]);
 assert.equal(logoEntries.length, 30, 'Diretório de escudos oficiais deve conter as 30 franquias.');
 assert.deepEqual(logoEntries.map(([abbr]) => abbr).sort(), teamAbbrs.slice().sort(), 'Escudos devem cobrir exatamente as 30 abreviações oficiais.');
+assert.ok(app.includes("const teamLogoId=abbr=>TEAM_LOGO_IDS[String(abbr??'').toUpperCase()==='UTAH'?'UTA':String(abbr??'').toUpperCase()]||null") && app.includes("teamLogoId(c.abbreviation)"), 'Escudo do Utah deve ser resolvido tanto pelo código oficial UTA quanto pelo alias UTAH nos placares por quarto.');
 
 assert.ok(server.includes("app.get('/api/team-stats'") && server.includes("NBA Stats base") && server.includes("NBA Stats advanced"), 'Comparador de franquias deve consumir estatísticas oficiais da NBA.');
 assert.ok(server.includes("team-stats-gamefinder:") && server.includes("needsGameFallback") && server.includes("data.length!==30") && server.includes("NBA Stats game finder (médias calculadas dos jogos oficiais)"), 'Comparador deve consolidar dados oficiais e retornar exatamente as 30 franquias, sem duplicações.');
