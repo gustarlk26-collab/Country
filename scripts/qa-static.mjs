@@ -260,7 +260,7 @@ assert.ok(app.includes("cache:cacheGet?fetchOptions.cache:'no-store'"), 'Atualiz
 
 assert.ok(styles.includes('@media'), 'Regras responsivas não encontradas.');
 assert.ok(app.includes('profile-hero-headshot') && app.includes('1040x760') && app.includes('decoding="async"') && app.includes('Array.isArray(playerBio.family)') && app.includes('playerBio.family.filter(relative=>relative!=null)'), 'Perfil deve validar relações da biografia antes de renderizar para evitar crash com dados incompletos.');
-assert.ok(app.includes('className="player-card-image"') && css.includes('.profile-picker-card .player-card-image img') && css.includes('.profile-picker-card::before,.profile-picker-card::after'), 'Cards de jogadores devem isolar e centralizar as fotos sem artefatos de layout.');
+assert.ok(app.includes('className="player-card-image"') && styles.includes('.profile-picker-card .player-card-image img') && styles.includes('.profile-picker-card::before,.profile-picker-card::after'), 'Cards de jogadores devem isolar e centralizar as fotos sem artefatos de layout.');
 assert.ok(!app.includes("style.visibility='hidden'"), 'Falha de headshot não deve deixar espaços vazios na interface.');
 assert.ok(styles.includes('prefers-reduced-motion'), 'Preferência de movimento reduzido não respeitada.');
 assert.ok(worker.includes("url.pathname.startsWith('/api/')"), 'Service worker deve deixar respostas da API fora do cache offline.');
