@@ -1622,6 +1622,12 @@ app.get('/api/team-stats',async(_req,res)=>{
     const base=baseResult.status==='fulfilled'?(baseResult.value[0]||[]):[];
     const advanced=advancedResult.status==='fulfilled'?(advancedResult.value[0]||[]):[];
     const fallback=standingResult.status==='fulfilled'?standingResult.value:[];
+    let estimatedRows=[];
+    if(advanced.length!==30||advanced.some(row=>['GP','PACE','OFF_RATING','DEF_RATING','NET_RATING'].some(field=>finiteNumberOrNull(row[field])==null))){
+      try{estimatedRows=(await cached('team-estimated-metrics:'+season,()=>nba('teamestimatedmetrics',{LeagueID:'00',Season:season,SeasonType:'Regular Season'}),2*60*1000))[0]||[];}
+      catch(error){console.warn('NBA team estimated metrics fallback indisponível:',error.message);}
+    }
+    const estimatedById=new Map(estimatedRows.map(row=>[String(row.TEAM_ID),row]));
     // O game finder é um fallback pesado: só consulta a NBA se a tabela principal
     // estiver incompleta, evitando uma quarta chamada externa em carregamentos normais.
     const baseFields=['GP','W','L','PTS','REB','AST','STL','BLK','FG_PCT','FG3_PCT'];
@@ -1657,7 +1663,7 @@ app.get('/api/team-stats',async(_req,res)=>{
     // added as extra IDs: doing so duplicated every team when the standings fallback was present.
     const ids=Object.keys(TEAM_META);
     const data=[...ids].map(id=>{
-      const teamId=Number(id),meta=TEAM_META[teamId],row=baseById.get(id)||{},adv=advById.get(id)||{},games=gameFallback.get(id)||{};
+      const teamId=Number(id),meta=TEAM_META[teamId],row=baseById.get(id)||{},adv=advById.get(id)||{},estimated=estimatedById.get(id)||{},games=gameFallback.get(id)||{};
       const abbreviation=canonicalTeamAbbr(row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||meta?.[0]||'');
       const standing=standingsByAbbr.get(abbreviation)||{};
       const number=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
@@ -1676,12 +1682,13 @@ app.get('/api/team-stats',async(_req,res)=>{
       return {team:{id:teamId,abbreviation,full_name:row.TEAM_NAME||standing.team?.full_name||meta?.[1]||abbreviation,
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
         wins,losses,win_pct:winPct,gp,pts:stat(row.PTS,'pts'),reb:stat(row.REB,'reb'),ast:stat(row.AST,'ast'),stl:stat(row.STL,'stl'),blk:stat(row.BLK,'blk'),
-        fg_pct:fgPct,fg3_pct:fg3Pct,pace:positive(adv.PACE),off_rating:positive(adv.OFF_RATING),def_rating:positive(adv.DEF_RATING),net_rating:number(adv.NET_RATING)??(number(adv.OFF_RATING)!=null&&number(adv.DEF_RATING)!=null?Number((Number(adv.OFF_RATING)-Number(adv.DEF_RATING)).toFixed(1)):null)};
+        fg_pct:fgPct,fg3_pct:fg3Pct,pace:positive(adv.PACE)??positive(estimated.E_PACE)??positive(estimated.PACE),off_rating:positive(adv.OFF_RATING)??positive(estimated.E_OFF_RATING)??positive(estimated.OFF_RATING),def_rating:positive(adv.DEF_RATING)??positive(estimated.E_DEF_RATING)??positive(estimated.DEF_RATING),net_rating:number(adv.NET_RATING)??number(estimated.E_NET_RATING)??number(estimated.NET_RATING)??(number(adv.OFF_RATING)!=null&&number(adv.DEF_RATING)!=null?Number((Number(adv.OFF_RATING)-Number(adv.DEF_RATING)).toFixed(1)):null)};
     });
     if(data.length!==30||data.some(item=>!item.team?.abbreviation))throw new Error(`Base de franquias inconsistente: esperadas 30 equipes, recebidas ${data.length}.`);
     const sources=[];
     if(base.length)sources.push('NBA Stats base');
     if(advanced.length)sources.push('NBA Stats advanced');
+    if(estimatedRows.length)sources.push('NBA Stats team estimated metrics');
     if(gameRows.length)sources.push('NBA Stats game finder (médias calculadas dos jogos oficiais)');
     if(fallback.length)sources.push('ESPN standings');
     res.json({data:data.sort((a,b)=>{if(a.net_rating==null&&b.net_rating!=null)return 1;if(b.net_rating==null&&a.net_rating!=null)return -1;if(a.net_rating!=null&&b.net_rating!=null&&a.net_rating!==b.net_rating)return b.net_rating-a.net_rating;return (b.win_pct??-Infinity)-(a.win_pct??-Infinity);}),season,
