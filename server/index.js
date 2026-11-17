@@ -777,7 +777,7 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       })).filter(row=>row.season),
       team:teamData,headshot:photoUrl,
       family:(Array.isArray(athlete.relatives)?athlete.relatives:Array.isArray(athlete.family)?athlete.family:Array.isArray(player.family)?player.family:[]).map(displayText).filter(Boolean),
-      biography:displayText(athlete.biography)||displayText(athlete.description)||profileNarrative,
+      biography:displayText(athlete.biography)||displayText(athlete.description)||profileNarrative,biography_type:displayText(athlete.biography)||displayText(athlete.description)?'editorial':'factual',
       stats:Object.values(playerStats).some(value=>value!=null)?playerStats:null,
       source:Object.keys(detailedStats).length?'ESPN athlete profile + season statistics':overview.statistics?'ESPN athlete profile + season overview':'ESPN athlete profile'
     };
