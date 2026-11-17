@@ -1776,7 +1776,7 @@ app.get('/api/standings', async (_req, res) => {
         wins,losses,win_pct:winPct,
         playoff_rank:rank!=null&&Number.isSafeInteger(rank)&&rank>0?rank:validCount(fallback.playoff_rank)??validCount(scheduleFallback.playoff_rank)};
     }).filter(Boolean);
-    res.json({data,season,source:nbaRows.length&&espnRows.length?'NBA Stats + ESPN standings':nbaRows.length?'NBA Stats':'ESPN standings fallback',updatedAt:new Date().toISOString()});
+    res.json({data,season,source:[nbaRows.length?'NBA Stats':null,espnRows.length?'ESPN standings':null,scheduleRows.length?'NBA CDN official schedule fallback':null].filter(Boolean).join(' + '),updatedAt:new Date().toISOString()});
   } catch (e) { res.status(503).json({ error: 'Classificação indisponível: '+e.message }); }
 });
 app.use(express.static(distPath, {
