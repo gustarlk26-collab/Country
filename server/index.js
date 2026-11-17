@@ -1391,16 +1391,23 @@ app.get('/api/injuries', async (_req, res) => {
 app.get('/api/team-stats',async(_req,res)=>{
   try{
     const season=seasonFor();
-    const [baseResult,advancedResult,standingResult,gameFinderResult]=await Promise.allSettled([
-      cached('team-stats-base:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Base',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),3*60*1000),
-      cached('team-stats-advanced:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Advanced',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),3*60*1000),
-      cached('espn:standings',espnStandings,5*60*1000),
-      cached('team-stats-gamefinder:'+season,()=>nba('leaguegamefinder',{PlayerOrTeam:'T',LeagueID:'00',Season:season,SeasonType:'Regular Season',TeamID:0,VsTeamID:0,DateFrom:'',DateTo:'',Outcome:'',Location:'',SeasonSegment:''}),3*60*1000)
+    const [baseResult,advancedResult,standingResult]=await Promise.allSettled([
+      cached('team-stats-base:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Base',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),10*60*1000),
+      cached('team-stats-advanced:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Advanced',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),10*60*1000),
+      cached('espn:standings',espnStandings,5*60*1000)
     ]);
     const base=baseResult.status==='fulfilled'?(baseResult.value[0]||[]):[];
     const advanced=advancedResult.status==='fulfilled'?(advancedResult.value[0]||[]):[];
     const fallback=standingResult.status==='fulfilled'?standingResult.value:[];
-    const gameRows=gameFinderResult.status==='fulfilled'?(gameFinderResult.value[0]||[]):[];
+    // O game finder é um fallback pesado: só consulta a NBA se a tabela principal
+    // estiver incompleta, evitando uma quarta chamada externa em carregamentos normais.
+    const baseFields=['GP','W','L','PTS','REB','AST','STL','BLK','FG_PCT','FG3_PCT'];
+    const needsGameFallback=base.length!==30||base.some(row=>baseFields.some(field=>finiteNumberOrNull(row[field])==null));
+    let gameRows=[];
+    if(needsGameFallback){
+      try{gameRows=(await cached('team-stats-gamefinder:'+season,()=>nba('leaguegamefinder',{PlayerOrTeam:'T',LeagueID:'00',Season:season,SeasonType:'Regular Season',TeamID:0,VsTeamID:0,DateFrom:'',DateTo:'',Outcome:'',Location:'',SeasonSegment:''}),10*60*1000))[0]||[];}
+      catch(error){console.warn('Fallback game finder indisponível:',error.message);}
+    }
     const gameFallback=new Map();
     for(const game of gameRows){
       const id=String(game.TEAM_ID||game.Team_ID||'');
