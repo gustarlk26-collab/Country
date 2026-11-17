@@ -1172,7 +1172,7 @@ app.get('/api/fantasy/gamelogs',async(req,res)=>{
     const raw=String(req.query.players||'').split(',').map(value=>value.trim()).filter(Boolean);
     const ids=[...new Set(raw)];
     if(!ids.length)return res.json({data:[],season:seasonFor(),source:'NBA Stats player game logs',updatedAt:new Date().toISOString()});
-    if(ids.length>8||ids.some(id=>!/^\\d{1,12}$/.test(id)))return res.status(400).json({error:'Selecione até 8 jogadores com IDs NBA válidos.'});
+    if(ids.length>8||ids.some(id=>!/^\d{1,12}$/.test(id)))return res.status(400).json({error:'Selecione até 8 jogadores com IDs NBA válidos.'});
     const season=seasonFor();
     const data=await Promise.all(ids.map(async id=>{
       const rows=(await cached('fantasy-gamelog:'+season+':'+id,()=>nba('playergamelog',{
