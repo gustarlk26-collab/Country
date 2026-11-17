@@ -1655,25 +1655,29 @@ app.get('/api/team-stats',async(_req,res)=>{
 });
 app.get('/api/standings', async (_req, res) => {
   try {
-    const rows = (await cached(`standings:${seasonFor()}`, () => nba('leaguestandings', {
-      LeagueID: '00', Season: seasonFor(), SeasonType: 'Regular Season'
-    }), 2 * 60 * 1000))[0] || [];
-    if (!rows.length) throw new Error('NBA Stats não retornou dados da classificação.');
-    const data = rows.map(r => ({
-      team: { id: r.TeamID, full_name: r.TeamName, name: r.TeamName, abbreviation: TEAM_META[Number(r.TeamID)]?.[0] || r.TeamAbbreviation, conference: r.Conference || TEAM_META[Number(r.TeamID)]?.[2] },
-      wins: (()=>{const value=finiteNumberOrNull(r.WINS);return value!=null&&Number.isSafeInteger(value)&&value>=0?value:null;})(),
-      losses: (()=>{const value=finiteNumberOrNull(r.LOSSES);return value!=null&&Number.isSafeInteger(value)&&value>=0?value:null;})(),
-      win_pct: r.WIN_PCT == null || r.WIN_PCT === '' || !Number.isFinite(Number(r.WIN_PCT)) || Number(r.WIN_PCT) < 0 || Number(r.WIN_PCT) > 1 ? null : Number(r.WIN_PCT),
-      playoff_rank: (()=>{const value=finiteNumberOrNull(r.PlayoffRank);return value!=null&&Number.isSafeInteger(value)&&value>0?value:null;})()
-    }));
-    res.json({ data });
-  } catch (e) {
-    try { const data = await cached('espn:standings', espnStandings, 5 * 60 * 1000); res.json({ data, source: 'ESPN standings', fallback: true }); }
-    catch (fallbackError) { res.status(503).json({ error: `Classificação indisponível. NBA Stats: ${e.message} ESPN: ${fallbackError.message}` }); }
-  }
+    const season=seasonFor();
+    const [nbaResult,espnResult]=await Promise.allSettled([
+      cached('standings:'+season,()=>nba('leaguestandings',{LeagueID:'00',Season:season,SeasonType:'Regular Season'}),2*60*1000),
+      cached('espn:standings',espnStandings,2*60*1000)
+    ]);
+    const nbaRows=nbaResult.status==='fulfilled'?(nbaResult.value[0]||[]):[];
+    const espnRows=espnResult.status==='fulfilled'?espnResult.value:[];
+    const espnByAbbr=new Map(espnRows.map(row=>[canonicalTeamAbbr(row.team?.abbreviation),row]));
+    if(!nbaRows.length&&!espnRows.length)throw new Error('NBA Stats e ESPN não retornaram classificação.');
+    const data=nbaRows.length?nbaRows.map(r=>{
+      const abbreviation=TEAM_META[Number(r.TeamID)]?.[0]||canonicalTeamAbbr(r.TeamAbbreviation||'');
+      const fallback=espnByAbbr.get(abbreviation)||{};
+      const validCount=value=>{const n=finiteNumberOrNull(value);return n!=null&&Number.isSafeInteger(n)&&n>=0?n:null;};
+      const validPct=value=>{const n=finiteNumberOrNull(value);return n!=null&&n>=0&&n<=1?n:null;};
+      const rank=finiteNumberOrNull(r.PlayoffRank);
+      return {team:{id:r.TeamID,full_name:r.TeamName||fallback.team?.full_name||TEAM_META[Number(r.TeamID)]?.[1]||abbreviation,name:r.TeamName||fallback.team?.full_name||TEAM_META[Number(r.TeamID)]?.[1]||abbreviation,abbreviation,conference:r.Conference||fallback.team?.conference||TEAM_META[Number(r.TeamID)]?.[2]},
+        wins:validCount(r.WINS)??fallback.wins??null,losses:validCount(r.LOSSES)??fallback.losses??null,
+        win_pct:validPct(r.WIN_PCT)??validPct(fallback.win_pct),
+        playoff_rank:rank!=null&&Number.isSafeInteger(rank)&&rank>0?rank:fallback.playoff_rank??null};
+    }):espnRows;
+    res.json({data,season,source:nbaRows.length&&espnRows.length?'NBA Stats + ESPN standings':nbaRows.length?'NBA Stats':'ESPN standings fallback',updatedAt:new Date().toISOString()});
+  } catch (e) { res.status(503).json({ error: 'Classificação indisponível: '+e.message }); }
 });
-
-const limiter = new Map();
 app.use(express.static(distPath, {
   index: false,
   setHeaders(res, filePath) {
