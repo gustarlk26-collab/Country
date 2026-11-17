@@ -647,9 +647,14 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     // A listagem /api/players vem dos elencos ESPN: player.id é ESPN athlete ID,
     // NÃO o PERSON_ID da NBA. Resolver o ID oficial NBA pelo nome + franquia
     // antes de chamar CommonPlayerInfo, PlayerCareerStats e PlayerAwards.
-    const nbaDirectory=await cached('nba:players:'+seasonFor(),async()=>(await nba('commonallplayers',{
-      LeagueID:'00',Season:seasonFor(),IsOnlyCurrentSeason:'0'
-    }))[0]||[],12*60*60*1000);
+    let nbaDirectory=[];
+    try{
+      nbaDirectory=await cached('nba:players:'+seasonFor(),async()=>(await nba('commonallplayers',{
+        LeagueID:'00',Season:seasonFor(),IsOnlyCurrentSeason:'0'
+      }))[0]||[],12*60*60*1000);
+    }catch(directoryError){
+      console.warn('NBA player directory unavailable; biography will use verified ESPN fields:',directoryError.message);
+    }
     const normalizedRequestedName=normalizeName(player.first_name+' '+player.last_name);
     const nbaMatches=nbaDirectory.filter(row=>
       normalizeName(row.DISPLAY_FIRST_LAST||[row.PLAYER_FIRST_NAME,row.PLAYER_LAST_NAME].filter(Boolean).join(' '))===normalizedRequestedName &&
