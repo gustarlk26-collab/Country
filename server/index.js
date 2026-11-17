@@ -1167,6 +1167,30 @@ app.get('/api/averages', async (req, res) => {
     res.json({ data, updatedAt: new Date().toISOString(), source: 'NBA Stats', season, lastGames: requested, period: requested ? `Últimos ${requested} jogos` : 'Temporada completa', totalPlayers: data.length });
   } catch (e) { res.status(e.status || 503).json({ error: e.message }); }
 });
+app.get('/api/fantasy/gamelogs',async(req,res)=>{
+  try{
+    const raw=String(req.query.players||'').split(',').map(value=>value.trim()).filter(Boolean);
+    const ids=[...new Set(raw)];
+    if(!ids.length)return res.json({data:[],season:seasonFor(),source:'NBA Stats player game logs',updatedAt:new Date().toISOString()});
+    if(ids.length>8||ids.some(id=>!/^\\d{1,12}$/.test(id)))return res.status(400).json({error:'Selecione até 8 jogadores com IDs NBA válidos.'});
+    const season=seasonFor();
+    const data=await Promise.all(ids.map(async id=>{
+      const rows=(await cached('fantasy-gamelog:'+season+':'+id,()=>nba('playergamelog',{
+        DateFrom:'',DateTo:'',LeagueID:'00',PlayerID:id,Season:season,SeasonType:'Regular Season'
+      }),2*60*1000))[0]||[];
+      const number=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
+      const games=rows.map(row=>{
+        const pts=number(row.PTS),reb=number(row.REB),ast=number(row.AST),stl=number(row.STL),blk=number(row.BLK),turnover=number(row.TOV);
+        const complete=[pts,reb,ast,stl,blk,turnover].every(value=>value!=null&&value>=0);
+        return {game_id:String(row.Game_ID||row.GAME_ID||''),date:row.GAME_DATE||null,matchup:String(row.MATCHUP||''),result:String(row.WL||''),minutes:row.MIN??null,pts,reb,ast,stl,blk,turnover,
+          fantasy_points:complete?Number((pts+1.2*reb+1.5*ast+3*stl+3*blk-turnover).toFixed(2)):null};
+      }).filter(game=>game.game_id&&game.date).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+      return {player:{id,first_name:String(rows[0]?.PLAYER_NAME||'').split(' ').slice(0,-1).join(' '),last_name:String(rows[0]?.PLAYER_NAME||'').split(' ').slice(-1)[0]||''},games};
+    }));
+    res.json({data,season,source:'NBA Stats playergamelog',updatedAt:new Date().toISOString(),formula:'PTS + 1.2*REB + 1.5*AST + 3*STL + 3*BLK - TOV'});
+  }catch(error){res.status(error.status||503).json({error:'Resultados Fantasy por partida indisponíveis: '+error.message});}
+});
+
 async function espnTeamSchedule(abbreviation, seasonYear) {
   const teamId = ESPN_TEAM_IDS[abbreviation];
   if (!teamId) throw new Error('ID ESPN da franquia não encontrado.');
