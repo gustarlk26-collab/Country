@@ -154,7 +154,7 @@ assert.ok(app.includes("scenarioValid=scenarioExtraWins!==''&&Number.isFinite(ex
 assert.ok(app.includes('metricColumns.some(column=>p[column.key]!=null)'), 'Tabela avançada deve excluir atletas sem métricas oficiais.');
 assert.ok(app.includes('featureKeys.includes(page)&&<section className="panel feature-workspace">'), 'Páginas de ferramentas devem manter o contêiner e cabeçalho compartilhados.');
 assert.ok(app.includes('rows.some(p=>p[column.key]!=null)'), 'Tabela avançada deve ocultar colunas sem valores publicados.');
-assert.ok(app.includes("const rows=alphaTeamStats.filter(x=>x.pace!=null)"), 'Painel Pace deve ocultar times sem métrica oficial.');
+assert.ok(app.includes("page==='pace'&&(()=>{const rows=alphaTeamStats;") && app.includes('<th>PACE</th><th>OFF RTG</th><th>DEF RTG</th><th>NET RTG</th>'), 'Painel Pace deve manter as 30 franquias e contextualizar ritmo, eficiência ofensiva e defensiva com dados oficiais.');
 assert.ok(app.includes('p.team?.abbreviation===teamA&&p.pts!=null'), 'Destaques de franquia devem ignorar pontos ausentes.');
 assert.ok(app.includes('Nenhum valor será estimado.'), 'Painéis de times devem explicar a ausência de métricas sem inventar números.');
 assert.ok(app.includes("const raw=p[m.key],value=raw==null||raw===''?null:Number(raw)"), 'Perfil de estilo não pode transformar estatística ausente em zero.');
