@@ -12,6 +12,10 @@ Os modelos HTML desta pasta precisam ser aplicados no painel do Supabase; o depl
 
 Os links usam a variável oficial `{{ .ConfirmationURL }}` do Supabase. Não substitua por links fixos nem remova o token de confirmação.
 
+## Destino após confirmar o e-mail
+
+Em **Authentication → URL Configuration**, use `https://courtside-family.onrender.com` como **Site URL** e adicione `https://courtside-family.onrender.com/` em **Redirect URLs**. O frontend também envia essa origem no `emailRedirectTo`; o Supabase só aceita destinos que estejam nessa lista. Depois de confirmar, o usuário deve voltar ao Courtside Family e entrar automaticamente.
+
 ## Para melhorar a entrega
 
 Em **Project Settings → Auth → SMTP Settings**, configure um provedor SMTP com domínio próprio verificado. Ajuste também o nome do remetente para **Courtside Family** e use um endereço do seu domínio. Isso melhora a identidade e a entregabilidade; não é necessário colocar senha SMTP no frontend ou no repositório.
