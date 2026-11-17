@@ -291,11 +291,28 @@ const flash=(s)=>{setToast(s);if(toastTimerRef.current)window.clearTimeout(toast
       const updates=gamesResult.data||[];
       setLiveUnavailable(false);
       const sameGame=(left,right)=>{if(!left||!right)return false;const leftId=left.id==null?'':String(left.id),rightId=right.id==null?'':String(right.id);if(leftId&&rightId&&leftId===rightId)return true;const date=String(left.date||''),home=String(left.home_team?.abbreviation||''),away=String(left.visitor_team?.abbreviation||'');return Boolean(date&&home&&away&&date===String(right.date||'')&&home===String(right.home_team?.abbreviation||'')&&away===String(right.visitor_team?.abbreviation||''));};
+      const mergeLiveGame=(previous,game)=>{
+        const statusRank={scheduled:0,in_progress:1,final:2};
+        const previousRank=statusRank[previous.status_state]??0;
+        const incomingRank=statusRank[game.status_state]??0;
+        if(previousRank>incomingRank){
+          return {...previous,...game,
+            status:previous.status,
+            status_state:previous.status_state,
+            period:previous.period??game.period??null,
+            period_label:previous.period_label||game.period_label||'',
+            display_clock:previous.status_state==='final'?null:(previous.display_clock??game.display_clock??null),
+            home_team_score:previous.home_team_score??game.home_team_score??null,
+            visitor_team_score:previous.visitor_team_score??game.visitor_team_score??null
+          };
+        }
+        return {...previous,...game};
+      };
       if(updates.length)setGames(current=>{
         const byId=new Map(current.map(game=>[String(game.id),game]));
         updates.forEach(game=>{
           const match=[...byId.entries()].find(([,existing])=>sameGame(existing,game));
-          if(match){byId.delete(match[0]);const previous=match[1];byId.set(String(game.id),{...previous,...game});}
+          if(match){byId.delete(match[0]);const previous=match[1];byId.set(String(game.id),mergeLiveGame(previous,game));}
           else byId.set(String(game.id),game);
         });
         return [...byId.values()].sort((x,y)=>new Date(x.datetime||x.date)-new Date(y.datetime||y.date));
@@ -303,8 +320,8 @@ const flash=(s)=>{setToast(s);if(toastTimerRef.current)window.clearTimeout(toast
       setLastSync(new Date());
       const selectedGame=boxGameRef.current;
       const updated=updates.find(game=>sameGame(game,selectedGame));
-      if(updated)setBoxGame(current=>current&&sameGame(current,updated)?({...current,...updated}):current);
-      const activeGame=updated||selectedGame;
+      if(updated)setBoxGame(current=>current&&sameGame(current,updated)?mergeLiveGame(current,updated):current);
+      const activeGame=updated&&selectedGame?mergeLiveGame(selectedGame,updated):updated||selectedGame;
       if(page==='boxscore'&&activeGame?.id&&(activeGame.status_state==='in_progress'||activeGame.status_state==='final')){
         const boxRequest=boxRequestRef.current;
         const score=await api('/api/games/'+encodeURIComponent(activeGame.id)+'/stats',{cache:false});
