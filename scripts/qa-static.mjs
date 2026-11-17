@@ -516,7 +516,7 @@ assert.ok(server.includes("max-age=31536000, immutable") && server.includes("res
 const franchiseMetricsLoader = app.slice(app.indexOf('const loadTeamStats=async'), app.indexOf('const loadTeamRoster=async'));
 assert.ok(franchiseMetricsLoader.includes("api('/api/team-stats')") && !franchiseMetricsLoader.includes('cache:false'), 'Páginas que compartilham estatísticas de franquias devem reutilizar o cache recente ao abrir; a atualização periódica ao vivo permanece separada.');
 assert.ok(app.includes("api('/api/team-stats')"), 'A atualização periódica das estatísticas de franquias deve reutilizar o cache recente para evitar consultas externas desnecessárias.');
-assert.ok(app.includes('Servidor do Courtside temporariamente indisponível (HTTP '+r.status+')') && app.includes('verifique os logs do serviço no Render'), 'Erros de gateway 502/503/504 devem orientar o usuário a verificar a inicialização e os logs do Render.');
+assert.ok(app.includes("Servidor do Courtside temporariamente indisponível (HTTP '") && app.includes('verifique os logs do serviço no Render'), 'Erros de gateway 502/503/504 devem orientar o usuário a verificar a inicialização e os logs do Render.');
 assert.ok(app.includes('Instale como aplicativo') && app.includes('Android · Chrome') && app.includes('iPhone · Safari') && app.includes('Google Play Store'), 'Configurações devem orientar a instalação PWA em Android, iPhone e computador e explicar a etapa adicional da Play Store.');
 assert.ok(app.includes('Consultando calendário oficial…') && app.includes('calendário oficial NBA CDN, com ESPN como alternativa'), 'Confrontos diretos devem informar corretamente a fonte prioritária oficial.');
 
