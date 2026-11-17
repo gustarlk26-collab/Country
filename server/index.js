@@ -629,10 +629,18 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     const normalizeName=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
     // O parâmetro :id vem da NBA Stats; ele não pertence ao espaço de IDs da ESPN.
     // Nunca comparar IDs de provedores diferentes: resolva a ficha pelo nome e pela franquia.
-    const nameMatches=requestedName?roster.filter(item=>
+    let nameMatches=requestedName?roster.filter(item=>
       normalizeName(item.first_name+' '+item.last_name)===requestedName &&
       (!requestedTeam||canonicalTeamAbbr(item.team?.abbreviation||'')===requestedTeam)
     ):[];
+    // Se o atleta não estiver mais no elenco informado (troca, agente livre ou
+    // roster desatualizado), procure no diretório global antes de declarar 404.
+    if(!nameMatches.length&&requestedName&&requestedTeam){
+      try{
+        const allPlayers=await cached('espn:active-players',espnPlayers,30*60*1000);
+        nameMatches=allPlayers.filter(item=>normalizeName(item.first_name+' '+item.last_name)===requestedName&&(!requestedTeam||canonicalTeamAbbr(item.team?.abbreviation||'')===requestedTeam));
+      }catch(globalRosterError){console.warn('ESPN global roster fallback failed: '+globalRosterError.message);}
+    }
     if(nameMatches.length>1)return res.status(409).json({error:'Mais de um atleta corresponde ao nome informado. A ficha não pode ser associada com segurança.'});
     const player=nameMatches[0]||null;
     if(!player)return res.status(404).json({error:'Biografia não encontrada para este nome e franquia na ESPN.'});
