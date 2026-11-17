@@ -1041,3 +1041,119 @@ button:active,.feature-tile:active{transform:scale(.985)}
  .install-app-button{font-size:11px;padding:8px 10px}
 }
 @media(prefers-reduced-motion:reduce){.main::before{animation:none!important}}
+
+
+/* COURTSIDE FAMILY — visual system refresh */
+:root{
+  --court-blue:#1685ee;
+  --court-blue-soft:#62b6ff;
+  --court-orange:#f29a55;
+  --court-gold:#f5c16b;
+}
+button,select,input{font-family:'DM Sans',sans-serif}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
+  outline:2px solid var(--court-blue-soft);
+  outline-offset:3px;
+}
+.layout{
+  background:
+    radial-gradient(ellipse at 84% 0%,rgba(28,112,194,.15),transparent 34%),
+    radial-gradient(ellipse at 8% 92%,rgba(242,154,85,.055),transparent 28%),
+    #071426;
+}
+.panel{
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(121,169,218,.2);
+  border-radius:19px;
+  background:linear-gradient(145deg,rgba(18,43,70,.97),rgba(10,27,47,.98));
+  box-shadow:0 18px 48px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025);
+}
+.panel>h2,.panel .panel-head h2{letter-spacing:-.35px}
+.panel-head{align-items:flex-start}
+.eyebrow{color:#69baff;letter-spacing:2.2px}
+.metric-card{
+  position:relative;
+  overflow:hidden;
+  border-radius:16px;
+  background:linear-gradient(145deg,#153758,#102740);
+  border-color:rgba(115,172,226,.2);
+}
+.metric-card:after{
+  content:"";position:absolute;width:90px;height:90px;right:-38px;top:-42px;
+  border-radius:50%;background:rgba(82,166,239,.09);pointer-events:none;
+}
+.metric-card b{letter-spacing:-.8px}
+.team-card,.leader-card{
+  border-radius:14px;
+  background:linear-gradient(145deg,rgba(24,55,86,.88),rgba(14,34,57,.94));
+}
+.primary{
+  border-radius:10px;
+  background:linear-gradient(110deg,#198bf2,#1768d2);
+}
+.secondary,.text-btn,.game-tabs button{border-radius:10px}
+.filters label,.settings label{font-weight:600}
+input,select{min-height:40px}
+.search-field{min-height:42px}
+table{font-variant-numeric:tabular-nums}
+th{font-weight:800;text-transform:uppercase}
+tbody tr:last-child td{border-bottom-color:transparent}
+.game-row{padding:16px 8px;border-bottom-color:rgba(125,167,208,.14)}
+.game-row:hover{background:rgba(40,115,180,.08);border-radius:10px}
+.install-guide{max-width:780px;margin-top:18px}
+.install-guide h2{margin:8px 0 10px}
+.install-guide>.primary{margin:8px 0 4px}
+.install-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.install-steps p{
+  display:flex;flex-direction:column;gap:8px;margin:0;padding:15px;
+  border:1px solid var(--line);border-radius:13px;background:var(--panel2);
+}
+.install-steps b{font-size:12px;color:var(--text)}
+.install-steps span{font-size:11px;line-height:1.6;color:var(--muted)}
+.install-note{font-size:11px;line-height:1.65;margin-top:18px}
+.layout.light{
+  background:
+    radial-gradient(ellipse at 85% -5%,rgba(28,112,194,.11),transparent 36%),
+    radial-gradient(ellipse at 5% 100%,rgba(242,154,85,.07),transparent 28%),
+    #edf3fa;
+}
+.layout.light .sidebar{
+  background:linear-gradient(180deg,#142f4c,#10263e);
+  border-right-color:rgba(40,83,125,.2);
+}
+.layout.light .topbar{
+  background:rgba(246,249,253,.96);
+  border-bottom-color:#d7e2ee;
+}
+.layout.light .panel{
+  background:linear-gradient(145deg,#ffffff,#f5f8fc);
+  border-color:#d7e2ee;
+  box-shadow:0 14px 34px rgba(24,55,86,.07),inset 0 1px 0 #fff;
+}
+.layout.light .metric-card{
+  background:linear-gradient(145deg,#fff,#edf4fb);
+  border-color:#d6e2ef;
+}
+.layout.light .team-card,.layout.light .leader-card{
+  background:linear-gradient(145deg,#fff,#f0f5fb);
+  border-color:#d6e2ef;
+}
+.layout.light .install-steps p{background:#f2f6fb;border-color:#d9e3ee}
+.layout.light .game-row:hover{background:rgba(31,119,197,.055)}
+.layout.light .panel h2,.layout.light .metric-card b{color:#142b44}
+@media(max-width:850px){
+  .install-steps{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+  .panel{border-radius:15px;padding:15px}
+  .content{padding-top:16px;padding-bottom:30px}
+  .topbar{gap:10px}
+  .topbar .top-right{flex-wrap:wrap;gap:8px}
+  .install-steps{gap:8px}
+  .install-steps p{padding:12px}
+  .game-row{padding:13px 4px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
