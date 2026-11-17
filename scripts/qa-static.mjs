@@ -233,6 +233,8 @@ assert.ok(app.includes("page==='defense'&&(()=>{const rows=alphaTeamStats.filter
 assert.ok(app.includes("label:'Rating defensivo',key:'def_rating'") && app.includes("label:'Roubos por jogo',key:'stl'") && app.includes("label:'Tocos por jogo',key:'blk'") && app.includes("team[row.key]==null?'Sem dado':fmt(team[row.key],1)"), 'Comparador deve identificar ratings defensivos, roubos e tocos ausentes com rótulos honestos.');
 
 assert.ok(server.includes('const [nbaResult,espnResult]=await Promise.allSettled([') && server.includes("cached('espn:standings',espnStandings,2*60*1000)") && server.includes("if(!nbaRows.length&&!espnRows.length)throw new Error('NBA Stats e ESPN não retornaram classificação.')"), 'Classificação vazia da NBA Stats deve acionar o fallback ESPN e preservar o tratamento quando ambas falharem.');
+assert.ok(server.includes('const nbaByAbbr=new Map(nbaRows.map') && server.includes('const data=Object.values(TEAM_META).map(meta=>') && server.includes('const abbreviation=meta[0],r=nbaByAbbr.get(abbreviation)||{},fallback=espnByAbbr.get(abbreviation)||{}'), 'Classificação deve unir NBA Stats e ESPN por franquia, incluindo Utah quando uma das fontes retornar uma tabela parcial.');
+
 assert.ok(server.includes("IsOnlyCurrentSeason: '1'"), 'Fallback do diretório não deve misturar atletas históricos com elenco atual.');
 assert.ok(server.includes('Number(p.ROSTERSTATUS) === 1'), 'Fallback NBA Stats deve exibir somente atletas no elenco ativo.');
 assert.ok(server.includes("Array.isArray(body.injuries) ? body.injuries : Array.isArray(body.teams)"), 'Parser de lesões deve validar o formato do payload antes de percorrer equipes.');
