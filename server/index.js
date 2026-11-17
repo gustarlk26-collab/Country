@@ -1671,17 +1671,23 @@ app.get('/api/standings', async (_req, res) => {
     const espnRows=espnResult.status==='fulfilled'?espnResult.value:[];
     const espnByAbbr=new Map(espnRows.map(row=>[canonicalTeamAbbr(row.team?.abbreviation),row]));
     if(!nbaRows.length&&!espnRows.length)throw new Error('NBA Stats e ESPN não retornaram classificação.');
-    const data=nbaRows.length?nbaRows.map(r=>{
-      const abbreviation=TEAM_META[Number(r.TeamID)]?.[0]||canonicalTeamAbbr(r.TeamAbbreviation||'');
-      const fallback=espnByAbbr.get(abbreviation)||{};
-      const validCount=value=>{const n=finiteNumberOrNull(value);return n!=null&&Number.isSafeInteger(n)&&n>=0?n:null;};
-      const validPct=value=>{const n=finiteNumberOrNull(value);return n!=null&&n>=0&&n<=1?n:null;};
+    const validCount=value=>{const n=finiteNumberOrNull(value);return n!=null&&Number.isSafeInteger(n)&&n>=0?n:null;};
+    const validPct=value=>{const n=finiteNumberOrNull(value);return n!=null&&n>=0&&n<=1?n:null;};
+    const nbaByAbbr=new Map(nbaRows.map(row=>[TEAM_META[Number(row.TeamID)]?.[0]||canonicalTeamAbbr(row.TeamAbbreviation||''),row]).filter(([abbr])=>abbr));
+    // Merge by the canonical 30-team directory instead of letting a partial NBA
+    // standings response hide franchises that ESPN still reports (for example UTA).
+    const data=Object.values(TEAM_META).map(meta=>{
+      const abbreviation=meta[0],r=nbaByAbbr.get(abbreviation)||{},fallback=espnByAbbr.get(abbreviation)||{};
+      if(!Object.keys(r).length&&!fallback.team)return null;
       const rank=finiteNumberOrNull(r.PlayoffRank);
-      return {team:{id:r.TeamID,full_name:r.TeamName||fallback.team?.full_name||TEAM_META[Number(r.TeamID)]?.[1]||abbreviation,name:r.TeamName||fallback.team?.full_name||TEAM_META[Number(r.TeamID)]?.[1]||abbreviation,abbreviation,conference:r.Conference||fallback.team?.conference||TEAM_META[Number(r.TeamID)]?.[2]},
-        wins:validCount(r.WINS)??fallback.wins??null,losses:validCount(r.LOSSES)??fallback.losses??null,
+      const teamId=Object.keys(TEAM_META).find(id=>TEAM_META[id][0]===abbreviation);
+      const fullName=r.TeamName||fallback.team?.full_name||meta[1];
+      return {team:{id:r.TeamID||Number(teamId),full_name:fullName,name:fullName,abbreviation,conference:r.Conference||fallback.team?.conference||meta[2]},
+        wins:validCount(r.WINS)??validCount(fallback.wins),
+        losses:validCount(r.LOSSES)??validCount(fallback.losses),
         win_pct:validPct(r.WIN_PCT)??validPct(fallback.win_pct),
-        playoff_rank:rank!=null&&Number.isSafeInteger(rank)&&rank>0?rank:fallback.playoff_rank??null};
-    }):espnRows;
+        playoff_rank:rank!=null&&Number.isSafeInteger(rank)&&rank>0?rank:validCount(fallback.playoff_rank)};
+    }).filter(Boolean);
     res.json({data,season,source:nbaRows.length&&espnRows.length?'NBA Stats + ESPN standings':nbaRows.length?'NBA Stats':'ESPN standings fallback',updatedAt:new Date().toISOString()});
   } catch (e) { res.status(503).json({ error: 'Classificação indisponível: '+e.message }); }
 });
