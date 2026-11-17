@@ -1498,3 +1498,30 @@ tbody tr:hover{background:rgba(42,133,208,.10)}
  .mobile-nav-categories button{padding:7px 9px}
 }
 @media(prefers-reduced-motion:reduce){.home-section-card{transition:none}}
+
+
+/* Mobile: all navigation and data must fit without sideways gestures */
+@media(max-width:650px){
+ .mobile-nav-categories{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;overflow:visible!important;width:100%;padding:2px 0 6px}
+ .mobile-nav-categories button{width:100%;min-width:0;max-width:none;white-space:normal;justify-content:flex-start;line-height:1.2;text-align:left;min-height:36px;padding:7px 9px}
+ .sidebar nav .nav-group.mobile-open{display:flex!important;flex-wrap:wrap;align-items:stretch;gap:5px;overflow:visible!important;width:100%;padding:0 0 4px}
+ .sidebar nav .nav-group.mobile-open button{flex:1 1 calc(50% - 5px);width:auto;max-width:none;min-width:0;min-height:36px;white-space:normal;justify-content:flex-start;text-align:left;line-height:1.2;padding:7px 8px}
+ .sidebar nav .nav-group.mobile-open button span{white-space:normal;overflow-wrap:anywhere}
+ .sidebar nav .nav-group.mobile-open button svg{flex:0 0 14px}
+ .table-wrap{overflow:visible!important;max-width:100%;width:100%}
+ .table-wrap table{width:100%;min-width:0!important;table-layout:fixed;white-space:normal}
+ .table-wrap th,.table-wrap td{white-space:normal;overflow-wrap:anywhere;word-break:normal;padding:7px 4px;font-size:9px;line-height:1.3}
+ .table-wrap th{font-size:8px;letter-spacing:0;padding:7px 3px}
+ .table-wrap td img{max-width:30px;height:auto}
+ .table-wrap td button{max-width:100%;white-space:normal}
+ .panel,.content,.main{min-width:0;max-width:100%}
+ .filters>*{min-width:0;max-width:100%}
+ .profile-tabs,.game-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ .profile-tabs button,.game-tabs button{min-width:0;white-space:normal;line-height:1.25;padding:8px 6px}
+ .leader-grid,.team-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:380px){
+ .mobile-nav-categories{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .sidebar nav .nav-group.mobile-open button{flex-basis:100%}
+ .table-wrap th,.table-wrap td{font-size:8px;padding:6px 3px}
+}
