@@ -1063,7 +1063,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
 }
 .panel{
   position:relative;
-  overflow:hidden;
+  overflow:visible;
   border:1px solid rgba(121,169,218,.2);
   border-radius:19px;
   background:linear-gradient(145deg,rgba(18,43,70,.97),rgba(10,27,47,.98));
