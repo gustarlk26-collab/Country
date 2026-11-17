@@ -251,16 +251,21 @@ async function getGameBoxscore(gameId) {
       }
     }
   }
-  try { return await espnBoxscore(id); }
-  catch (espnError) {
-    try {
-      const nbaId=await nbaGameIdFromEspn(id);
-      try{return await nbaLiveBoxscore(nbaId);}
-      catch(liveError){return await nbaHistoricalBoxscore(nbaId);}
-    } catch(fallbackError) {
-      throw new Error(`Box score indisponível. ESPN: ${espnError.message} NBA CDN: ${fallbackError.message}`);
+  // ESPN event IDs are not NBA game IDs. Resolve the exact fixture by date
+  // and both franchises, then prefer the official NBA CDN/Stats box score.
+  // ESPN is retained as a fallback, but a partial ESPN box score must not hide
+  // complete official shooting/rebound/foul fields when NBA data is available.
+  let nbaError;
+  try {
+    const nbaId=await nbaGameIdFromEspn(id);
+    try{return await nbaLiveBoxscore(nbaId);}
+    catch(liveError){
+      try{return await nbaHistoricalBoxscore(nbaId);}
+      catch(statsError){nbaError=new Error(`NBA Live: ${liveError.message} NBA Stats: ${statsError.message}`);}
     }
-  }
+  } catch(error) { nbaError=error; }
+  try{return await espnBoxscore(id);}
+  catch(espnError){throw new Error(`Box score indisponível. NBA: ${nbaError?.message||'ID NBA não resolvido'} ESPN: ${espnError.message}`);}
 }
 
 async function espnJson(url) {
@@ -1519,8 +1524,8 @@ app.get('/api/team-stats',async(_req,res)=>{
   try{
     const season=seasonFor();
     const [baseResult,advancedResult,standingResult]=await Promise.allSettled([
-      cached('team-stats-base:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Base',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),10*60*1000),
-      cached('team-stats-advanced:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Advanced',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),10*60*1000),
+      cached('team-stats-base:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Base',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),2*60*1000),
+      cached('team-stats-advanced:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Advanced',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),2*60*1000),
       cached('espn:standings',espnStandings,5*60*1000)
     ]);
     const base=baseResult.status==='fulfilled'?(baseResult.value[0]||[]):[];
@@ -1532,7 +1537,7 @@ app.get('/api/team-stats',async(_req,res)=>{
     const needsGameFallback=base.length!==30||base.some(row=>baseFields.some(field=>finiteNumberOrNull(row[field])==null));
     let gameRows=[];
     if(needsGameFallback){
-      try{gameRows=(await cached('team-stats-gamefinder:'+season,()=>nba('leaguegamefinder',{PlayerOrTeam:'T',LeagueID:'00',Season:season,SeasonType:'Regular Season',TeamID:0,VsTeamID:0,DateFrom:'',DateTo:'',Outcome:'',Location:'',SeasonSegment:''}),10*60*1000))[0]||[];}
+      try{gameRows=(await cached('team-stats-gamefinder:'+season,()=>nba('leaguegamefinder',{PlayerOrTeam:'T',LeagueID:'00',Season:season,SeasonType:'Regular Season',TeamID:0,VsTeamID:0,DateFrom:'',DateTo:'',Outcome:'',Location:'',SeasonSegment:''}),2*60*1000))[0]||[];}
       catch(error){console.warn('Fallback game finder indisponível:',error.message);}
     }
     const gameFallback=new Map();
@@ -1561,7 +1566,7 @@ app.get('/api/team-stats',async(_req,res)=>{
     const ids=Object.keys(TEAM_META);
     const data=[...ids].map(id=>{
       const teamId=Number(id),meta=TEAM_META[teamId],row=baseById.get(id)||{},adv=advById.get(id)||{},games=gameFallback.get(id)||{};
-      const abbreviation=row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||meta?.[0]||'';
+      const abbreviation=canonicalTeamAbbr(row.TEAM_ABBREVIATION||adv.TEAM_ABBREVIATION||meta?.[0]||'');
       const standing=standingsByAbbr.get(abbreviation)||{};
       const number=value=>value==null||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value))?null:Number(value);
       const nonNegative=value=>{const parsed=number(value);return parsed!=null&&parsed>=0?parsed:null;};
@@ -1579,7 +1584,7 @@ app.get('/api/team-stats',async(_req,res)=>{
       return {team:{id:teamId,abbreviation,full_name:row.TEAM_NAME||standing.team?.full_name||meta?.[1]||abbreviation,
         conference:standing.team?.conference||meta?.[2],division:meta?.[3]},
         wins,losses,win_pct:winPct,gp,pts:stat(row.PTS,'pts'),reb:stat(row.REB,'reb'),ast:stat(row.AST,'ast'),stl:stat(row.STL,'stl'),blk:stat(row.BLK,'blk'),
-        fg_pct:fgPct,fg3_pct:fg3Pct,pace:positive(adv.PACE),off_rating:positive(adv.OFF_RATING),def_rating:positive(adv.DEF_RATING),net_rating:number(adv.NET_RATING)};
+        fg_pct:fgPct,fg3_pct:fg3Pct,pace:positive(adv.PACE),off_rating:positive(adv.OFF_RATING),def_rating:positive(adv.DEF_RATING),net_rating:number(adv.NET_RATING)??(number(adv.OFF_RATING)!=null&&number(adv.DEF_RATING)!=null?Number((Number(adv.OFF_RATING)-Number(adv.DEF_RATING)).toFixed(1)):null)};
     });
     if(data.length!==30||data.some(item=>!item.team?.abbreviation))throw new Error(`Base de franquias inconsistente: esperadas 30 equipes, recebidas ${data.length}.`);
     const sources=[];
