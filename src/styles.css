@@ -1557,3 +1557,35 @@ tbody tr:hover{background:rgba(42,133,208,.10)}
 .layout.light:before,.layout.light:after{opacity:.10}
 @media(max-width:650px){.layout:before,.layout:after{position:absolute;opacity:.14}.content{animation-duration:.35s}.panel:hover,.metric-card:hover,.leader-card:hover,.team-card:hover,.home-section-card:hover,.feature-tile:hover{transform:translateY(-2px)}.home-hero-player img{animation:none}}
 @media(prefers-reduced-motion:reduce){.layout:before,.layout:after,.content,.home-hero,.home-hero:before,.home-hero-player img,.home-hero-glow,.live i{animation:none!important}.panel,.metric-card,.leader-card,.team-card,.home-section-card,.feature-tile,.primary:after{transition:none!important}}
+
+
+/* 3D COURTSIDE ARENA — basketball hero object */
+.home-hero{isolation:isolate;overflow:hidden;position:relative}
+.home-hero-copy{position:relative;z-index:4}
+.home-hero-player{z-index:2}
+.home-hero-glow{z-index:1}
+.hero-basketball-stage{position:absolute;z-index:3;right:3.5%;top:50%;width:clamp(170px,24vw,330px);aspect-ratio:1;transform:translateY(-48%);perspective:900px;pointer-events:none;filter:drop-shadow(0 28px 28px rgba(0,0,0,.42))}
+.hero-basketball{position:absolute;inset:9%;border-radius:50%;overflow:hidden;transform-style:preserve-3d;animation:courtsideBallSpin 8s linear infinite, courtsideBallFloat 5s ease-in-out infinite;background:
+radial-gradient(ellipse at 29% 22%,rgba(255,221,159,.98) 0%,rgba(255,151,66,.9) 8%,transparent 27%),
+radial-gradient(ellipse at 68% 78%,rgba(91,28,7,.72),transparent 42%),
+radial-gradient(circle at 38% 34%,#ffad50 0%,#e87924 38%,#b94b12 76%,#672508 100%);
+box-shadow:inset -20px -22px 34px rgba(48,12,0,.48),inset 10px 10px 24px rgba(255,220,164,.48),0 0 42px rgba(255,126,39,.2)}
+.hero-basketball:before,.hero-basketball:after{content:"";position:absolute;inset:-4%;border:clamp(3px,.45vw,6px) solid rgba(42,20,12,.92);border-radius:50%;box-shadow:0 0 2px rgba(255,221,173,.35)}
+.hero-basketball:before{transform:scaleX(.43); }
+.hero-basketball:after{transform:rotate(90deg) scaleX(.43)}
+.basketball-seam{position:absolute;z-index:2;display:block;background:rgba(42,20,12,.94);box-shadow:0 0 2px rgba(255,210,160,.3)}
+.basketball-seam-vertical{width:clamp(3px,.45vw,6px);height:115%;left:50%;top:-7%;transform:translateX(-50%) rotate(42deg);border-radius:50%}
+.basketball-seam-horizontal{height:clamp(3px,.45vw,6px);width:115%;left:-7%;top:50%;transform:translateY(-50%) rotate(42deg);border-radius:50%}
+.basketball-seam-diagonal{width:clamp(3px,.45vw,6px);height:115%;left:50%;top:-7%;transform:translateX(-50%) rotate(-42deg);border-radius:50%;opacity:.85}
+.basketball-highlight{position:absolute;inset:5% 12% 54% 13%;z-index:3;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.32),transparent);filter:blur(8px);transform:rotate(-28deg)}
+.hero-basketball-orbit{position:absolute;inset:0;border:1px solid rgba(91,183,255,.42);border-radius:50%;transform:rotate(-24deg) scaleY(.32);box-shadow:0 0 18px rgba(49,150,245,.12)}
+.hero-basketball-orbit-one{animation:courtsideOrbit 9s linear infinite}
+.hero-basketball-orbit-two{inset:8% -8%;transform:rotate(62deg) scaleY(.24);border-color:rgba(255,174,92,.3);animation:courtsideOrbit 13s linear infinite reverse}
+.hero-basketball-shadow{position:absolute;left:19%;right:19%;bottom:0;height:9%;border-radius:50%;background:rgba(0,0,0,.58);filter:blur(13px);animation:courtsideShadow 5s ease-in-out infinite}
+@keyframes courtsideBallSpin{from{transform:rotateY(0deg) rotateZ(-9deg)}to{transform:rotateY(360deg) rotateZ(351deg)}}
+@keyframes courtsideBallFloat{0%,100%{translate:0 0}50%{translate:0 -13px}}
+@keyframes courtsideOrbit{from{rotate:0deg}to{rotate:360deg}}
+@keyframes courtsideShadow{0%,100%{transform:scaleX(1);opacity:.55}50%{transform:scaleX(.72);opacity:.32}}
+@media(max-width:850px){.hero-basketball-stage{right:0;width:clamp(145px,28vw,230px);opacity:.92}.home-hero-player{opacity:.72}}
+@media(max-width:560px){.hero-basketball-stage{width:124px;right:-5px;top:24%;opacity:.7}.home-hero-player{opacity:.38}.home-hero-copy{max-width:78%}}
+@media(prefers-reduced-motion:reduce){.hero-basketball,.hero-basketball-orbit,.hero-basketball-shadow{animation:none!important}}
