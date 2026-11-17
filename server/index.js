@@ -1231,12 +1231,12 @@ async function espnTeamSchedule(abbreviation, seasonYear) {
           const officialGames=(nbaSchedule?.leagueSchedule?.gameDates||[]).flatMap(day=>day.games||[]);
           for(const game of parsed){
             if(game.state!=='post'||game.sides.every(side=>side.score!=null))continue;
-            const espnDate=game.date?String(game.date).slice(0,10):'';
+            const espnDateOptions=new Set(game.date?[String(game.date).slice(0,10),saoPauloDate(game.date)]:[]);
             const homeAbbr=game.sides.find(side=>side.homeAway==='home')?.abbreviation;
             const awayAbbr=game.sides.find(side=>side.homeAway==='away')?.abbreviation;
             const match=officialGames.find(item=>{
               const date=item.gameDateTimeUTC?saoPauloDate(item.gameDateTimeUTC):String(item.gameDateEst||item.gameDate||'').slice(0,10);
-              return date===espnDate&&canonicalTeamAbbr(item.homeTeam?.teamTricode||'')===homeAbbr&&canonicalTeamAbbr(item.awayTeam?.teamTricode||'')===awayAbbr&&Number(item.gameStatus)===3;
+              return espnDateOptions.has(date)&&canonicalTeamAbbr(item.homeTeam?.teamTricode||'')===homeAbbr&&canonicalTeamAbbr(item.awayTeam?.teamTricode||'')===awayAbbr&&Number(item.gameStatus)===3;
             });
             if(!match)continue;
             const home=game.sides.find(side=>side.homeAway==='home'),away=game.sides.find(side=>side.homeAway==='away');
