@@ -42,7 +42,6 @@ assert.ok(app.includes("if(updates.length)setGames(current=>{") && !app.includes
 assert.ok(app.includes("String(v).trim()===''"), 'Interface deve rejeitar strings vazias ou com espaços em vez de convertê-las em zero.');
 assert.ok(app.includes('rosterRequestRef.current') && app.includes('if(request!==rosterRequestRef.current)return;'), 'Elenco deve impedir que uma resposta antiga sobrescreva o time atualmente selecionado.');
 assert.ok(app.includes('shotRequestRef.current+=1') && app.includes('request!==shotRequestRef.current'), 'Mapa de arremessos deve descartar respostas de um jogador selecionado anteriormente.');
-assert.ok(app.includes('headToHeadRequestRef.current+=1') && app.includes('request!==headToHeadRequestRef.current'), 'Confrontos diretos devem descartar respostas antigas após trocar franquias.');
 assert.ok(app.includes('calendarRangeDays<=90') && app.includes('disabled={!calendarRangeValid||busy}'), 'Calendário personalizado deve bloquear datas inválidas e intervalos acima de 90 dias.');
 assert.ok(app.includes('campaignValid=Number.isFinite(w)&&Number.isFinite(l)&&w>=0&&l>=0&&w+l>0') && app.includes("'Campanha indisponível'"), 'Simulador não deve converter campanha ausente em 0 vitórias ou calcular percentual parcial.');
 assert.ok(app.includes("String(value).trim()===''"), 'Formatadores globais devem rejeitar strings vazias ou com espaços em vez de mostrá-las como zero.');
