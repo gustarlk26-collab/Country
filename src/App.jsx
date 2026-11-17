@@ -2,7 +2,7 @@ const apiResponseCache = new Map();
 const apiInflight = new Map();
 // Reaproveita respostas recentes ao navegar entre páginas; endpoints ao vivo
 // e atualizações explícitas continuam usando cache:false.
-const API_RESPONSE_CACHE_TTL_MS = 45000;
+const API_RESPONSE_CACHE_TTL_MS = 120000;
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {translateText} from './translations';
 import {createClient} from '@supabase/supabase-js';
@@ -262,7 +262,7 @@ useEffect(()=>{
       if(page==='rankings'){const request=++rankingsRequestRef.current;const r=await api('/api/rankings/recent');if(!active||request!==rankingsRequestRef.current)return;setRanking(r.data||[]);}
       if(page==='highlights'||page==='averages'){const request=++averagesRequestRef.current;const r=await api('/api/averages?last='+averagePeriod);if(!active||request!==averagesRequestRef.current)return;setAverages(Array.isArray(r.data)?r.data:[]);}
       if(['teams','playoffs','power','teamhub','teamanalytics'].includes(page)){const request=++standingsRequestRef.current;const r=await api('/api/standings');if(!active||request!==standingsRequestRef.current)return;setStandings(Array.isArray(r.data)?r.data:[]);}
-       if(['power','teamhub','teamanalytics','betlab','matchup','homeaway','form','streaks','rest','schedulestrength','pace','defense','simulator'].includes(page)){const request=++teamStatsRequestRef.current;try{const r=await api('/api/team-stats',{cache:false});if(!active||request!==teamStatsRequestRef.current)return;if(!Array.isArray(r.data)||!r.data.length)throw new Error('A fonte não retornou estatísticas de franquias.');setTeamStats(r.data);setTeamStatsMeta({season:r.season,source:r.source,updatedAt:r.updatedAt});setTeamStatsError('');}catch(error){if(active&&request===teamStatsRequestRef.current)setTeamStatsError(error.message||'Não foi possível atualizar as métricas das franquias.');}}
+       if(['power','teamhub','teamanalytics','betlab','matchup','homeaway','form','streaks','rest','schedulestrength','pace','defense','simulator'].includes(page)){const request=++teamStatsRequestRef.current;try{const r=await api('/api/team-stats');if(!active||request!==teamStatsRequestRef.current)return;if(!Array.isArray(r.data)||!r.data.length)throw new Error('A fonte não retornou estatísticas de franquias.');setTeamStats(r.data);setTeamStatsMeta({season:r.season,source:r.source,updatedAt:r.updatedAt});setTeamStatsError('');}catch(error){if(active&&request===teamStatsRequestRef.current)setTeamStatsError(error.message||'Não foi possível atualizar as métricas das franquias.');}}
        if(['teamanalytics','lineups','rotation'].includes(page)){const r=await api('/api/teams/'+encodeURIComponent(teamA)+'/roster');if(!active)return;setTeamRoster(r.data||[]);}
       if(['mvp','mvpRace'].includes(page)){const request=++mvpRequestRef.current;const r=await api('/api/mvp');if(!active||request!==mvpRequestRef.current)return;setMvp(r);}
       if(['records','historicstats'].includes(page)){const request=++recordsRequestRef.current;const r=await api('/api/records');if(!active||request!==recordsRequestRef.current)return;setRecordLeaders(Array.isArray(r.data)?r.data:[]);}
@@ -274,7 +274,7 @@ useEffect(()=>{
       if(['history','evolution','fantasy','awards','playercards','teamanalytics','betlab','playerprops','statlab','rotation','lineups'].includes(page)){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
     } catch(e) { if(active)setError(`Não foi possível atualizar ${page}: ${e?.message||'fonte temporariamente indisponível'}. Os últimos dados válidos foram preservados.`); }
     finally { refreshing=false; }
-  },60000);
+  },180000);
   return()=>{active=false;window.clearInterval(timer);};
 },[session,api,page,averagePeriod,quarterGameId,selectedProfile,teamA]);
  const loadPlayers=async(reset=false)=>{const requestId=++playerRequestRef.current;const query=playerSearch.trim();const append=!reset&&Boolean(playerCursor)&&query===playerLoadedSearchRef.current;if(!append)playerLoadedSearchRef.current=query;setBusy(true);setError('');try{const qs=new URLSearchParams();qs.set('search',query);if(append)qs.set('cursor',playerCursor);const result=await api(`/api/players?${qs}`);if(requestId!==playerRequestRef.current)return;const incoming=Array.isArray(result.data)?result.data:[];setPlayers(old=>append?[...old,...incoming]:incoming);setPlayerCursor(result.meta?.next_cursor||null);}catch(e){if(requestId===playerRequestRef.current)setError(e.message);}finally{if(requestId===playerRequestRef.current)setBusy(false);}};
