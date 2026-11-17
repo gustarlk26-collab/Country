@@ -29,7 +29,7 @@ Esses endpoints não constituem uma API pública com SLA: a NBA pode aplicar blo
 
 1. No Supabase, abra **SQL Editor**.
 2. Execute o esquema em `supabase/schema.sql` (se essa pasta estiver presente no repositório).
-3. Em **Authentication → URL Configuration**, configure a URL do serviço Render como Site URL e Redirect URL.
+3. Em **Authentication → URL Configuration**, configure `https://courtside-family.onrender.com` como **Site URL** e adicione também `https://courtside-family.onrender.com/` em **Redirect URLs**. O cadastro envia esse endereço explicitamente como destino após a confirmação. Para desenvolvimento local, adicione `http://localhost:5173/**` como Redirect URL.
 4. Configure os usuários da família em Authentication.
 
 As tabelas `favorites` e `user_settings` devem ter RLS habilitado e políticas limitadas a `auth.uid() = user_id`.
