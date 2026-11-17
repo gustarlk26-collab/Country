@@ -1157,3 +1157,125 @@ tbody tr:last-child td{border-bottom-color:transparent}
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* COURTSIDE FAMILY — 2026 visual identity: hardwood / violet */
+:root{
+  --court-ink:#080811;
+  --court-violet:#8b5cf6;
+  --court-violet-bright:#a78bfa;
+  --court-orange:#f28b45;
+  --court-surface:#11111f;
+  --court-stroke:rgba(167,139,250,.19);
+}
+body{background:#080811}
+.layout{
+  --bg:#090914;--panel:#11111f;--panel2:#17172a;
+  --text:#f5f3ff;--muted:#a5a1bb;--line:rgba(167,139,250,.17);
+  background:
+    radial-gradient(ellipse at 80% -12%,rgba(124,58,237,.20),transparent 38%),
+    radial-gradient(ellipse at 12% 82%,rgba(242,139,69,.055),transparent 28%),
+    #090914;
+}
+.sidebar{
+  background:linear-gradient(180deg,#0d0b19 0%,#090914 100%);
+  border-right:1px solid rgba(167,139,250,.16);
+  box-shadow:14px 0 44px rgba(0,0,0,.24);
+}
+.brand-icon{
+  background:linear-gradient(145deg,#f59a50,#e76a32)!important;
+  box-shadow:0 8px 26px rgba(242,139,69,.22);
+}
+.sidebar nav button{border-radius:11px;color:#aaa5c2}
+.sidebar nav button.active{
+  color:#fff;background:linear-gradient(100deg,rgba(139,92,246,.30),rgba(139,92,246,.10));
+  border:1px solid rgba(167,139,250,.26);
+  box-shadow:inset 3px 0 #a78bfa,0 8px 22px rgba(76,29,149,.12);
+}
+.sidebar nav button:hover{background:rgba(139,92,246,.13);border-color:rgba(167,139,250,.18)}
+.topbar{
+  background:rgba(9,9,20,.91);
+  border-bottom:1px solid rgba(167,139,250,.15);
+}
+.eyebrow{color:#c4b5fd}
+.topbar h1{letter-spacing:-.9px}
+.content{max-width:1680px}
+.panel,.metric-card,.leader-card,.team-card,.feature-tile{
+  border:1px solid var(--court-stroke);
+  box-shadow:0 16px 42px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.025);
+}
+.panel{
+  border-radius:20px;
+  background:linear-gradient(145deg,rgba(20,18,36,.98),rgba(14,13,27,.98));
+}
+.panel h2,.panel-head h2{letter-spacing:-.45px}
+.metric-card{
+  border-radius:17px;
+  background:linear-gradient(145deg,#1a1730,#121222);
+}
+.metric-card svg,.feature-icon{color:#c4b5fd}
+.metric-card:after{background:rgba(139,92,246,.13)}
+.metric-card b{letter-spacing:-1px}
+.team-card,.leader-card{
+  border-radius:15px;
+  background:linear-gradient(145deg,#1a1830,#121222);
+}
+.primary,.profile-tabs button.active,.game-tabs button.active{
+  background:linear-gradient(110deg,#8b5cf6,#6d3bd1);
+  border-color:#8b5cf6;
+  box-shadow:0 8px 24px rgba(109,59,209,.24);
+}
+.primary:hover{filter:brightness(1.12)}
+.secondary,.game-tabs button,.profile-tabs button{
+  border-radius:11px;
+  background:#171629;
+  border-color:rgba(167,139,250,.2);
+}
+.text-btn,.feature-open{color:#c4b5fd}
+input:focus,select:focus,.search-field:focus-within{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(139,92,246,.12)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline-color:#c4b5fd}
+.search-field{border-radius:12px;background:#10101e;border-color:rgba(167,139,250,.2)}
+table th{color:#aaa5c2}
+tbody tr:hover{background:rgba(139,92,246,.075)}
+.game-row{border-bottom-color:rgba(167,139,250,.13)}
+.game-row:hover{background:rgba(139,92,246,.07)}
+.feature-tile{
+  border-radius:16px;
+  background:linear-gradient(145deg,rgba(29,25,52,.92),rgba(16,15,30,.96));
+}
+.feature-tile:hover{border-color:rgba(167,139,250,.48);background:linear-gradient(145deg,#282044,#151329)}
+.feature-icon{background:rgba(139,92,246,.16);border-radius:12px}
+.feature-link,.news-row:hover{color:#c4b5fd}
+.live i{background:#f28b45}
+.auth-page{background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,.22),transparent 48%),#090914}
+.auth-card{
+  background:linear-gradient(155deg,#1b1830,#100f1e);
+  border-color:rgba(167,139,250,.2);
+}
+.mvp-card,.feature-workspace .mvp-card{
+  background:linear-gradient(110deg,#34215d,#1a1730);
+  border-color:rgba(167,139,250,.24);
+}
+.star.on,.leader-rank{color:#f5b66f}
+.layout.light{
+  --bg:#f5f3fb;--panel:#fff;--panel2:#f0edf8;
+  --text:#211b35;--muted:#716b84;--line:#e3dcef;
+  background:radial-gradient(ellipse at 85% -5%,rgba(139,92,246,.10),transparent 38%),#f5f3fb;
+}
+.layout.light .sidebar{background:linear-gradient(180deg,#19142b,#120f20);border-right-color:rgba(167,139,250,.2)}
+.layout.light .topbar{background:rgba(250,249,253,.96);border-bottom-color:#e3dcef}
+.layout.light .panel{background:linear-gradient(145deg,#fff,#faf9fd);border-color:#e4deef;box-shadow:0 14px 34px rgba(42,26,75,.07)}
+.layout.light .metric-card,.layout.light .team-card,.layout.light .leader-card{background:linear-gradient(145deg,#fff,#f5f2fa);border-color:#e4deef}
+.layout.light .secondary,.layout.light .game-tabs button,.layout.light .profile-tabs button{background:#f3eff9;border-color:#e3dcef;color:#30264a}
+.layout.light .search-field{background:#fff;border-color:#e3dcef}
+.layout.light .panel h2,.layout.light .metric-card b{color:#211b35}
+.layout.light tbody tr:hover{background:rgba(139,92,246,.055)}
+@media(max-width:650px){
+  .sidebar{background:rgba(12,10,22,.97);border-bottom:1px solid rgba(167,139,250,.18)}
+  .sidebar nav button.active{box-shadow:inset 0 -2px #a78bfa}
+  .panel{border-radius:16px}
+  .content{padding-left:12px;padding-right:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
