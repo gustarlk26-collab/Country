@@ -274,7 +274,7 @@ useEffect(()=>{
       if(['history','evolution','fantasy','awards','playercards','teamanalytics','betlab','playerprops','statlab','rotation','lineups'].includes(page)){const r=await api('/api/averages?last='+averagePeriod);setAverages(r.data||[]);}
     } catch(e) { if(active)setError(`Não foi possível atualizar ${page}: ${e?.message||'fonte temporariamente indisponível'}. Os últimos dados válidos foram preservados.`); }
     finally { refreshing=false; }
-  },180000);
+  },120000);
   return()=>{active=false;window.clearInterval(timer);};
 },[session,api,page,averagePeriod,quarterGameId,selectedProfile,teamA]);
  const loadPlayers=async(reset=false)=>{const requestId=++playerRequestRef.current;const query=playerSearch.trim();const append=!reset&&Boolean(playerCursor)&&query===playerLoadedSearchRef.current;if(!append)playerLoadedSearchRef.current=query;setBusy(true);setError('');try{const qs=new URLSearchParams();qs.set('search',query);if(append)qs.set('cursor',playerCursor);const result=await api(`/api/players?${qs}`);if(requestId!==playerRequestRef.current)return;const incoming=Array.isArray(result.data)?result.data:[];setPlayers(old=>append?[...old,...incoming]:incoming);setPlayerCursor(result.meta?.next_cursor||null);}catch(e){if(requestId===playerRequestRef.current)setError(e.message);}finally{if(requestId===playerRequestRef.current)setBusy(false);}};
