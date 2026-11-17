@@ -1572,7 +1572,7 @@ app.get('/api/injuries', async (_req, res) => {
           team: group.team?.displayName || group.team?.abbreviation || group.displayName || item.team?.displayName || item.team?.abbreviation || '',
           status:statusTranslations[statusKey]||rawStatus,
           status_original:rawStatus,
-          detail: typeof detail === 'string' ? detail : ''
+          detail: typeof detail === 'string' ? detail.replace(/left ankle/gi,'tornozelo esquerdo').replace(/right ankle/gi,'tornozelo direito').replace(/left knee/gi,'joelho esquerdo').replace(/right knee/gi,'joelho direito').replace(/hamstring/gi,'posterior da coxa').replace(/groin/gi,'virilha').replace(/lower back/gi,'região lombar').replace(/back/gi,'costas').replace(/foot/gi,'pé').replace(/hand/gi,'mão').replace(/wrist/gi,'pulso').replace(/shoulder/gi,'ombro').replace(/ankle/gi,'tornozelo').replace(/knee/gi,'joelho').replace(/illness/gi,'doença').replace(/injury management/gi,'controle de lesão').replace(/injury recovery/gi,'recuperação de lesão').replace(/return to competition reconditioning/gi,'recondicionamento para retorno às competições').replace(/personal reasons/gi,'motivos pessoais').replace(/not with team/gi,'não está com a equipe') : ''
         };
       }).filter(item => item.name);
     });
