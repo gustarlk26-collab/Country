@@ -352,6 +352,10 @@ assert.ok(app.includes('const quarterSummaryRequestRef=useRef(0)') && app.includ
 assert.ok(app.includes("if(page==='quarters'&&quarterGameId){const request=++quarterSummaryRequestRef.current") && app.includes('if(!active||request!==quarterSummaryRequestRef.current)return;setQuarterSummary(r.data||null);'), 'A atualização periódica dos parciais deve respeitar a seleção atual e não sobrescrever uma consulta mais recente.');
 assert.ok(app.includes("if(updates.length)setGames(current=>{") && !app.includes("else setGames(current=>current.filter(game=>gameLocalDate(game)!==dateNow(0)))"), 'Feed ao vivo vazio não pode apagar a agenda diária já carregada.');
 assert.ok(app.includes("if(page==='historicstats')loadHistoricStats()"), 'A página de estatísticas históricas deve consultar automaticamente a temporada selecionada ao ser aberta.');
+assert.ok(app.includes('const currentSeasonStartYear=()=>') && app.includes("useState(()=>seasonLabel(currentSeasonStartYear()))") && app.includes('const y=currentSeasonStartYear()-i'), 'O arquivo histórico deve acompanhar a temporada NBA atual sem depender de um ano fixo no código.');
+assert.ok(app.includes("if(request===historicRequestRef.current)setHistoricError(e.message||'Não foi possível carregar a temporada.')") && !app.includes("setHistoricRows([]);setHistoricMeta(null);setHistoricError(e.message||'Não foi possível carregar a temporada.')"), 'Falhas ao atualizar o arquivo histórico devem preservar a última consulta válida.');
+assert.ok(app.includes('Atualizar classificação</button>') && app.includes('Atualizar métricas defensivas</button>'), 'Playoffs e análise defensiva devem permitir atualização manual das fontes oficiais.');
+assert.ok(app.includes("Amostra: {p.gamesPlayed??'Não disponível'} jogos."), 'Análise de props deve informar o tamanho da amostra real usada na média.');
 
 assert.ok(server.includes("score:['in','post'].includes(String(competition.status?.type?.state||event.status?.type?.state||'pre').toLowerCase())?finiteNumberOrNull(side.score):null"), 'Confrontos diretos não podem exibir placar ou saldo em partidas ainda não iniciadas, mesmo que a ESPN envie zero no calendário.');
 
