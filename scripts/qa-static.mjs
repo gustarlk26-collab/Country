@@ -8,6 +8,7 @@ const styles = read('src/styles.css');
 const worker = read('public/sw.js');
 const schema = read('supabase/schema.sql');
 const manifest = read('public/manifest.webmanifest');
+const styles = read('src/styles.css');
 const html = read('index.html');
 const arena = read('public/courtside-arena.svg');
 const render = read('render.yml');
@@ -209,7 +210,10 @@ assert.ok(app.includes("boxGame?.status_state==='in_progress'?' · '+(boxGame?.d
 
 assert.ok(server.includes("const today = saoPauloDate(new Date().toISOString())"), 'Calendário CDN deve usar a data local de São Paulo.');
 assert.ok(server.includes("cached('nba:season-schedule'"), 'Calendário oficial da NBA deve ser armazenado em cache para reduzir chamadas externas.');
-assert.equal((server.match(/cached\('nba:season-schedule'/g)||[]).length, 5, 'Calendário NBA deve compartilhar o mesmo cache no calendário, no confronto direto, na resolução de IDs, no preenchimento de placares finais e no fallback do histórico de confrontos.');
+assert.ok(server.includes('async function nbaScheduleStandings(season=seasonFor())') && server.includes('Number(game.gameType)!==2||Number(game.gameStatus)!==3') && server.includes('win_pct:record.gp?record.wins/record.gp:null'), 'Classificação deve ter fallback de campanha calculado exclusivamente por placares finais da temporada regular no calendário oficial da NBA.');
+assert.ok(server.includes('const scheduleByAbbr=new Map(scheduleRows.map(row=>[row.team.abbreviation,row]));') && server.includes('validCount(scheduleFallback.wins)') && server.includes('validCount(scheduleFallback.losses)') && server.includes('validPct(scheduleFallback.win_pct)'), 'Fallback do calendário oficial deve preencher campanhas ausentes sem fabricar estatísticas.');
+
+assert.equal((server.match(/cached\('nba:season-schedule'/g)||[]).length, 6, 'Calendário NBA deve compartilhar o mesmo cache no calendário, no confronto direto, na resolução de IDs, no preenchimento de placares finais e no fallback do histórico de confrontos.');
 assert.ok(server.includes('30 * 60 * 1000'), 'Cache do calendário alternativo deve expirar em trinta minutos.');
 assert.ok(server.includes("espn-scoreboard-day:"), 'Consultas diárias ESPN devem usar cache para reduzir chamadas repetidas.');
 assert.ok(server.includes("if (failures.length) throw new Error('Calendário ESPN incompleto ('"), 'Calendário parcial da ESPN deve acionar o calendário completo da NBA CDN.');
@@ -234,7 +238,7 @@ assert.ok(app.includes("teamA===teamB?<p className=\"franchise-warning\">A compa
 assert.ok(app.includes("page==='defense'&&(()=>{const rows=alphaTeamStats.filter(x=>[x.def_rating,x.net_rating,x.stl,x.blk].some(value=>value!=null))") && app.includes('<th>DEF RTG</th>') && app.includes("x.def_rating==null?'Não disponível':fmt(x.def_rating,1)") && app.includes("x.net_rating==null?'Não disponível':fmt(x.net_rating,1)"), 'Análise defensiva deve ordenar as franquias e exibir somente métricas reais retornadas, sem transformar campos ausentes em zero.');
 assert.ok(app.includes("label:'Rating defensivo',key:'def_rating'") && app.includes("label:'Roubos por jogo',key:'stl'") && app.includes("label:'Tocos por jogo',key:'blk'") && app.includes("team[row.key]==null?'Sem dado':fmt(team[row.key],1)"), 'Comparador deve identificar ratings defensivos, roubos e tocos ausentes com rótulos honestos.');
 
-assert.ok(server.includes('const [nbaResult,espnResult]=await Promise.allSettled([') && server.includes("cached('espn:standings',espnStandings,2*60*1000)") && server.includes("if(!nbaRows.length&&!espnRows.length)throw new Error('NBA Stats e ESPN não retornaram classificação.')"), 'Classificação vazia da NBA Stats deve acionar o fallback ESPN e preservar o tratamento quando ambas falharem.');
+assert.ok(server.includes('const [nbaResult,espnResult]=await Promise.allSettled([') && server.includes("cached('espn:standings',espnStandings,5*60*1000)") && server.includes("if(!nbaRows.length&&!espnRows.length&&!scheduleRows.length)throw new Error('NBA Stats, ESPN e calendário oficial da NBA não retornaram classificação.')"), 'Classificação vazia da NBA Stats deve acionar o fallback ESPN e preservar o tratamento quando ambas falharem.');
 assert.ok(server.includes('const nbaByAbbr=new Map(nbaRows.map') && server.includes('const data=Object.values(TEAM_META).map(meta=>') && server.includes('const abbreviation=meta[0],r=nbaByAbbr.get(abbreviation)||{},fallback=espnByAbbr.get(abbreviation)||{}'), 'Classificação deve unir NBA Stats e ESPN por franquia, incluindo Utah quando uma das fontes retornar uma tabela parcial.');
 
 assert.ok(server.includes("IsOnlyCurrentSeason: '1'"), 'Fallback do diretório não deve misturar atletas históricos com elenco atual.');
@@ -405,6 +409,9 @@ assert.ok(server.includes("app.set('trust proxy', 1)") && server.indexOf("app.se
 
 assert.ok(worker.includes("courtside-shell-v6") && worker.includes("'/courtside-arena.svg'"), 'Service worker deve atualizar o cache e disponibilizar o fundo da arena também no modo offline.');
 assert.ok(manifest.includes('"sizes": "192x192"') && manifest.includes('"sizes": "512x512"') && manifest.includes('"display": "standalone"'), 'PWA deve declarar ícones e modo de instalação em tela cheia.');
+assert.ok(styles.includes('.install-guide') && styles.includes('.layout.light .panel') && styles.includes('@media(max-width:650px)'), 'Atualização visual deve preservar tema claro e estilos responsivos para instalação.');
+assert.ok(manifest.includes('"display_override"') && manifest.includes('"prefer_related_applications": false') && manifest.includes('"purpose": "maskable"'), 'Manifest deve priorizar instalação standalone e declarar ícone maskable para dispositivos Android.');
+
 assert.ok(app.includes("beforeinstallprompt") && app.includes("installPrompt.prompt()") && app.includes("appInstalled"), 'Cabeçalho deve oferecer instalação nativa do Courtside quando o navegador permitir.');
 assert.ok(styles.includes("COURTSIDE ARENA V2") && styles.includes("prefers-reduced-motion:reduce") && styles.includes("backdrop-filter:none!important"), 'Visual da arena deve respeitar movimento reduzido e evitar filtros pesados.');
 
@@ -505,6 +512,10 @@ assert.ok(server.includes("max-age=31536000, immutable") && server.includes("res
 const franchiseMetricsLoader = app.slice(app.indexOf('const loadTeamStats=async'), app.indexOf('const loadTeamRoster=async'));
 assert.ok(franchiseMetricsLoader.includes("api('/api/team-stats')") && !franchiseMetricsLoader.includes('cache:false'), 'Páginas que compartilham estatísticas de franquias devem reutilizar o cache recente ao abrir; a atualização periódica ao vivo permanece separada.');
 assert.ok(app.includes("api('/api/team-stats')"), 'A atualização periódica das estatísticas de franquias deve reutilizar o cache recente para evitar consultas externas desnecessárias.');
+assert.ok(app.includes('Servidor do Courtside temporariamente indisponível (HTTP '+r.status+')') && app.includes('verifique os logs do serviço no Render'), 'Erros de gateway 502/503/504 devem orientar o usuário a verificar a inicialização e os logs do Render.');
+assert.ok(app.includes('Instale como aplicativo') && app.includes('Android · Chrome') && app.includes('iPhone · Safari') && app.includes('Google Play Store'), 'Configurações devem orientar a instalação PWA em Android, iPhone e computador e explicar a etapa adicional da Play Store.');
+assert.ok(app.includes('Consultando calendário oficial…') && app.includes('calendário oficial NBA CDN, com ESPN como alternativa'), 'Confrontos diretos devem informar corretamente a fonte prioritária oficial.');
+
 
 
 assert.ok(app.includes("const finalGames=useMemo(()=>sortedGames.filter") && app.includes("const teamRowsAlpha=useMemo(()=>alphaTeams.map") && app.includes("[alphaTeams,finalGames,sortedGames]"), 'Cálculos compartilhados de campanha, forma, sequência e calendário dos times devem ser memorizados para evitar recomputação em cada renderização.');
@@ -531,7 +542,7 @@ assert.ok(app.includes('Como ler: NET RTG = OFF RTG') && app.includes('Prioriza 
 assert.ok(server.includes("app.get('/api/fantasy/gamelogs'") && server.includes("nba('playergamelog'") && server.includes('fantasy_points:complete?Number((pts+1.2*reb+1.5*ast+3*stl+3*blk-turnover).toFixed(2)):null'), 'Fantasy deve consultar logs oficiais por atleta e calcular pontos em cada partida sem transformar dados ausentes em zero.');
 assert.ok(app.includes("api('/api/fantasy/gamelogs?players='+encodeURIComponent(fantasyIds.join(','))") && app.includes('Resultados reais por partida · elenco selecionado') && app.includes('game.fantasy_points'), 'Fantasy deve atualizar automaticamente e exibir resultados reais por partida para os jogadores escolhidos.');
 
-assert.ok(server.includes("cached('espn:standings',espnStandings,2*60*1000)") && server.includes("source:nbaRows.length&&espnRows.length?'NBA Stats + ESPN standings'"), 'Playoffs devem receber classificação e aproveitamento via fallback ESPN quando NBA Stats falhar ou omitir campos.');
+assert.ok(server.includes("cached('espn:standings',espnStandings,2*60*1000)") && server.includes("scheduleRows.length?'NBA CDN official schedule fallback'"), 'Playoffs devem receber classificação e aproveitamento via fallback ESPN quando NBA Stats falhar ou omitir campos.');
 assert.ok(app.includes('sample=logs.map(game=>game[propMetric])') && app.includes('Acima da linha') && app.includes('Frequência histórica')===false && app.includes('resultados oficiais partida a partida'), 'Análise de props deve comparar a linha com resultados reais de jogos anteriores, sem chamar frequência histórica de probabilidade futura.');
 
 assert.ok(app.includes('Líder da categoria') && app.includes('Média dos jogadores retornados') && app.includes('Atletas na amostra'), 'Laboratório estatístico deve mostrar líder, média e tamanho da amostra para o período selecionado.');
