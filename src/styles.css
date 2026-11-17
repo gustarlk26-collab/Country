@@ -1009,3 +1009,35 @@ button:active,.feature-tile:active{transform:scale(.985)}
 
 /* Identidade visual compacta das franquias no box score e Fantasy. */
 .boxscore-team{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}.boxscore-team img,.mini-team-logo{width:22px;height:22px;object-fit:contain;vertical-align:middle}.mini-team-logo{width:19px;height:19px;margin-right:4px}.player-cell{display:inline-flex;align-items:center;gap:8px;min-width:0}.player-cell .player-headshot{width:34px;height:34px;object-fit:contain;flex:0 0 34px}
+
+
+/* COURTSIDE ARENA V2 — atmosphere with a tiny paint/compositing footprint. */
+.main{position:relative;isolation:isolate}
+.main::before{
+ content:"";position:fixed;z-index:-1;pointer-events:none;
+ width:clamp(170px,22vw,330px);aspect-ratio:1;right:clamp(18px,5vw,90px);top:clamp(100px,17vh,190px);
+ border-radius:50%;opacity:.105;
+ background:
+  linear-gradient(90deg,transparent 48.8%,rgba(255,224,194,.9) 49.4% 50.6%,transparent 51.2%),
+  linear-gradient(0deg,transparent 48.8%,rgba(255,224,194,.9) 49.4% 50.6%,transparent 51.2%),
+  radial-gradient(ellipse at 50% 50%,transparent 0 35%,rgba(255,224,194,.9) 35.5% 36.4%,transparent 37%),
+  radial-gradient(circle at 32% 25%,#ffbf79 0%,#e7833d 48%,#9b451e 100%);
+ box-shadow:inset -18px -18px 38px rgba(42,13,3,.38),0 18px 55px rgba(0,0,0,.12);
+ animation:courtsideBallFloat 18s ease-in-out infinite alternate;
+}
+.layout.light .main::before{opacity:.055}
+@keyframes courtsideBallFloat{from{transform:translate3d(0,0,0) rotate(-8deg)}to{transform:translate3d(-10px,18px,0) rotate(8deg)}}
+.content{position:relative;z-index:1}
+.topbar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(7,20,38,.94)}
+.panel,.metric-card,.feature-tile,.team-card,.leader-card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.layout:before{opacity:.22}
+.layout.light:before{opacity:.085}
+.feature-category{content-visibility:auto;contain-intrinsic-size:auto 390px}
+.install-app-button{white-space:nowrap;box-shadow:0 7px 22px rgba(20,121,232,.22)}
+.app-installed-label{display:inline-flex;align-items:center;gap:6px;color:#57d6a2;font-size:11px;font-weight:700;white-space:nowrap}
+@media(max-width:650px){
+ .main::before{width:160px;right:-28px;top:150px;opacity:.07;animation:none}
+ .layout:before{opacity:.16}
+ .install-app-button{font-size:11px;padding:8px 10px}
+}
+@media(prefers-reduced-motion:reduce){.main::before{animation:none!important}}
