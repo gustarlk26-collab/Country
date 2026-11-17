@@ -443,17 +443,7 @@ return()=>{active=false;if(page==='news')newsRequestRef.current++;if(page==='inj
  </div>
  <div className="home-hero-player"><img src="https://cdn.nba.com/headshots/nba/latest/1040x760/2544.png" alt="LeBron James" fetchPriority="high" onError={e=>{e.currentTarget.style.opacity='0';}}/><span className="home-player-name">LEBRON JAMES</span><span className="home-player-number">23</span></div>
  <div className="home-hero-glow"/>
- <div className="hero-basketball-stage" aria-hidden="true">
-  <div className="hero-basketball-orbit hero-basketball-orbit-one"/>
-  <div className="hero-basketball-orbit hero-basketball-orbit-two"/>
-  <div className="hero-basketball">
-   <span className="basketball-seam basketball-seam-vertical"/>
-   <span className="basketball-seam basketball-seam-horizontal"/>
-   <span className="basketball-seam basketball-seam-diagonal"/>
-   <span className="basketball-highlight"/>
-  </div>
-  <span className="hero-basketball-shadow"/>
- </div>
+
 </section>
 <section className="home-sections" aria-label="Seções do Courtside">
  <div className="home-section-heading"><div><span className="eyebrow">EXPLORE O COURTSIDE</span><h2>Tudo da NBA, organizado.</h2><p className="muted">Escolha uma área para acessar as ferramentas e estatísticas.</p></div><span className="home-section-count">6 áreas</span></div>
