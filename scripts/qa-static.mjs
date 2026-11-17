@@ -554,5 +554,5 @@ assert.ok(app.includes('Líder da categoria') && app.includes('Média dos jogado
 
 assert.ok(app.includes('hero-basketball-stage') && app.includes('basketball-seam-vertical'), 'Hero deve incluir a bola decorativa em posição própria.');
 assert.ok(styles.includes('.home-hero-player img{\n  animation: none!important;') && styles.includes('@keyframes playerRimLight'), 'Imagem do jogador não deve ficar subindo e descendo; usar apenas luz de recorte sutil.');
-assert.ok(styles.includes('.auth-page:before') && styles.includes('.auth-card:focus') && styles.includes('@keyframes authCardEnter'), 'Tela de login deve ter identidade visual premium, foco acessível e entrada animada.');
+assert.ok(styles.includes('.auth-page:before') && styles.includes('.auth-card input:focus') && styles.includes('@keyframes authCardEnter'), 'Tela de login deve ter identidade visual premium, foco acessível e entrada animada.');
 assert.ok(styles.includes('@media(max-width:650px)') && styles.includes('.hero-basketball-stage{width:72px'), 'Bola e login devem ter tratamento responsivo para celular.');
