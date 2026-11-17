@@ -491,7 +491,7 @@ assert.ok(favoritesLoader.includes('try{') && favoritesLoader.includes('catch(er
 assert.ok(app.includes('if(session){loadSettings();loadFavorites();loadCore();}'), 'O carregamento de favoritos deve delegar o tratamento de erros ao próprio carregador protegido por sessão.');
 
 assert.ok(app.includes('const API_RESPONSE_CACHE_TTL_MS = 120000;') && app.includes('Date.now()-cached.at<API_RESPONSE_CACHE_TTL_MS'), 'Navegação entre páginas deve reaproveitar respostas recentes por dois minutos para reduzir consultas repetidas.');
-assert.ok(app.includes("includes(r.status)&&attempt<attempts-1")===false && app.includes("[502,503,504].includes(r.status)&&attempt<attempts-1"), 'A API deve repetir automaticamente erros transitórios 502/503/504 do gateway antes de mostrar falha ao usuário.');
+assert.ok(app.includes("[502,503,504].includes(r.status)&&attempt<attempts-1"), 'A API deve repetir automaticamente erros transitórios 502/503/504 do gateway antes de mostrar falha ao usuário.');
 
 assert.ok(app.includes("api('/api/games/live',{cache:false})") && app.includes("{cache:false})"), 'O cache de navegação não pode substituir consultas explicitamente atualizadas de dados ao vivo.');
 assert.ok(app.includes('if(apiInflight.has(key))return apiInflight.get(key);'), 'Chamadas GET simultâneas para o mesmo recurso devem compartilhar a mesma requisição em andamento.');
