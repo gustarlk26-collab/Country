@@ -442,7 +442,7 @@ assert.ok(app.includes("const audioContextRef=useRef(null),toastTimerRef=useRef(
 
 
 const asyncApiRoutes = [...server.matchAll(/app\.(?:get|post|put|patch|delete)\(['"][^'"]+['"],\s*async/g)];
-assert.equal(asyncApiRoutes.length, 19, 'Quantidade de rotas assíncronas mudou; revise a cobertura de tratamento de erros.');
+assert.equal(asyncApiRoutes.length, 20, 'Quantidade de rotas assíncronas mudou; revise a cobertura de tratamento de erros.');
 for (let index = 0; index < asyncApiRoutes.length; index++) {
   const start = asyncApiRoutes[index].index;
   const end = index + 1 < asyncApiRoutes.length ? asyncApiRoutes[index + 1].index : server.length;
@@ -502,3 +502,6 @@ assert.ok(app.includes('},120000);') && app.includes('const timer=window.setInte
 assert.ok(app.includes('const totals=complete?roster.reduce(') && app.includes('Pontos médios do elenco') && app.includes('Rebotes médios'), 'Fantasy deve calcular automaticamente os totais de pontos, rebotes, assistências e pontuação do elenco quando os dados estão completos.');
 assert.ok(app.includes('className="boxscore-team"') && app.includes('mini-team-logo') && app.includes('a.espncdn.com/i/headshots/nba/players/full/'), 'Box score, análise de times e Fantasy devem mostrar escudos e usar fallback de fotos ESPN nos elencos.');
 assert.ok(app.includes('Como ler: NET RTG = OFF RTG') && app.includes('Prioriza Net Rating oficial')===false, 'Power Ranking deve explicar o significado das métricas e o critério de ordenação.');
+
+assert.ok(server.includes("app.get('/api/fantasy/gamelogs'") && server.includes("nba('playergamelog'") && server.includes('fantasy_points:complete?Number((pts+1.2*reb+1.5*ast+3*stl+3*blk-turnover).toFixed(2)):null'), 'Fantasy deve consultar logs oficiais por atleta e calcular pontos em cada partida sem transformar dados ausentes em zero.');
+assert.ok(app.includes("api('/api/fantasy/gamelogs?players='+encodeURIComponent(fantasyIds.join(','))") && app.includes('Resultados reais por partida · elenco selecionado') && app.includes('game.fantasy_points'), 'Fantasy deve atualizar automaticamente e exibir resultados reais por partida para os jogadores escolhidos.');
