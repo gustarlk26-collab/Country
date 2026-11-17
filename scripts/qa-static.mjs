@@ -367,7 +367,7 @@ assert.ok(server.includes("score:['in','post'].includes(String(competition.statu
 
 assert.ok(server.includes("'/schedule?season=' + seasonYear + '&seasontype=2'"), 'Confrontos diretos devem solicitar explicitamente a temporada regular à ESPN, sem misturar pré-temporada ou playoffs.');
 
-assert.ok(server.includes("const winsValue = finiteNumberOrNull(stats.wins), lossesValue = finiteNumberOrNull(stats.losses)") && server.includes("Number.isSafeInteger(value)&&value>=0?value:null"), 'Classificação NBA/ESPN deve rejeitar campanhas vazias, booleanas ou inválidas em vez de exibir zeros falsos.');
+assert.ok(server.includes('const validCount=value=>{const n=finiteNumberOrNull(value);return n!=null&&Number.isSafeInteger(n)&&n>=0?n:null;}') && server.includes('wins:validCount(r.WINS)??fallback.wins??null,losses:validCount(r.LOSSES)??fallback.losses??null'), 'Classificação NBA/ESPN deve rejeitar campanhas vazias, booleanas ou inválidas em vez de exibir zeros falsos.');
 
 assert.ok(server.includes('const wins=count(row.W)??(games.decided?games.wins:null)??count(standing.wins)') && server.includes('const losses=count(row.L)??(games.decided?games.losses:null)??count(standing.losses)') && server.includes('const winPct=percentage(row.W_PCT)??percentage(standing.win_pct)'), 'Comparador deve usar campanha ESPN validada quando NBA Stats e Game Finder não fornecerem vitórias, derrotas ou aproveitamento.');
 assert.ok(server.includes("const count=value=>{const parsed=number(value);return parsed!=null&&Number.isSafeInteger(parsed)&&parsed>=0?parsed:null;}") && server.includes("const wins=count(row.W)??(games.decided?games.wins:null)"), 'Estatísticas de franquias devem aceitar GP, vitórias e derrotas somente como contagens inteiras não negativas.');
