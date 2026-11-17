@@ -1188,7 +1188,37 @@ async function espnTeamSchedule(abbreviation, seasonYear) {
         state:competition.status?.type?.state||event.status?.type?.state||'pre',
         sides,venue:competition.venue?.fullName||null}];
     });
-    if (parsed.length) return parsed;
+    if (parsed.length) {
+      // ESPN schedules sometimes mark a game as final before exposing both
+      // numeric scores. Fill only those missing score fields from the NBA's
+      // official season schedule, matching date + home/away franchise IDs.
+      const needsOfficialScores=parsed.some(game=>game.state==='post'&&game.sides.some(side=>side.score==null));
+      if(needsOfficialScores){
+        try{
+          const nbaSchedule=await cached('nba:season-schedule',async()=>{
+            const response=await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json',{headers:NBA_HEADERS,signal:AbortSignal.timeout(9000)});
+            if(!response.ok)throw new Error('NBA CDN schedule HTTP '+response.status);
+            return response.json();
+          },30*60*1000);
+          const officialGames=(nbaSchedule?.leagueSchedule?.gameDates||[]).flatMap(day=>day.games||[]);
+          for(const game of parsed){
+            if(game.state!=='post'||game.sides.every(side=>side.score!=null))continue;
+            const espnDate=game.date?String(game.date).slice(0,10):'';
+            const homeAbbr=game.sides.find(side=>side.homeAway==='home')?.abbreviation;
+            const awayAbbr=game.sides.find(side=>side.homeAway==='away')?.abbreviation;
+            const match=officialGames.find(item=>{
+              const date=item.gameDateTimeUTC?saoPauloDate(item.gameDateTimeUTC):String(item.gameDateEst||item.gameDate||'').slice(0,10);
+              return date===espnDate&&canonicalTeamAbbr(item.homeTeam?.teamTricode||'')===homeAbbr&&canonicalTeamAbbr(item.awayTeam?.teamTricode||'')===awayAbbr&&Number(item.gameStatus)===3;
+            });
+            if(!match)continue;
+            const home=game.sides.find(side=>side.homeAway==='home'),away=game.sides.find(side=>side.homeAway==='away');
+            if(home?.score==null)home.score=finiteNumberOrNull(match.homeTeamScore);
+            if(away?.score==null)away.score=finiteNumberOrNull(match.awayTeamScore);
+          }
+        }catch(scoreFallbackError){console.warn('NBA schedule score enrichment failed for '+abbreviation+': '+scoreFallbackError.message);}
+      }
+      return parsed;
+    }
     throw new Error('ESPN não retornou partidas para esta franquia.');
   } catch (espnError) {
     const schedule = await cached('nba:season-schedule', async () => {
