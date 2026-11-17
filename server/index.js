@@ -719,7 +719,10 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     }:null;
     const photoUrl=displayText(athlete.headshot?.href||player.headshot?.href||player.headshot);
     const birthplaceParts=[nbaInfo.BIRTHCITY,nbaInfo.BIRTHSTATE,nbaInfo.BIRTHCOUNTRY].map(displayText).filter(Boolean);
-    const birthplace=[...new Set(birthplaceParts)].join(', ')||displayText(athlete.birthPlace||player.birth_place);
+    // ESPN sometimes labels hometown/region as birthPlace; do not present it as a
+    // confirmed birthplace unless NBA Stats supplies an actual BIRTHCITY.
+    const birthplace=nbaInfo.BIRTHCITY?[...new Set(birthplaceParts)].join(', '):null;
+    const reportedOrigin=displayText(athlete.birthPlace||player.birth_place);
     const draftYear=Number(nbaInfo.DRAFT_YEAR)>0?String(nbaInfo.DRAFT_YEAR):null;
     const draftRound=Number(nbaInfo.DRAFT_ROUND)>0?String(nbaInfo.DRAFT_ROUND):null;
     const draftPick=Number(nbaInfo.DRAFT_NUMBER)>0?String(nbaInfo.DRAFT_NUMBER):null;
@@ -732,7 +735,7 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       id:player.espn_id,name:displayText(athlete.displayName||athlete.fullName)||[player.first_name,player.last_name].filter(Boolean).join(' '),
       height:displayText(nbaInfo.HEIGHT)||displayText(athlete.displayHeight||player.height),weight:displayText(nbaInfo.WEIGHT)||displayText(athlete.displayWeight||player.weight),
       birth_date:displayText(nbaInfo.BIRTHDATE)||displayText(athlete.dateOfBirth||player.birth_date),age:displayText(athlete.age??player.age),
-      birth_place:birthplace,
+      birth_place:birthplace,origin:reportedOrigin,
       college:school,experience:displayText(nbaInfo.SEASON_EXP)||displayText(athlete.experience?.displayValue||player.experience),
       jersey:displayText(nbaInfo.JERSEY)||displayText(athlete.jersey||player.jersey),position:displayText(nbaInfo.POSITION)||displayText(athlete.position?.displayName||player.position),
       country:displayText(nbaInfo.COUNTRY),last_affiliation:displayText(nbaInfo.LAST_AFFILIATION),
