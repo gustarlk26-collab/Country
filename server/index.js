@@ -1136,7 +1136,7 @@ app.get('/api/averages', async (req, res) => {
       ...playerDashFilters(), LeagueID: '00', Season: season, SeasonType: 'Regular Season', PerMode: 'PerGame',
       LastNGames: String(requested), MeasureType: 'Base', PaceAdjust: 'N', PlusMinus: 'N', Rank: 'N',
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
-    }), 3 * 60 * 1000))[0] || [];
+    }), 2 * 60 * 1000))[0] || [];
     const numberOrNull = value => value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
     const nonNegative = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>=0?parsed:null; };
     const positive = value => { const parsed=numberOrNull(value); return parsed!=null&&parsed>0?parsed:null; };
@@ -1503,12 +1503,15 @@ app.get('/api/injuries', async (_req, res) => {
         : (group.athlete || group.name) ? [group] : [];
       return items.map(item => {
         const status = item.status;
+        const rawStatus=(typeof status === 'string' ? status : status?.type?.description || status?.description || status?.name)||item.type?.description||item.details?.type||'Status não informado';
+        const statusKey=String(rawStatus).toLowerCase().replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim();
+        const statusTranslations={'out':'Fora','day to day':'Dia a dia','questionable':'Questionável','doubtful':'Pouco provável','probable':'Provável','available':'Disponível','active':'Ativo','inactive':'Inativo','injured reserve':'Lista de lesionados','injury reserve':'Lista de lesionados','suspended':'Suspenso','out for season':'Fora da temporada','season ending':'Fora da temporada','game time decision':'Decisão perto do jogo','not injury related':'Não relacionado a lesão'};
         const detail = item.shortComment || item.longComment || item.details?.detail || item.details?.description || '';
         return {
           name: item.athlete?.displayName || item.athlete?.fullName || item.name || null,
           team: group.team?.displayName || group.team?.abbreviation || group.displayName || item.team?.displayName || item.team?.abbreviation || '',
-          status: (typeof status === 'string' ? status : status?.type?.description || status?.description || status?.name)
-            || item.type?.description || item.details?.type || 'Status não informado',
+          status:statusTranslations[statusKey]||rawStatus,
+          status_original:rawStatus,
           detail: typeof detail === 'string' ? detail : ''
         };
       }).filter(item => item.name);
