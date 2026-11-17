@@ -746,8 +746,19 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     const school=displayText(nbaInfo.SCHOOL)||displayText(athlete.college?.name||athlete.college||player.college);
     const draftSummary=draftYear?(draftPick&&draftRound?'Selecionado no Draft da NBA de '+draftYear+', na '+draftRound+'ª rodada, escolha '+draftPick+'.':'Selecionado no Draft da NBA de '+draftYear+'.'):'';
     const careerSummary=[draftSummary,school?'Formação universitária: '+school+'.':'',careerStart?'Registros de carreira na NBA a partir de '+careerStart+(careerEnd&&careerEnd!==careerStart?' até '+careerEnd:'')+'.':''].filter(Boolean).join(' ');
+    const playerName=displayText(athlete.displayName||athlete.fullName)||[player.first_name,player.last_name].filter(Boolean).join(' ');
+    const positionName=displayText(nbaInfo.POSITION)||displayText(athlete.position?.displayName||player.position);
+    const teamName=displayText(nbaInfo.TEAM_NAME)||displayText(player.team?.displayName||player.team?.name||player.team?.abbreviation);
+    const careerFacts=[
+      playerName+(positionName?' atua como '+positionName:'')+(teamName?' e está associado ao '+teamName:'')+'.',
+      school?'Antes da NBA, estudou na '+school+'.':'',
+      draftYear?'Entrou na NBA pelo Draft de '+draftYear+(draftRound&&draftPick?' como escolha '+draftPick+' da '+draftRound+'ª rodada':'')+'.':'',
+      careerStart?'Seu registro de temporadas na NBA vai de '+careerStart+(careerEnd&&careerEnd!==careerStart?' a '+careerEnd:'')+'.':'',
+      awardRows.length?'O histórico oficial registra '+awardRows.length+' reconhecimento(s), detalhados abaixo.':''
+    ].filter(Boolean).join(' ');
+    const profileNarrative=careerFacts.length?careerFacts:null;
     const data={
-      id:player.espn_id,nba_player_id:nbaPlayerId||null,name:displayText(athlete.displayName||athlete.fullName)||[player.first_name,player.last_name].filter(Boolean).join(' '),
+      id:player.espn_id,nba_player_id:nbaPlayerId||null,name:playerName,
       height:displayText(nbaInfo.HEIGHT)||displayText(athlete.displayHeight||player.height),weight:displayText(nbaInfo.WEIGHT)||displayText(athlete.displayWeight||player.weight),
       birth_date:displayText(nbaInfo.BIRTHDATE)||displayText(athlete.dateOfBirth||player.birth_date),age:displayText(athlete.age??player.age),
       birth_place:birthplace,origin:reportedOrigin,
@@ -766,7 +777,7 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       })).filter(row=>row.season),
       team:teamData,headshot:photoUrl,
       family:(Array.isArray(athlete.relatives)?athlete.relatives:Array.isArray(athlete.family)?athlete.family:Array.isArray(player.family)?player.family:[]).map(displayText).filter(Boolean),
-      biography:displayText(athlete.biography)||displayText(athlete.description),
+      biography:displayText(athlete.biography)||displayText(athlete.description)||profileNarrative,
       stats:Object.values(playerStats).some(value=>value!=null)?playerStats:null,
       source:Object.keys(detailedStats).length?'ESPN athlete profile + season statistics':overview.statistics?'ESPN athlete profile + season overview':'ESPN athlete profile'
     };
