@@ -411,7 +411,7 @@ assert.ok(!server.includes("'N/D'") && server.includes("date:game.date?String(ga
 assert.ok(server.includes("const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '').split(',')") && server.includes("app.use(cors({ origin(origin, callback)") && server.includes("ALLOWED_ORIGINS.includes(origin)"), 'CORS deve estar ativo e aceitar somente as origens explicitamente configuradas.');
 assert.ok(server.includes("app.set('trust proxy', 1)") && server.indexOf("app.set('trust proxy', 1)") < server.indexOf("app.use('/api/', rateLimit"), 'Rate limit precisa identificar o IP real do cliente atrás do proxy do Render.');
 
-assert.ok(worker.includes("courtside-shell-v6") && worker.includes("'/courtside-arena.svg'"), 'Service worker deve atualizar o cache e disponibilizar o fundo da arena também no modo offline.');
+assert.ok(worker.includes("courtside-shell-v7") && worker.includes("'/courtside-arena.svg'"), 'Service worker deve atualizar o cache e disponibilizar o fundo da arena também no modo offline.');
 assert.ok(manifest.includes('"sizes": "192x192"') && manifest.includes('"sizes": "512x512"') && manifest.includes('"display": "standalone"'), 'PWA deve declarar ícones e modo de instalação em tela cheia.');
 assert.ok(styles.includes('.install-guide') && styles.includes('.layout.light .panel') && styles.includes('@media(max-width:650px)'), 'Atualização visual deve preservar tema claro e estilos responsivos para instalação.');
 assert.ok(manifest.includes('"display_override"') && manifest.includes('"prefer_related_applications": false') && manifest.includes('"purpose": "maskable"'), 'Manifest deve priorizar instalação standalone e declarar ícone maskable para dispositivos Android.');
