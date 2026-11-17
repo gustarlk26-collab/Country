@@ -207,7 +207,7 @@ assert.ok(app.includes("boxGame?.status_state==='in_progress'?' · '+(boxGame?.d
 
 assert.ok(server.includes("const today = saoPauloDate(new Date().toISOString())"), 'Calendário CDN deve usar a data local de São Paulo.');
 assert.ok(server.includes("cached('nba:season-schedule'"), 'Calendário oficial da NBA deve ser armazenado em cache para reduzir chamadas externas.');
-assert.equal((server.match(/cached\('nba:season-schedule'/g)||[]).length, 3, 'Calendário NBA deve compartilhar o mesmo cache no calendário, no confronto direto e na resolução de IDs.');
+assert.equal((server.match(/cached\('nba:season-schedule'/g)||[]).length, 4, 'Calendário NBA deve compartilhar o mesmo cache no calendário, no confronto direto, na resolução de IDs e no preenchimento de placares finais.');
 assert.ok(server.includes('30 * 60 * 1000'), 'Cache do calendário alternativo deve expirar em trinta minutos.');
 assert.ok(server.includes("espn-scoreboard-day:"), 'Consultas diárias ESPN devem usar cache para reduzir chamadas repetidas.');
 assert.ok(server.includes("if (failures.length) throw new Error('Calendário ESPN incompleto ('"), 'Calendário parcial da ESPN deve acionar o calendário completo da NBA CDN.');
