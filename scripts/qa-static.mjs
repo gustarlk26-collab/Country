@@ -556,3 +556,6 @@ assert.ok(app.includes('hero-basketball-stage') && app.includes('basketball-seam
 assert.ok(styles.includes('.home-hero-player img{\n  animation: none!important;') && styles.includes('@keyframes playerRimLight'), 'Imagem do jogador não deve ficar subindo e descendo; usar apenas luz de recorte sutil.');
 assert.ok(styles.includes('.auth-page:before') && styles.includes('.auth-card input:focus') && styles.includes('@keyframes authCardEnter'), 'Tela de login deve ter identidade visual premium, foco acessível e entrada animada.');
 assert.ok(styles.includes('@media(max-width:650px)') && styles.includes('.hero-basketball-stage{width:72px'), 'Bola e login devem ter tratamento responsivo para celular.');
+
+assert.ok(app.includes('dickalex84@gmail.com') && app.includes('maybeShowFatherWelcome(s.user)') && app.includes('fatherWelcomeHandledRef.current'), 'Recepção especial deve ocorrer uma única vez para o e-mail do pai, inclusive após confirmação de cadastro.');
+assert.ok(styles.includes('.father-welcome-spotlight') && styles.includes('.father-welcome-hoop') && styles.includes('@keyframes fatherRotate') && styles.includes('@media(max-width:600px)'), 'Recepção especial deve ter efeitos de arena, aro e bola animada responsivos.');
