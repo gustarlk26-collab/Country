@@ -998,3 +998,11 @@ button:active,.feature-tile:active{transform:scale(.985)}
 .profile-picker-card .collectible-info>b{max-width:100%;overflow-wrap:anywhere;}
 .profile-picker-card .collectible-info>.secondary{margin-top:3px;}
 @media(max-width:650px){.profile-picker-card .player-card-image{height:154px;flex-basis:154px}.profile-picker-card .collectible-info{min-height:90px}}
+
+
+.profile-career-table{width:100%;overflow-x:auto;margin:12px 0 20px;border:1px solid var(--line);border-radius:12px;background:rgba(8,24,42,.35)}
+.profile-career-table table{width:100%;min-width:560px;border-collapse:collapse;font-size:13px;text-align:left}
+.profile-career-table th,.profile-career-table td{padding:11px 13px;border-bottom:1px solid var(--line);white-space:nowrap}
+.profile-career-table th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.profile-career-table tbody tr:last-child td{border-bottom:0}
+.profile-career-table tbody tr:hover{background:rgba(45,130,210,.08)}
