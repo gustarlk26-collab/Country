@@ -690,6 +690,36 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       }
       return null;
     };
+    // NBA Stats returns HEIGHT as feet-inches (for example "6-9") and
+    // WEIGHT in pounds (for example "200"). Normalize both provider formats
+    // once on the API so every player profile uses the same explicit units.
+    const formatPlayerHeight=value=>{
+      const raw=displayText(value);
+      if(!raw)return null;
+      let feet=null,inches=null;
+      const imperial=raw.match(/^(\\d+)\\s*(?:-|['′])\\s*(\\d{1,2})\\s*(?:["″]|in(?:ches?)?)?$/i);
+      if(imperial){feet=Number(imperial[1]);inches=Number(imperial[2]);}
+      else{
+        const metric=raw.match(/(\\d+(?:[.,]\\d+)?)\\s*cm\\b/i);
+        if(metric){const totalInches=Number(metric[1].replace(',','.'))/2.54;feet=Math.floor(totalInches/12);inches=Math.round(totalInches-feet*12);if(inches===12){feet++;inches=0;}}
+      }
+      if(feet==null||inches==null||inches>11)return raw;
+      const centimeters=Math.round((feet*12+inches)*2.54);
+      return feet+"'"+inches+'"'+' ('+(centimeters/100).toFixed(2).replace('.',',')+' m)';
+    };
+    const formatPlayerWeight=value=>{
+      const raw=displayText(value);
+      if(!raw)return null;
+      const numeric=raw.match(/\\d+(?:[.,]\\d+)?/);
+      if(!numeric)return raw;
+      const amount=Number(numeric[0].replace(',','.'));
+      if(!Number.isFinite(amount)||amount<=0)return raw;
+      const isKg=/kg|kilograms?/i.test(raw);
+      const pounds=isKg?amount*2.2046226218:amount;
+      const kilograms=isKg?amount:amount/2.2046226218;
+      const lbText=Number.isInteger(pounds)?String(Math.round(pounds)):pounds.toFixed(1).replace(/\\.0$/,'');
+      return lbText+' lb ('+kilograms.toFixed(1).replace('.',',')+' kg)';
+    };
     const statsBlock=overview.statistics||overview.stats?.statistics||{};
     const statLabels=statsBlock.labels||statsBlock.displayNames||[];
     const statNames=statsBlock.names||[];
@@ -764,7 +794,7 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     const profileNarrative=careerFacts.length?careerFacts:null;
     const data={
       id:player.espn_id,nba_player_id:nbaPlayerId||null,name:playerName,
-      height:displayText(nbaInfo.HEIGHT)||displayText(athlete.displayHeight||player.height),weight:displayText(nbaInfo.WEIGHT)||displayText(athlete.displayWeight||player.weight),
+      height:formatPlayerHeight(nbaInfo.HEIGHT)||formatPlayerHeight(athlete.displayHeight||player.height),weight:formatPlayerWeight(nbaInfo.WEIGHT)||formatPlayerWeight(athlete.displayWeight||player.weight),
       birth_date:displayText(nbaInfo.BIRTHDATE)||displayText(athlete.dateOfBirth||player.birth_date),age:displayText(athlete.age??player.age),
       birth_place:birthplace,origin:reportedOrigin,
       college:school,experience:displayText(nbaInfo.SEASON_EXP)||displayText(athlete.experience?.displayValue||player.experience),
