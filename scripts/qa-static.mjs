@@ -373,6 +373,10 @@ assert.ok(server.includes("score:['in','post'].includes(String(competition.statu
 
 assert.ok(server.includes("'/schedule?season=' + seasonYear + '&seasontype=2'"), 'Confrontos diretos devem solicitar explicitamente a temporada regular à ESPN, sem misturar pré-temporada ou playoffs.');
 assert.ok(server.includes("Promise.allSettled([espnTeamSchedule(team,seasonYear),espnTeamSchedule(opponent,seasonYear)])") && server.includes("if(!hasPair(merged))") && server.includes("headtohead:'+team+':'+opponent+':'+season"), 'Confrontos diretos devem tolerar falha 502/503 da ESPN e consultar o calendário oficial NBA CDN antes de falhar.');
+assert.ok(server.includes("if(hasPair(fromNba))return fromNba;") && server.includes("const hasPair=items=>") && server.includes("if(!hasPair(merged))throw new Error"), 'Confrontos diretos devem priorizar um único calendário oficial NBA CDN e usar ESPN somente como fallback.');
+assert.ok(server.includes("const winPct=validPct(r.WIN_PCT)??validPct(fallback.win_pct)??(wins!=null&&losses!=null&&wins+losses>0?wins/(wins+losses):null);"), 'Playoffs devem calcular aproveitamento a partir de vitórias e derrotas oficiais validadas quando a fonte omitir WIN_PCT.');
+assert.ok(server.includes("const staleWindow = ttl >= 60_000 ? 6 * 60 * 60 * 1000 : 0;") && server.includes("return stale.value;"), 'Falhas temporárias das fontes devem preservar o último cache válido de dados não voláteis para evitar páginas vazias.');
+
 
 assert.ok(server.includes('const validCount=value=>{const n=finiteNumberOrNull(value);return n!=null&&Number.isSafeInteger(n)&&n>=0?n:null;}') && server.includes('wins:validCount(r.WINS)??validCount(fallback.wins)') && server.includes('losses:validCount(r.LOSSES)??validCount(fallback.losses)'), 'Classificação NBA/ESPN deve rejeitar campanhas vazias, booleanas ou inválidas em vez de exibir zeros falsos.');
 
@@ -487,6 +491,8 @@ assert.ok(favoritesLoader.includes('try{') && favoritesLoader.includes('catch(er
 assert.ok(app.includes('if(session){loadSettings();loadFavorites();loadCore();}'), 'O carregamento de favoritos deve delegar o tratamento de erros ao próprio carregador protegido por sessão.');
 
 assert.ok(app.includes('const API_RESPONSE_CACHE_TTL_MS = 120000;') && app.includes('Date.now()-cached.at<API_RESPONSE_CACHE_TTL_MS'), 'Navegação entre páginas deve reaproveitar respostas recentes por dois minutos para reduzir consultas repetidas.');
+assert.ok(app.includes("includes(r.status)&&attempt<attempts-1")===false && app.includes("[502,503,504].includes(r.status)&&attempt<attempts-1"), 'A API deve repetir automaticamente erros transitórios 502/503/504 do gateway antes de mostrar falha ao usuário.');
+
 assert.ok(app.includes("api('/api/games/live',{cache:false})") && app.includes("{cache:false})"), 'O cache de navegação não pode substituir consultas explicitamente atualizadas de dados ao vivo.');
 assert.ok(app.includes('if(apiInflight.has(key))return apiInflight.get(key);'), 'Chamadas GET simultâneas para o mesmo recurso devem compartilhar a mesma requisição em andamento.');
 
