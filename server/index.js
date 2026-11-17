@@ -1231,13 +1231,15 @@ async function espnTeamSchedule(abbreviation, seasonYear) {
           const officialGames=(nbaSchedule?.leagueSchedule?.gameDates||[]).flatMap(day=>day.games||[]);
           for(const game of parsed){
             if(game.state!=='post'||game.sides.every(side=>side.score!=null))continue;
-            const espnDateOptions=new Set(game.date?[String(game.date).slice(0,10),saoPauloDate(game.date)]:[]);
+            const rawDates=game.date?[String(game.date).slice(0,10),saoPauloDate(game.date)]:[];
+            const espnDateOptions=new Set(rawDates.flatMap(value=>[-1,0,1].map(offset=>{const date=new Date(value+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+offset);return date.toISOString().slice(0,10);} )));
             const homeAbbr=game.sides.find(side=>side.homeAway==='home')?.abbreviation;
             const awayAbbr=game.sides.find(side=>side.homeAway==='away')?.abbreviation;
-            const match=officialGames.find(item=>{
+            const candidates=officialGames.filter(item=>{
               const date=item.gameDateTimeUTC?saoPauloDate(item.gameDateTimeUTC):String(item.gameDateEst||item.gameDate||'').slice(0,10);
               return espnDateOptions.has(date)&&canonicalTeamAbbr(item.homeTeam?.teamTricode||'')===homeAbbr&&canonicalTeamAbbr(item.awayTeam?.teamTricode||'')===awayAbbr&&Number(item.gameStatus)===3;
             });
+            const match=candidates.length===1?candidates[0]:candidates.find(item=>rawDates.includes(item.gameDateTimeUTC?saoPauloDate(item.gameDateTimeUTC):String(item.gameDateEst||item.gameDate||'').slice(0,10)));
             if(!match)continue;
             const home=game.sides.find(side=>side.homeAway==='home'),away=game.sides.find(side=>side.homeAway==='away');
             if(home?.score==null)home.score=finiteNumberOrNull(match.homeTeamScore);
@@ -1563,7 +1565,7 @@ app.get('/api/injuries', async (_req, res) => {
         const status = item.status;
         const rawStatus=(typeof status === 'string' ? status : status?.type?.description || status?.description || status?.name)||item.type?.description||item.details?.type||'Status não informado';
         const statusKey=String(rawStatus).toLowerCase().replace(/[_-]+/g,' ').replace(/\\s+/g,' ').trim();
-        const statusTranslations={'out':'Fora','day to day':'Dia a dia','questionable':'Questionável','doubtful':'Pouco provável','probable':'Provável','available':'Disponível','active':'Ativo','inactive':'Inativo','injured reserve':'Lista de lesionados','injury reserve':'Lista de lesionados','suspended':'Suspenso','out for season':'Fora da temporada','season ending':'Fora da temporada','game time decision':'Decisão perto do jogo','not injury related':'Não relacionado a lesão'};
+        const statusTranslations={'out':'Fora','day to day':'Dia a dia','questionable':'Questionável','doubtful':'Pouco provável','probable':'Provável','available':'Disponível','active':'Ativo','inactive':'Inativo','injured reserve':'Lista de lesionados','injury reserve':'Lista de lesionados','suspended':'Suspenso','out for season':'Fora da temporada','season ending':'Fora da temporada','game time decision':'Decisão perto do jogo','not injury related':'Não relacionado a lesão','personal reasons':'Motivos pessoais','illness':'Doença','injury':'Lesão','left ankle':'Tornozelo esquerdo','right ankle':'Tornozelo direito','left knee':'Joelho esquerdo','right knee':'Joelho direito','hamstring':'Posterior da coxa','groin':'Região da virilha','back':'Costas','foot':'Pé','hand':'Mão','wrist':'Pulso','shoulder':'Ombro','concussion protocol':'Protocolo de concussão','return to competition reconditioning':'Recondicionamento para retorno','conditioning':'Condicionamento físico','rest':'Descanso'};
         const detail = item.shortComment || item.longComment || item.details?.detail || item.details?.description || '';
         return {
           name: item.athlete?.displayName || item.athlete?.fullName || item.name || null,
@@ -1595,7 +1597,8 @@ app.get('/api/team-stats',async(_req,res)=>{
     // O game finder é um fallback pesado: só consulta a NBA se a tabela principal
     // estiver incompleta, evitando uma quarta chamada externa em carregamentos normais.
     const baseFields=['GP','W','L','PTS','REB','AST','STL','BLK','FG_PCT','FG3_PCT'];
-    const needsGameFallback=base.length!==30||base.some(row=>baseFields.some(field=>finiteNumberOrNull(row[field])==null));
+    const advancedFields=['GP','PACE','OFF_RATING','DEF_RATING','NET_RATING'];
+    const needsGameFallback=base.length!==30||base.some(row=>baseFields.some(field=>finiteNumberOrNull(row[field])==null))||advanced.length!==30||advanced.some(row=>advancedFields.some(field=>finiteNumberOrNull(row[field])==null));
     let gameRows=[];
     if(needsGameFallback){
       try{gameRows=(await cached('team-stats-gamefinder:'+season,()=>nba('leaguegamefinder',{PlayerOrTeam:'T',LeagueID:'00',Season:season,SeasonType:'Regular Season',TeamID:0,VsTeamID:0,DateFrom:'',DateTo:'',Outcome:'',Location:'',SeasonSegment:''}),2*60*1000))[0]||[];}
