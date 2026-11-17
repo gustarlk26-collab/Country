@@ -145,7 +145,7 @@ assert.ok(app.includes("selectedProfile.advanced||null"), 'Atualizações perió
 
 assert.ok(app.includes("x[propMetric]!=null&&x[propMetric]!==''&&Number.isFinite(Number(x[propMetric]))") && app.includes("Number.isFinite(v)?fmt(v):'Não disponível'") && app.includes('Nenhum atleta ou número foi estimado.'), 'Props devem listar somente jogadores com valor oficial válido para a métrica escolhida, preservar zeros reais e explicar quando não há dados.');
 assert.ok(app.includes("const fantasyScore=p=>{const values=[p?.pts,p?.reb,p?.ast,p?.stl,p?.blk,p?.turnover];if(values.some(value=>value==null||value===''||!Number.isFinite(Number(value))))return null"), 'Fantasy não pode pontuar estatísticas ausentes como zero.');
-assert.ok(app.includes('scores.length===fantasyIds.length&&scores.every(score=>score!=null)'), 'Total fantasy só pode aparecer quando todos os atletas selecionados têm dados completos.');
+assert.ok(app.includes('roster.length===fantasyIds.length&&roster.every(p=>') && app.includes("['pts','reb','ast','stl','blk','turnover'].every(k=>p[k]!=null") && app.includes('const totals=complete?roster.reduce('), 'Total fantasy e totais de pontos/rebotes/assistências só podem aparecer quando todos os atletas selecionados têm dados completos.');
 assert.ok(app.includes('].filter(column=>rows.some(row=>row[column.key]!=null))'), 'Evolução do jogador deve ocultar colunas sem dados oficiais.');
 assert.ok(app.includes('alphaAverages.filter(p=>p[statMetric]!=null'), 'Rankings estatísticos devem excluir métricas ausentes.');
 assert.ok(app.includes('averages.filter(p=>p[category.key]!=null'), 'Destaques por categoria devem excluir valores ausentes.');
