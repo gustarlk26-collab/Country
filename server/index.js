@@ -59,18 +59,29 @@ function cached(key, fn, ttl = CACHE_MS) {
   const now = Date.now();
   const hit = cache.get(key);
   if (hit && now - hit.at < ttl) {
-    // Map mantém a ordem de inserção: mover o hit para o fim implementa LRU
-    // sem ordenar centenas de entradas a cada inserção.
+    // Map mantém a ordem de inserção: mover o hit para o fim implementa LRU.
     cache.delete(key);
     cache.set(key, hit);
     return Promise.resolve(hit.value);
   }
-  if (hit) cache.delete(key);
+  // Mantém o último valor válido para recuperação caso a fonte externa falhe.
   if (pending.has(key)) return pending.get(key);
-  const request = Promise.resolve().then(fn).then(value => {
-    cache.delete(key);
-    cache.set(key, { at: Date.now(), value });
-    while (cache.size > 500) cache.delete(cache.keys().next().value);
+  let usedStaleFallback = false;
+  const request = Promise.resolve().then(fn).catch(error => {
+    const stale = cache.get(key);
+    const staleWindow = ttl >= 60_000 ? 6 * 60 * 60 * 1000 : 0;
+    if (stale && staleWindow && Date.now() - stale.at <= ttl + staleWindow) {
+      usedStaleFallback = true;
+      console.warn('Usando cache anterior após falha da fonte (' + key + '): ' + (error?.message || error));
+      return stale.value;
+    }
+    throw error;
+  }).then(value => {
+    if (!usedStaleFallback) {
+      cache.delete(key);
+      cache.set(key, { at: Date.now(), value });
+      while (cache.size > 500) cache.delete(cache.keys().next().value);
+    }
     return value;
   }).finally(() => pending.delete(key));
   pending.set(key, request);
@@ -1292,21 +1303,17 @@ app.get('/api/headtohead', async (req, res) => {
     const season = seasonFor();
     const seasonYear = Number(season.slice(0,4)) + 1;
     const schedules = await cached('headtohead:'+team+':'+opponent+':'+season,async()=>{
-      const [aResult,bResult]=await Promise.allSettled([espnTeamSchedule(team,seasonYear),espnTeamSchedule(opponent,seasonYear)]);
-      const byId=new Map();
-      for(const result of [aResult,bResult])if(result.status==='fulfilled')for(const game of result.value||[])if(game?.id)byId.set(String(game.id),game);
-      let merged=[...byId.values()];
       const hasPair=items=>items.some(game=>game.sides?.some(side=>side.abbreviation===team)&&game.sides?.some(side=>side.abbreviation===opponent));
-      // ESPN pode responder 502/503 ou retornar calendários incompletos. Em vez
-      // de falhar o endpoint inteiro, reconcilia o confronto com o calendário oficial NBA CDN.
-      if(!hasPair(merged)){
+      // A NBA CDN é a primeira fonte: um único calendário oficial substitui
+      // duas consultas ESPN independentes e reduz a latência do confronto.
+      try{
         const schedule=await cached('nba:season-schedule',async()=>{
-          const response=await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json',{headers:NBA_HEADERS,signal:AbortSignal.timeout(12000)});
+          const response=await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json',{headers:NBA_HEADERS,signal:AbortSignal.timeout(9000)});
           if(!response.ok)throw new Error('NBA CDN schedule HTTP '+response.status);
           return response.json();
         },30*60*1000);
         const official=(schedule?.leagueSchedule?.gameDates||[]).flatMap(day=>day.games||[]);
-        const fallback=official.filter(game=>Number(game.gameType)===2&&
+        const fromNba=official.filter(game=>Number(game.gameType)===2&&
           [canonicalTeamAbbr(game.homeTeam?.teamTricode||''),canonicalTeamAbbr(game.awayTeam?.teamTricode||'')].includes(team)&&
           [canonicalTeamAbbr(game.homeTeam?.teamTricode||''),canonicalTeamAbbr(game.awayTeam?.teamTricode||'')].includes(opponent)
         ).map(game=>{
@@ -1319,10 +1326,14 @@ app.get('/api/headtohead', async (req, res) => {
               {abbreviation:canonicalTeamAbbr(away.teamTricode||''),name:[away.teamCity,away.teamName].filter(Boolean).join(' '),score:stateCode>=2?finiteNumberOrNull(game.awayTeamScore):null,homeAway:'away'}
             ],venue:game.arenaName||null};
         });
-        const fallbackKeys=new Set(merged.map(game=>String(game.date||'').slice(0,10)+'|'+game.sides?.map(side=>side.abbreviation).sort().join('|')));
-        for(const game of fallback){const key=String(game.date||'').slice(0,10)+'|'+game.sides.map(side=>side.abbreviation).sort().join('|');if(!fallbackKeys.has(key))merged.push(game);}
-      }
-      if(!hasPair(merged))throw new Error('ESPN '+(aResult.status==='rejected'?aResult.reason?.message:'OK')+'; NBA CDN não retornou confrontos entre '+team+' e '+opponent+'.');
+        if(hasPair(fromNba))return fromNba;
+      }catch(nbaScheduleError){console.warn('NBA CDN head-to-head schedule indisponível:',nbaScheduleError.message);}
+      // Fallback para ESPN somente quando o calendário oficial não puder atender.
+      const [aResult,bResult]=await Promise.allSettled([espnTeamSchedule(team,seasonYear),espnTeamSchedule(opponent,seasonYear)]);
+      const byId=new Map();
+      for(const result of [aResult,bResult])if(result.status==='fulfilled')for(const game of result.value||[])if(game?.id)byId.set(String(game.id),game);
+      const merged=[...byId.values()];
+      if(!hasPair(merged))throw new Error('NBA CDN e ESPN não retornaram confrontos entre '+team+' e '+opponent+'.');
       return merged;
     },5*60*1000);
     const data = schedules.filter(game=>game.sides.some(side=>side.abbreviation===team)&&game.sides.some(side=>side.abbreviation===opponent))
@@ -1717,10 +1728,13 @@ app.get('/api/standings', async (_req, res) => {
       const rank=finiteNumberOrNull(r.PlayoffRank);
       const teamId=Object.keys(TEAM_META).find(id=>TEAM_META[id][0]===abbreviation);
       const fullName=r.TeamName||fallback.team?.full_name||meta[1];
+      const wins=validCount(r.WINS)??validCount(fallback.wins);
+      const losses=validCount(r.LOSSES)??validCount(fallback.losses);
+      // Aproveitamento é derivado somente da campanha oficial validada quando
+      // a fonte omite WIN_PCT; isso evita "Não disponível" com V/D publicados.
+      const winPct=validPct(r.WIN_PCT)??validPct(fallback.win_pct)??(wins!=null&&losses!=null&&wins+losses>0?wins/(wins+losses):null);
       return {team:{id:r.TeamID||Number(teamId),full_name:fullName,name:fullName,abbreviation,conference:r.Conference||fallback.team?.conference||meta[2]},
-        wins:validCount(r.WINS)??validCount(fallback.wins),
-        losses:validCount(r.LOSSES)??validCount(fallback.losses),
-        win_pct:validPct(r.WIN_PCT)??validPct(fallback.win_pct),
+        wins,losses,win_pct:winPct,
         playoff_rank:rank!=null&&Number.isSafeInteger(rank)&&rank>0?rank:validCount(fallback.playoff_rank)};
     }).filter(Boolean);
     res.json({data,season,source:nbaRows.length&&espnRows.length?'NBA Stats + ESPN standings':nbaRows.length?'NBA Stats':'ESPN standings fallback',updatedAt:new Date().toISOString()});
