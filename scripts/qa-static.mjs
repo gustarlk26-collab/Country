@@ -395,7 +395,10 @@ assert.ok(!server.includes("'N/D'") && server.includes("date:game.date?String(ga
 assert.ok(server.includes("const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '').split(',')") && server.includes("app.use(cors({ origin(origin, callback)") && server.includes("ALLOWED_ORIGINS.includes(origin)"), 'CORS deve estar ativo e aceitar somente as origens explicitamente configuradas.');
 assert.ok(server.includes("app.set('trust proxy', 1)") && server.indexOf("app.set('trust proxy', 1)") < server.indexOf("app.use('/api/', rateLimit"), 'Rate limit precisa identificar o IP real do cliente atrás do proxy do Render.');
 
-assert.ok(worker.includes("courtside-shell-v5") && worker.includes("'/courtside-arena.svg'"), 'Service worker deve atualizar o cache e disponibilizar o fundo da arena também no modo offline.');
+assert.ok(worker.includes("courtside-shell-v6") && worker.includes("'/courtside-arena.svg'"), 'Service worker deve atualizar o cache e disponibilizar o fundo da arena também no modo offline.');
+assert.ok(manifest.includes('"sizes": "192x192"') && manifest.includes('"sizes": "512x512"') && manifest.includes('"display": "standalone"'), 'PWA deve declarar ícones e modo de instalação em tela cheia.');
+assert.ok(app.includes("beforeinstallprompt") && app.includes("installPrompt.prompt()") && app.includes("appInstalled"), 'Cabeçalho deve oferecer instalação nativa do Courtside quando o navegador permitir.');
+assert.ok(styles.includes("COURTSIDE ARENA V2") && styles.includes("prefers-reduced-motion:reduce") && styles.includes("backdrop-filter:none!important"), 'Visual da arena deve respeitar movimento reduzido e evitar filtros pesados.');
 
 assert.ok(html.includes('rel="preconnect" href="https://fonts.googleapis.com"') && html.includes('og:title') && !styles.startsWith('@import url('), 'Fontes externas devem ter preconnect no documento e metadados de compartilhamento sem @import bloqueante no CSS.');
 assert.ok(app.includes("meta.setAttribute('content',theme==='light'?'#e9eef4':'#081426')"), 'A cor da barra do navegador deve acompanhar o tema claro/escuro selecionado.');
