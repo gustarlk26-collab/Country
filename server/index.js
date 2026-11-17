@@ -1174,7 +1174,7 @@ app.get('/api/fantasy/gamelogs',async(req,res)=>{
     if(!ids.length)return res.json({data:[],season:seasonFor(),source:'NBA Stats player game logs',updatedAt:new Date().toISOString()});
     if(ids.length>8||ids.some(id=>!/^\d{1,12}$/.test(id)))return res.status(400).json({error:'Selecione até 8 jogadores com IDs NBA válidos.'});
     const season=seasonFor();
-    const data=await Promise.all(ids.map(async id=>{
+    const loadPlayerGames=async id=>{
       const rows=(await cached('fantasy-gamelog:'+season+':'+id,()=>nba('playergamelog',{
         DateFrom:'',DateTo:'',LeagueID:'00',PlayerID:id,Season:season,SeasonType:'Regular Season'
       }),2*60*1000))[0]||[];
@@ -1185,8 +1185,12 @@ app.get('/api/fantasy/gamelogs',async(req,res)=>{
         return {game_id:String(row.Game_ID||row.GAME_ID||''),date:row.GAME_DATE||null,matchup:String(row.MATCHUP||''),result:String(row.WL||''),min:row.MIN??null,minutes:row.MIN??null,pts,reb,ast,stl,blk,turnover,
           fantasy_points:complete?Number((pts+1.2*reb+1.5*ast+3*stl+3*blk-turnover).toFixed(2)):null};
       }).filter(game=>game.game_id&&game.date).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-      return {player:{id,first_name:String(rows[0]?.PLAYER_NAME||'').split(' ').slice(0,-1).join(' '),last_name:String(rows[0]?.PLAYER_NAME||'').split(' ').slice(-1)[0]||''},games};
-    }));
+      const name=String(rows[0]?.PLAYER_NAME||'');
+      return {player:{id,first_name:name.split(' ').slice(0,-1).join(' '),last_name:name.split(' ').slice(-1)[0]||''},games};
+    };
+    // Avoid eight simultaneous NBA Stats requests when the user selects a full roster.
+    const data=[];
+    for(let offset=0;offset<ids.length;offset+=2)data.push(...await Promise.all(ids.slice(offset,offset+2).map(loadPlayerGames)));
     res.json({data,season,source:'NBA Stats playergamelog',updatedAt:new Date().toISOString(),formula:'PTS + 1.2*REB + 1.5*AST + 3*STL + 3*BLK - TOV'});
   }catch(error){res.status(error.status||503).json({error:'Resultados Fantasy por partida indisponíveis: '+error.message});}
 });
