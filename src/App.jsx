@@ -61,7 +61,7 @@ export default function App(){
   const fmt=(value,d=1)=>{if(value===null||value===undefined||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value)))return 'Não disponível';return numberFormatter(numberLocale,d).format(Number(value));};
   const pct=(value)=>{if(value===null||value===undefined||typeof value==='boolean'||String(value).trim()===''||!Number.isFinite(Number(value)))return 'Não disponível';const n=Number(value);if(n<0||n>100)return 'Não disponível';return numberFormatter(numberLocale,1).format(n>1?n:n*100)+'%';};
  useEffect(()=>{
-  if(lang==='pt'||!featureNews.length){setTranslatedNews({});return;}
+  if(!featureNews.length){setTranslatedNews({});return;}
   let active=true;
   const controller=new AbortController();
   const translateOne=async(text)=>{
