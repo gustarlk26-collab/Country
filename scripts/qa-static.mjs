@@ -260,6 +260,8 @@ assert.ok(app.includes("cache:cacheGet?fetchOptions.cache:'no-store'"), 'Atualiz
 
 assert.ok(styles.includes('@media'), 'Regras responsivas não encontradas.');
 assert.ok(app.includes('profile-hero-headshot') && app.includes('1040x760') && app.includes('decoding="async"') && app.includes('Array.isArray(playerBio.family)') && app.includes('playerBio.family.filter(relative=>relative!=null)'), 'Perfil deve validar relações da biografia antes de renderizar para evitar crash com dados incompletos.');
+assert.ok(server.includes('const displayText=value=>') && server.includes('.map(displayText).filter(Boolean)') && server.includes('biography:displayText(athlete.biography)'), 'API de biografia deve normalizar campos textuais e familiares antes de enviar dados ao React.');
+assert.ok(app.includes("typeof playerBio.biography==='string'") && app.includes("typeof relative.displayName==='string'"), 'Biografia deve renderizar somente valores textuais seguros, mesmo com payloads ESPN inesperados.');
 assert.ok(app.includes('className="player-card-image"') && styles.includes('.profile-picker-card .player-card-image img') && styles.includes('.profile-picker-card::before,.profile-picker-card::after'), 'Cards de jogadores devem isolar e centralizar as fotos sem artefatos de layout.');
 assert.ok(!app.includes("style.visibility='hidden'"), 'Falha de headshot não deve deixar espaços vazios na interface.');
 assert.ok(styles.includes('prefers-reduced-motion'), 'Preferência de movimento reduzido não respeitada.');
