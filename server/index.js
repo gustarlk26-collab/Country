@@ -701,11 +701,13 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       if(imperial){feet=Number(imperial[1]);inches=Number(imperial[2]);}
       else{
         const metric=raw.match(/(\\d+(?:[.,]\\d+)?)\\s*cm\\b/i);
+        const meters=raw.match(/(\\d+(?:[.,]\\d+)?)\\s*m(?:eters?)?\\b/i);
         if(metric){const totalInches=Number(metric[1].replace(',','.'))/2.54;feet=Math.floor(totalInches/12);inches=Math.round(totalInches-feet*12);if(inches===12){feet++;inches=0;}}
+        else if(meters){const centimeters=Number(meters[1].replace(',','.'))*100;return Number.isFinite(centimeters)&&centimeters>=120&&centimeters<=250?(centimeters/100).toFixed(2).replace('.',',')+' m':raw;}
       }
       if(feet==null||inches==null||inches>11)return raw;
       const centimeters=Math.round((feet*12+inches)*2.54);
-      return feet+"'"+inches+'"'+' ('+(centimeters/100).toFixed(2).replace('.',',')+' m)';
+      return (centimeters/100).toFixed(2).replace('.',',')+' m';
     };
     const formatPlayerWeight=value=>{
       const raw=displayText(value);
@@ -1391,12 +1393,21 @@ app.get('/api/mvp', async (_req, res) => {
       Month: '0', Period: '0', GameScope: '', PlayerExperience: '', PlayerPosition: '', StarterBench: ''
     }), 5 * 60 * 1000))[0] || [];
     const numberOrNull = value => value == null || typeof value === 'boolean' || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
-    const data = rows.map(r => ({
-      player: { id: r.PLAYER_ID, first_name: String(r.PLAYER_NAME || '').split(' ').slice(0,-1).join(' '), last_name: String(r.PLAYER_NAME || '').split(' ').slice(-1)[0] },
+    // NBA LeagueDash não inclui posição em todas as respostas. Completar com
+    // elencos ESPN por nome + franquia, sem associar apenas pelo nome.
+    let espnRoster=[];
+    try{espnRoster=await cached('espn:active-players',espnPlayers,30*60*1000);}catch(rosterError){console.warn('MVP position enrichment unavailable:',rosterError.message);}
+    const normalizeMvpName=value=>String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const data = rows.map(r => {
+      const firstName=String(r.PLAYER_NAME||'').split(' ').slice(0,-1).join(' ');
+      const lastName=String(r.PLAYER_NAME||'').split(' ').slice(-1)[0];
+      const rosterMatch=espnRoster.find(player=>normalizeMvpName(player.first_name+' '+player.last_name)===normalizeMvpName(r.PLAYER_NAME)&&canonicalTeamAbbr(player.team?.abbreviation||'')===canonicalTeamAbbr(r.TEAM_ABBREVIATION||''));
+      return {
+      player: { id: r.PLAYER_ID, first_name:firstName, last_name:lastName, position:String(r.PLAYER_POSITION||r.POSITION||rosterMatch?.position||'').trim()||null },
       team: { abbreviation: r.TEAM_ABBREVIATION },
       gp: numberOrNull(r.GP), pts: numberOrNull(r.PTS), reb: numberOrNull(r.REB), ast: numberOrNull(r.AST),
       stl: numberOrNull(r.STL), blk: numberOrNull(r.BLK), fg_pct: numberOrNull(r.FG_PCT), fg3_pct: numberOrNull(r.FG3_PCT)
-    })).filter(r => r.gp != null && r.gp >= 1 && r.pts != null).sort((a,b) => {
+    };}).filter(r => r.gp != null && r.gp >= 1 && r.pts != null).sort((a,b) => {
       const pointsOrder = b.pts - a.pts;
       if (pointsOrder) return pointsOrder;
       const nameA = `${a.player.first_name} ${a.player.last_name}`.trim();
