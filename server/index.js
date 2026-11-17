@@ -706,14 +706,21 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       def_rating:stat('DEF RTG','DRTG'),net_rating:stat('NET RTG','NETRTG'),ast_pct:stat('AST%'),
       tov_pct:stat('TOV%'),efg_pct:stat('EFG%'),ast_to:stat('AST/TO'),ast_ratio:stat('AST RATIO'),pace:stat('PACE')
     };
+    // Nunca enviar objetos ESPN em campos que a interface renderiza como texto.
+    // React #31 ocorre quando um objeto bruto chega diretamente como filho JSX.
+    const teamData=player.team&&typeof player.team==='object'?{
+      abbreviation:displayText(player.team.abbreviation),
+      full_name:displayText(player.team.displayName||player.team.name||player.team.location),
+    }:null;
+    const photoUrl=displayText(athlete.headshot?.href||player.headshot?.href||player.headshot);
     const data={
-      id:player.espn_id,name:athlete.displayName||athlete.fullName||[player.first_name,player.last_name].join(' '),
-      height:athlete.displayHeight||player.height||null,weight:athlete.displayWeight||player.weight||null,
-      birth_date:athlete.dateOfBirth||player.birth_date||null,age:athlete.age??player.age??null,
-      birth_place:athlete.birthPlace?.displayText||athlete.birthPlace?.city||player.birth_place||null,
-      college:athlete.college?.name||player.college||null,experience:athlete.experience?.displayValue||player.experience||null,
-      jersey:athlete.jersey||player.jersey||null,position:athlete.position?.displayName||player.position||null,
-      team:player.team,headshot:athlete.headshot?.href||player.headshot||null,
+      id:player.espn_id,name:displayText(athlete.displayName||athlete.fullName)||[player.first_name,player.last_name].filter(Boolean).join(' '),
+      height:displayText(athlete.displayHeight||player.height),weight:displayText(athlete.displayWeight||player.weight),
+      birth_date:displayText(athlete.dateOfBirth||player.birth_date),age:displayText(athlete.age??player.age),
+      birth_place:displayText(athlete.birthPlace||player.birth_place),
+      college:displayText(athlete.college?.name||athlete.college||player.college),experience:displayText(athlete.experience?.displayValue||player.experience),
+      jersey:displayText(athlete.jersey||player.jersey),position:displayText(athlete.position?.displayName||player.position),
+      team:teamData,headshot:photoUrl,
       family:(Array.isArray(athlete.relatives)?athlete.relatives:Array.isArray(athlete.family)?athlete.family:Array.isArray(player.family)?player.family:[]).map(displayText).filter(Boolean),
       biography:displayText(athlete.biography)||displayText(athlete.description),
       stats:Object.values(playerStats).some(value=>value!=null)?playerStats:null,
