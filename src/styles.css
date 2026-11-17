@@ -1006,3 +1006,6 @@ button:active,.feature-tile:active{transform:scale(.985)}
 .profile-career-table th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
 .profile-career-table tbody tr:last-child td{border-bottom:0}
 .profile-career-table tbody tr:hover{background:rgba(45,130,210,.08)}
+
+/* Identidade visual compacta das franquias no box score e Fantasy. */
+.boxscore-team{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}.boxscore-team img,.mini-team-logo{width:22px;height:22px;object-fit:contain;vertical-align:middle}.mini-team-logo{width:19px;height:19px;margin-right:4px}.player-cell{display:inline-flex;align-items:center;gap:8px;min-width:0}.player-cell .player-headshot{width:34px;height:34px;object-fit:contain;flex:0 0 34px}
