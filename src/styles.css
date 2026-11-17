@@ -983,3 +983,8 @@ button:active,.feature-tile:active{transform:scale(.985)}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* Player portraits: preserve the full head/shoulders and keep a consistent frame. */
+.collectible-card>img{height:176px;object-fit:contain;object-position:center top;padding:4px 12px 0;box-sizing:border-box;background:linear-gradient(180deg,rgba(5,18,33,.12),transparent);}
+.mvp-card .profile-hero-headshot{width:148px;height:176px;flex:0 0 148px;border-radius:12px;object-fit:contain;object-position:center top;background:rgba(4,15,28,.28);border:1px solid rgba(146,190,230,.22);}
+@media(max-width:650px){.collectible-card>img{height:154px}.mvp-card .profile-hero-headshot{width:104px;height:132px;flex-basis:104px}.mvp-card{gap:12px;padding:14px}.mvp-card h2{font-size:20px}}
