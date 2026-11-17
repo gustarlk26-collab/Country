@@ -1291,11 +1291,39 @@ app.get('/api/headtohead', async (req, res) => {
     }
     const season = seasonFor();
     const seasonYear = Number(season.slice(0,4)) + 1;
-    const schedules = await cached('espn-headtohead:'+team+':'+opponent+':'+season,async()=>{
-      const [a,b] = await Promise.all([espnTeamSchedule(team,seasonYear),espnTeamSchedule(opponent,seasonYear)]);
-      const byId = new Map(a.map(game=>[game.id,game]));
-      b.forEach(game=>{if(!byId.has(game.id))byId.set(game.id,game);});
-      return [...byId.values()];
+    const schedules = await cached('headtohead:'+team+':'+opponent+':'+season,async()=>{
+      const [aResult,bResult]=await Promise.allSettled([espnTeamSchedule(team,seasonYear),espnTeamSchedule(opponent,seasonYear)]);
+      const byId=new Map();
+      for(const result of [aResult,bResult])if(result.status==='fulfilled')for(const game of result.value||[])if(game?.id)byId.set(String(game.id),game);
+      let merged=[...byId.values()];
+      const hasPair=items=>items.some(game=>game.sides?.some(side=>side.abbreviation===team)&&game.sides?.some(side=>side.abbreviation===opponent));
+      // ESPN pode responder 502/503 ou retornar calendários incompletos. Em vez
+      // de falhar o endpoint inteiro, reconcilia o confronto com o calendário oficial NBA CDN.
+      if(!hasPair(merged)){
+        const schedule=await cached('nba:season-schedule',async()=>{
+          const response=await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json',{headers:NBA_HEADERS,signal:AbortSignal.timeout(12000)});
+          if(!response.ok)throw new Error('NBA CDN schedule HTTP '+response.status);
+          return response.json();
+        },30*60*1000);
+        const official=(schedule?.leagueSchedule?.gameDates||[]).flatMap(day=>day.games||[]);
+        const fallback=official.filter(game=>Number(game.gameType)===2&&
+          [canonicalTeamAbbr(game.homeTeam?.teamTricode||''),canonicalTeamAbbr(game.awayTeam?.teamTricode||'')].includes(team)&&
+          [canonicalTeamAbbr(game.homeTeam?.teamTricode||''),canonicalTeamAbbr(game.awayTeam?.teamTricode||'')].includes(opponent)
+        ).map(game=>{
+          const stateCode=Number(game.gameStatus),home=game.homeTeam||{},away=game.awayTeam||'',datetime=game.gameDateTimeUTC||'';
+          return {id:String(game.gameId),date:datetime?saoPauloDate(datetime):String(game.gameDateEst||game.gameDate||'').slice(0,10),
+            status:game.gameStatusText||(stateCode===3?'Final':stateCode===2?'Em andamento':'Agendado'),
+            state:stateCode===3?'post':stateCode===2?'in':'pre',
+            sides:[
+              {abbreviation:canonicalTeamAbbr(home.teamTricode||''),name:[home.teamCity,home.teamName].filter(Boolean).join(' '),score:stateCode>=2?finiteNumberOrNull(game.homeTeamScore):null,homeAway:'home'},
+              {abbreviation:canonicalTeamAbbr(away.teamTricode||''),name:[away.teamCity,away.teamName].filter(Boolean).join(' '),score:stateCode>=2?finiteNumberOrNull(game.awayTeamScore):null,homeAway:'away'}
+            ],venue:game.arenaName||null};
+        });
+        const fallbackKeys=new Set(merged.map(game=>String(game.date||'').slice(0,10)+'|'+game.sides?.map(side=>side.abbreviation).sort().join('|')));
+        for(const game of fallback){const key=String(game.date||'').slice(0,10)+'|'+game.sides.map(side=>side.abbreviation).sort().join('|');if(!fallbackKeys.has(key))merged.push(game);}
+      }
+      if(!hasPair(merged))throw new Error('ESPN '+(aResult.status==='rejected'?aResult.reason?.message:'OK')+'; NBA CDN não retornou confrontos entre '+team+' e '+opponent+'.');
+      return merged;
     },5*60*1000);
     const data = schedules.filter(game=>game.sides.some(side=>side.abbreviation===team)&&game.sides.some(side=>side.abbreviation===opponent))
       .map(game=>{
