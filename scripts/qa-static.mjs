@@ -505,6 +505,9 @@ assert.ok(server.includes("statusTranslations={'out':'Fora'") && server.includes
 assert.ok(app.includes('},120000);') && app.includes('const timer=window.setInterval(refreshLive,15000)'), 'Dados da página ativa devem atualizar automaticamente e o placar ao vivo deve consultar em intervalo curto.');
 assert.ok(app.includes('const totals=complete?roster.reduce(') && app.includes('Pontos médios do elenco') && app.includes('Rebotes médios'), 'Fantasy deve calcular automaticamente os totais de pontos, rebotes, assistências e pontuação do elenco quando os dados estão completos.');
 assert.ok(app.includes('className="boxscore-team"') && app.includes('mini-team-logo') && app.includes('a.espncdn.com/i/headshots/nba/players/full/'), 'Box score, análise de times e Fantasy devem mostrar escudos e usar fallback de fotos ESPN nos elencos.');
+assert.ok(app.includes("src={p.headshot||('https://a.espncdn.com/i/headshots/nba/players/full/'+(p.espn_id||p.id)+'.png')}") && app.includes("TEAM_LOGO_IDS[c.abbreviation]"), 'Rotação e estatísticas por quarto devem mostrar fotos dos atletas e escudos oficiais das franquias.');
+assert.ok(server.includes(".replace(/left ankle/gi,'tornozelo esquerdo')") && server.includes(".replace(/hamstring/gi,'posterior da coxa')"), 'Detalhes comuns dos relatórios de lesão devem ser traduzidos para português.');
+
 assert.ok(app.includes('Como ler: NET RTG = OFF RTG') && app.includes('Prioriza Net Rating oficial')===false, 'Power Ranking deve explicar o significado das métricas e o critério de ordenação.');
 
 assert.ok(server.includes("app.get('/api/fantasy/gamelogs'") && server.includes("nba('playergamelog'") && server.includes('fantasy_points:complete?Number((pts+1.2*reb+1.5*ast+3*stl+3*blk-turnover).toFixed(2)):null'), 'Fantasy deve consultar logs oficiais por atleta e calcular pontos em cada partida sem transformar dados ausentes em zero.');
