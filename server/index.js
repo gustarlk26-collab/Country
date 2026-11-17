@@ -654,6 +654,17 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     if(overviewResult.status==='fulfilled')overview=overviewResult.value;
     if(statsResult.status==='fulfilled')statsPayload=statsResult.value;
     const athlete=detail.athlete||detail;
+    const displayText=value=>{
+      if(value==null||typeof value==='boolean')return null;
+      if(typeof value==='string'||typeof value==='number')return String(value);
+      if(typeof value==='object'){
+        for(const key of ['displayText','displayName','fullName','name','text','description','city']){
+          const candidate=value[key];
+          if(typeof candidate==='string'&&candidate.trim())return candidate.trim();
+        }
+      }
+      return null;
+    };
     const statsBlock=overview.statistics||overview.stats?.statistics||{};
     const statLabels=statsBlock.labels||statsBlock.displayNames||[];
     const statNames=statsBlock.names||[];
@@ -703,8 +714,8 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       college:athlete.college?.name||player.college||null,experience:athlete.experience?.displayValue||player.experience||null,
       jersey:athlete.jersey||player.jersey||null,position:athlete.position?.displayName||player.position||null,
       team:player.team,headshot:athlete.headshot?.href||player.headshot||null,
-      family:Array.isArray(athlete.relatives)?athlete.relatives:Array.isArray(athlete.family)?athlete.family:Array.isArray(player.family)?player.family:null,
-      biography:athlete.biography||athlete.description||null,
+      family:(Array.isArray(athlete.relatives)?athlete.relatives:Array.isArray(athlete.family)?athlete.family:Array.isArray(player.family)?player.family:[]).map(displayText).filter(Boolean),
+      biography:displayText(athlete.biography)||displayText(athlete.description),
       stats:Object.values(playerStats).some(value=>value!=null)?playerStats:null,
       source:Object.keys(detailedStats).length?'ESPN athlete profile + season statistics':overview.statistics?'ESPN athlete profile + season overview':'ESPN athlete profile'
     };
