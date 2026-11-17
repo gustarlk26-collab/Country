@@ -430,7 +430,7 @@ assert.ok(!app.includes("onChange={e=>{setTeamA(e.target.value);loadTeamRoster(e
 
 
 assert.ok(app.includes("const [teamA,setTeamA]=useState('BOS'),[teamB,setTeamB]=useState('GSW')"), 'Comparadores e painéis de franquias devem inicializar teamA e teamB antes de renderizar.');
-assert.ok(styles.includes('@media(max-width:650px)') && styles.includes('.table-wrap{max-width:100%;overflow-x:auto'), 'Layout móvel deve preservar navegação e rolagem horizontal de tabelas.');
+assert.ok(styles.includes('@media(max-width:650px)') && styles.includes('.mobile-nav-categories{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))') && styles.includes('.nav-group.mobile-open{display:flex!important;flex-wrap:wrap') && styles.includes('.table-wrap{overflow:visible!important') && styles.includes('min-width:0!important;table-layout:fixed'), 'Layout móvel deve exibir categorias, abas e tabelas sem exigir arraste horizontal.');
 assert.ok(app.includes("const favoritesRequestRef=useRef(0)") && app.includes("request!==favoritesRequestRef.current||session?.user?.id!==userId") && app.includes("else{favoritesRequestRef.current++;setFavorites([]);}"), 'Favoritos devem ser isolados por sessão e respostas pendentes da conta anterior não podem reaparecer após logout ou troca de usuário.');
 
 assert.ok(app.includes("favoriteMutationRef=useRef(new Map()),favoriteSessionEpochRef=useRef(0),favoriteSessionUserRef=useRef(null)") && app.includes("syncFavoriteSession(s?.user?.id||null)") && app.includes("favoriteMutationRef.current.clear()"), 'Mutação de favoritos deve invalidar travas quando a sessão autenticada muda ou é encerrada.');
