@@ -1346,7 +1346,7 @@ app.get('/api/headtohead', async (req, res) => {
           matchup:team+' vs '+opponent,winner,points:a.score,opponent_points:b.score,
           plus_minus:a.score!=null&&b.score!=null?a.score-b.score:null,status:game.status,state:game.state,venue:game.venue};
       }).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-    res.json({data,season,source:'ESPN team schedules + NBA CDN fallback',updatedAt:new Date().toISOString()});
+    res.json({data,season,source:'NBA CDN official schedule + ESPN fallback',updatedAt:new Date().toISOString()});
   } catch(e) { res.status(503).json({error:'Confronto direto temporariamente indisponível: '+e.message}); }
 });
 async function nbaLivePlayByPlay(gameId) {
@@ -1626,8 +1626,8 @@ app.get('/api/team-stats',async(_req,res)=>{
   try{
     const season=seasonFor();
     const [baseResult,advancedResult,standingResult]=await Promise.allSettled([
-      cached('team-stats-base:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Base',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),2*60*1000),
-      cached('team-stats-advanced:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Advanced',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),2*60*1000),
+      cached('team-stats-base:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Base',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),5*60*1000),
+      cached('team-stats-advanced:'+season,()=>nba('leaguedashteamstats',{LeagueID:'00',Season:season,SeasonType:'Regular Season',PerMode:'PerGame',MeasureType:'Advanced',PaceAdjust:'N',PlusMinus:'N',Rank:'N',Month:0,Period:0,OpponentTeamID:0,Location:'',Outcome:'',SeasonSegment:'',VsConference:'',VsDivision:''}),5*60*1000),
       cached('espn:standings',espnStandings,5*60*1000)
     ]);
     const base=baseResult.status==='fulfilled'?(baseResult.value[0]||[]):[];
@@ -1635,7 +1635,7 @@ app.get('/api/team-stats',async(_req,res)=>{
     const fallback=standingResult.status==='fulfilled'?standingResult.value:[];
     let estimatedRows=[];
     if(advanced.length!==30||advanced.some(row=>['GP','PACE','OFF_RATING','DEF_RATING','NET_RATING'].some(field=>finiteNumberOrNull(row[field])==null))){
-      try{estimatedRows=(await cached('team-estimated-metrics:'+season,()=>nba('teamestimatedmetrics',{LeagueID:'00',Season:season,SeasonType:'Regular Season'}),2*60*1000))[0]||[];}
+      try{estimatedRows=(await cached('team-estimated-metrics:'+season,()=>nba('teamestimatedmetrics',{LeagueID:'00',Season:season,SeasonType:'Regular Season'}),5*60*1000))[0]||[];}
       catch(error){console.warn('NBA team estimated metrics fallback indisponível:',error.message);}
     }
     const estimatedById=new Map(estimatedRows.map(row=>[String(row.TEAM_ID),row]));
@@ -1646,7 +1646,7 @@ app.get('/api/team-stats',async(_req,res)=>{
     const needsGameFallback=base.length!==30||base.some(row=>baseFields.some(field=>finiteNumberOrNull(row[field])==null))||advanced.length!==30||advanced.some(row=>advancedFields.some(field=>finiteNumberOrNull(row[field])==null));
     let gameRows=[];
     if(needsGameFallback){
-      try{gameRows=(await cached('team-stats-gamefinder:'+season,()=>nba('leaguegamefinder',{PlayerOrTeam:'T',LeagueID:'00',Season:season,SeasonType:'Regular Season',TeamID:0,VsTeamID:0,DateFrom:'',DateTo:'',Outcome:'',Location:'',SeasonSegment:''}),2*60*1000))[0]||[];}
+      try{gameRows=(await cached('team-stats-gamefinder:'+season,()=>nba('leaguegamefinder',{PlayerOrTeam:'T',LeagueID:'00',Season:season,SeasonType:'Regular Season',TeamID:0,VsTeamID:0,DateFrom:'',DateTo:'',Outcome:'',Location:'',SeasonSegment:''}),5*60*1000))[0]||[];}
       catch(error){console.warn('Fallback game finder indisponível:',error.message);}
     }
     const gameFallback=new Map();
@@ -1706,17 +1706,56 @@ app.get('/api/team-stats',async(_req,res)=>{
       source:sources.join(' + ')||'No verified source',updatedAt:new Date().toISOString()});
   }catch(e){res.status(503).json({error:'Estatísticas dos times indisponíveis: '+e.message});}
 });
+async function nbaScheduleStandings(season=seasonFor()) {
+  const schedule=await cached('nba:season-schedule',async()=>{
+    const response=await fetch('https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json',{headers:NBA_HEADERS,signal:AbortSignal.timeout(9000)});
+    if(!response.ok)throw new Error('NBA CDN schedule HTTP '+response.status);
+    return response.json();
+  },30*60*1000);
+  const startYear=Number(String(season).slice(0,4));
+  const totals=new Map(Object.values(TEAM_META).map(meta=>[meta[0],{wins:0,losses:0,gp:0}]));
+  const games=(schedule?.leagueSchedule?.gameDates||[]).flatMap(day=>day.games||[]);
+  let finalGames=0;
+  for(const game of games){
+    if(Number(game.gameType)!==2||Number(game.gameStatus)!==3)continue;
+    const date=String(game.gameDateEst||game.gameDateTimeUTC||game.gameDate||'').slice(0,10);
+    const year=Number(date.slice(0,4)),month=Number(date.slice(5,7));
+    if(!((year===startYear&&month>=10)||(year===startYear+1&&month<=6)))continue;
+    const home=canonicalTeamAbbr(game.homeTeam?.teamTricode||''),away=canonicalTeamAbbr(game.awayTeam?.teamTricode||'');
+    const homeScore=finiteNumberOrNull(game.homeTeamScore),awayScore=finiteNumberOrNull(game.awayTeamScore);
+    if(!totals.has(home)||!totals.has(away)||homeScore==null||awayScore==null||homeScore===awayScore)continue;
+    const h=totals.get(home),a=totals.get(away);h.gp++;a.gp++;
+    if(homeScore>awayScore){h.wins++;a.losses++;}else{a.wins++;h.losses++;}
+    finalGames++;
+  }
+  if(!finalGames)throw new Error('Calendário oficial não contém partidas regulares finalizadas da temporada '+season+'.');
+  const data=Object.entries(TEAM_META).map(([id,meta])=>{
+    const record=totals.get(meta[0]);
+    return {team:{id:Number(id),abbreviation:meta[0],full_name:meta[1],name:meta[1],conference:meta[2],division:meta[3]},
+      wins:record.wins,losses:record.losses,win_pct:record.gp?record.wins/record.gp:null,playoff_rank:null};
+  });
+  for(const conference of ['East','West']){
+    const ordered=data.filter(row=>row.team.conference===conference).sort((a,b)=>(b.win_pct??-1)-(a.win_pct??-1)||b.wins-a.wins||a.losses-b.losses);
+    ordered.forEach((row,index)=>{row.playoff_rank=index+1;});
+  }
+  return data;
+}
+
 app.get('/api/standings', async (_req, res) => {
   try {
     const season=seasonFor();
     const [nbaResult,espnResult]=await Promise.allSettled([
-      cached('standings:'+season,()=>nba('leaguestandings',{LeagueID:'00',Season:season,SeasonType:'Regular Season'}),2*60*1000),
-      cached('espn:standings',espnStandings,2*60*1000)
+      cached('standings:'+season,()=>nba('leaguestandings',{LeagueID:'00',Season:season,SeasonType:'Regular Season'}),5*60*1000),
+      cached('espn:standings',espnStandings,5*60*1000)
     ]);
     const nbaRows=nbaResult.status==='fulfilled'?(nbaResult.value[0]||[]):[];
     const espnRows=espnResult.status==='fulfilled'?espnResult.value:[];
     const espnByAbbr=new Map(espnRows.map(row=>[canonicalTeamAbbr(row.team?.abbreviation),row]));
-    if(!nbaRows.length&&!espnRows.length)throw new Error('NBA Stats e ESPN não retornaram classificação.');
+    const covered=new Set([...nbaRows.map(row=>TEAM_META[Number(row.TeamID)]?.[0]||canonicalTeamAbbr(row.TeamAbbreviation||'')),...espnRows.map(row=>canonicalTeamAbbr(row.team?.abbreviation))].filter(Boolean));
+    let scheduleRows=[];
+    if(covered.size<30){try{scheduleRows=await nbaScheduleStandings(season);}catch(scheduleError){console.warn('NBA CDN standings fallback indisponível:',scheduleError.message);}}
+    const scheduleByAbbr=new Map(scheduleRows.map(row=>[row.team.abbreviation,row]));
+    if(!nbaRows.length&&!espnRows.length&&!scheduleRows.length)throw new Error('NBA Stats, ESPN e calendário oficial da NBA não retornaram classificação.');
     const validCount=value=>{const n=finiteNumberOrNull(value);return n!=null&&Number.isSafeInteger(n)&&n>=0?n:null;};
     const validPct=value=>{const n=finiteNumberOrNull(value);return n!=null&&n>=0&&n<=1?n:null;};
     const nbaByAbbr=new Map(nbaRows.map(row=>[TEAM_META[Number(row.TeamID)]?.[0]||canonicalTeamAbbr(row.TeamAbbreviation||''),row]).filter(([abbr])=>abbr));
@@ -1727,15 +1766,15 @@ app.get('/api/standings', async (_req, res) => {
       if(!Object.keys(r).length&&!fallback.team)return null;
       const rank=finiteNumberOrNull(r.PlayoffRank);
       const teamId=Object.keys(TEAM_META).find(id=>TEAM_META[id][0]===abbreviation);
-      const fullName=r.TeamName||fallback.team?.full_name||meta[1];
-      const wins=validCount(r.WINS)??validCount(fallback.wins);
-      const losses=validCount(r.LOSSES)??validCount(fallback.losses);
-      // Aproveitamento é derivado somente da campanha oficial validada quando
-      // a fonte omite WIN_PCT; isso evita "Não disponível" com V/D publicados.
-      const winPct=validPct(r.WIN_PCT)??validPct(fallback.win_pct)??(wins!=null&&losses!=null&&wins+losses>0?wins/(wins+losses):null);
-      return {team:{id:r.TeamID||Number(teamId),full_name:fullName,name:fullName,abbreviation,conference:r.Conference||fallback.team?.conference||meta[2]},
+      const scheduleFallback=scheduleByAbbr.get(abbreviation)||{};
+      const fullName=r.TeamName||fallback.team?.full_name||scheduleFallback.team?.full_name||meta[1];
+      const wins=validCount(r.WINS)??validCount(fallback.wins)??validCount(scheduleFallback.wins);
+      const losses=validCount(r.LOSSES)??validCount(fallback.losses)??validCount(scheduleFallback.losses);
+      // Aproveitamento é derivado de campanhas oficiais validadas quando a fonte omite WIN_PCT.
+      const winPct=validPct(r.WIN_PCT)??validPct(fallback.win_pct)??validPct(scheduleFallback.win_pct)??(wins!=null&&losses!=null&&wins+losses>0?wins/(wins+losses):null);
+      return {team:{id:r.TeamID||Number(teamId),full_name:fullName,name:fullName,abbreviation,conference:r.Conference||fallback.team?.conference||scheduleFallback.team?.conference||meta[2]},
         wins,losses,win_pct:winPct,
-        playoff_rank:rank!=null&&Number.isSafeInteger(rank)&&rank>0?rank:validCount(fallback.playoff_rank)};
+        playoff_rank:rank!=null&&Number.isSafeInteger(rank)&&rank>0?rank:validCount(fallback.playoff_rank)??validCount(scheduleFallback.playoff_rank)};
     }).filter(Boolean);
     res.json({data,season,source:nbaRows.length&&espnRows.length?'NBA Stats + ESPN standings':nbaRows.length?'NBA Stats':'ESPN standings fallback',updatedAt:new Date().toISOString()});
   } catch (e) { res.status(503).json({ error: 'Classificação indisponível: '+e.message }); }
