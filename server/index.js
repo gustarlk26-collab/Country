@@ -645,14 +645,17 @@ app.get('/api/players/:id/bio',async(req,res)=>{
     const player=nameMatches[0]||null;
     if(!player)return res.status(404).json({error:'Biografia não encontrada para este nome e franquia na ESPN.'});
     let detail={},overview={},statsPayload={};
-    const [detailResult,overviewResult,statsResult]=await Promise.allSettled([
+    let nbaInfo={};
+    const [detailResult,overviewResult,statsResult,nbaInfoResult]=await Promise.allSettled([
       cached('espn-athlete:'+player.espn_id,()=>espnJson('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/athletes/'+player.espn_id),24*60*60*1000),
       cached('espn-athlete-overview:'+player.espn_id,()=>espnJson('https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/'+player.espn_id+'/overview'),10*60*1000),
-      cached('espn-athlete-stats:'+player.espn_id,()=>espnJson('https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/'+player.espn_id+'/stats'),10*60*1000)
+      cached('espn-athlete-stats:'+player.espn_id,()=>espnJson('https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/'+player.espn_id+'/stats'),10*60*1000),
+      cached('nba-player-bio:'+id,async()=>((await nba('commonplayerinfo',{PlayerID:id}))[0]||[])[0]||{},24*60*60*1000)
     ]);
     if(detailResult.status==='fulfilled')detail=detailResult.value;
     if(overviewResult.status==='fulfilled')overview=overviewResult.value;
     if(statsResult.status==='fulfilled')statsPayload=statsResult.value;
+    if(nbaInfoResult.status==='fulfilled')nbaInfo=nbaInfoResult.value;
     const athlete=detail.athlete||detail;
     const displayText=value=>{
       if(value==null||typeof value==='boolean')return null;
@@ -713,13 +716,27 @@ app.get('/api/players/:id/bio',async(req,res)=>{
       full_name:displayText(player.team.displayName||player.team.name||player.team.location),
     }:null;
     const photoUrl=displayText(athlete.headshot?.href||player.headshot?.href||player.headshot);
+    const birthplaceParts=[nbaInfo.BIRTHCITY,nbaInfo.BIRTHSTATE,nbaInfo.BIRTHCOUNTRY].map(displayText).filter(Boolean);
+    const birthplace=[...new Set(birthplaceParts)].join(', ')||displayText(athlete.birthPlace||player.birth_place);
+    const draftYear=Number(nbaInfo.DRAFT_YEAR)>0?String(nbaInfo.DRAFT_YEAR):null;
+    const draftRound=Number(nbaInfo.DRAFT_ROUND)>0?String(nbaInfo.DRAFT_ROUND):null;
+    const draftPick=Number(nbaInfo.DRAFT_NUMBER)>0?String(nbaInfo.DRAFT_NUMBER):null;
+    const careerStart=Number(nbaInfo.FROM_YEAR)>0?String(nbaInfo.FROM_YEAR):null;
+    const careerEnd=Number(nbaInfo.TO_YEAR)>0?String(nbaInfo.TO_YEAR):null;
+    const school=displayText(nbaInfo.SCHOOL)||displayText(athlete.college?.name||athlete.college||player.college);
+    const draftSummary=draftYear?(draftPick&&draftRound?'Selecionado no Draft da NBA de '+draftYear+', na '+draftRound+'ª rodada, escolha '+draftPick+'.':'Selecionado no Draft da NBA de '+draftYear+'.'):'';
+    const careerSummary=[draftSummary,school?'Formação universitária: '+school+'.':'',careerStart?'Registros de carreira na NBA a partir de '+careerStart+(careerEnd&&careerEnd!==careerStart?' até '+careerEnd:'')+'.':''].filter(Boolean).join(' ');
     const data={
       id:player.espn_id,name:displayText(athlete.displayName||athlete.fullName)||[player.first_name,player.last_name].filter(Boolean).join(' '),
-      height:displayText(athlete.displayHeight||player.height),weight:displayText(athlete.displayWeight||player.weight),
-      birth_date:displayText(athlete.dateOfBirth||player.birth_date),age:displayText(athlete.age??player.age),
-      birth_place:displayText(athlete.birthPlace||player.birth_place),
-      college:displayText(athlete.college?.name||athlete.college||player.college),experience:displayText(athlete.experience?.displayValue||player.experience),
-      jersey:displayText(athlete.jersey||player.jersey),position:displayText(athlete.position?.displayName||player.position),
+      height:displayText(nbaInfo.HEIGHT)||displayText(athlete.displayHeight||player.height),weight:displayText(nbaInfo.WEIGHT)||displayText(athlete.displayWeight||player.weight),
+      birth_date:displayText(nbaInfo.BIRTHDATE)||displayText(athlete.dateOfBirth||player.birth_date),age:displayText(athlete.age??player.age),
+      birth_place:birthplace,
+      college:school,experience:displayText(nbaInfo.SEASON_EXP)||displayText(athlete.experience?.displayValue||player.experience),
+      jersey:displayText(nbaInfo.JERSEY)||displayText(athlete.jersey||player.jersey),position:displayText(nbaInfo.POSITION)||displayText(athlete.position?.displayName||player.position),
+      country:displayText(nbaInfo.COUNTRY),last_affiliation:displayText(nbaInfo.LAST_AFFILIATION),
+      career_start:careerStart,career_end:careerEnd,
+      draft:draftYear?{year:draftYear,round:draftRound,pick:draftPick,team:displayText(nbaInfo.DRAFT_TEAM_NAME)}:null,
+      career_summary:careerSummary||null,
       team:teamData,headshot:photoUrl,
       family:(Array.isArray(athlete.relatives)?athlete.relatives:Array.isArray(athlete.family)?athlete.family:Array.isArray(player.family)?player.family:[]).map(displayText).filter(Boolean),
       biography:displayText(athlete.biography)||displayText(athlete.description),
