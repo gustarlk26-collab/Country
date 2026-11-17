@@ -4,11 +4,11 @@ import App from './App.jsx';
 import './styles.css';
 
 class AppErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { failed: false }; }
-  static getDerivedStateFromError() { return { failed: true }; }
+  constructor(props) { super(props); this.state = { failed: false, message: '' }; }
+  static getDerivedStateFromError(error) { return { failed: true, message: error?.message || 'Erro de renderização não identificado.' }; }
   componentDidCatch(error) { console.error('Courtside render error:', error); }
   render() {
-    if (this.state.failed) return <main className="app-crash"><section><span>COURTSIDE FAMILY</span><h1>Não foi possível abrir esta tela</h1><p>Ocorreu um erro inesperado na interface. Seus dados salvos continuam preservados. Tente recarregar o aplicativo.</p><button onClick={() => window.location.reload()}>Recarregar aplicativo</button></section></main>;
+    if (this.state.failed) return <main className="app-crash"><section><span>COURTSIDE FAMILY</span><h1>Não foi possível abrir esta tela</h1><p>Ocorreu um erro inesperado na interface. Seus dados salvos continuam preservados. Tente recarregar o aplicativo.</p><details><summary>Detalhes técnicos para suporte</summary><pre>{this.state.message}</pre></details><button onClick={() => window.location.reload()}>Recarregar aplicativo</button></section></main>;
     return this.props.children;
   }
 }
