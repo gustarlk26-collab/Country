@@ -28,6 +28,9 @@ assert.equal(new Set(features).size, features.length, 'Há funcionalidades dupli
 const navSource = app.slice(0, app.indexOf('const featureKeys='));
 const navKeys = [...navSource.matchAll(/\['([A-Za-z][A-Za-z0-9]*)',[A-Za-z][A-Za-z0-9]*\]/g)].map(match => match[1]);
 assert.ok(navKeys.length >= 45, 'A navegação parece incompleta.');
+assert.ok(app.includes("{label:'Partidas'") && app.includes("{label:'NBA e história'") && app.includes("{label:'Ferramentas'") && app.includes('const activeNavGroup=navGroups.find'), 'A navegação deve separar partidas, história, ferramentas e contexto da página.');
+assert.ok(app.includes('nav-category-count') && app.includes('page-subtitle') && app.includes('setMobileNavGroup(group.label)'), 'Navegação deve exibir contagens, descrição da página e manter a categoria ativa.');
+assert.ok(app.includes('8 áreas') && app.includes("setPage('playoffs')") && app.includes("setPage('playerprops')"), 'A página inicial deve dar acesso às áreas de NBA e ferramentas.');
 assert.equal(new Set(navKeys).size, navKeys.length, 'Há itens duplicados na navegação.');
 for (const key of features) assert.ok(navKeys.includes(key), 'Funcionalidade fora da navegação: ' + key);
 
