@@ -30,7 +30,7 @@ const navKeys = [...navSource.matchAll(/\['([A-Za-z][A-Za-z0-9]*)',[A-Za-z][A-Za
 assert.ok(navKeys.length >= 45, 'A navegação parece incompleta.');
 assert.ok(app.includes("{label:'Partidas'") && app.includes("{label:'NBA e história'") && app.includes("{label:'Ferramentas'") && app.includes('const activeNavGroup=navGroups.find'), 'A navegação deve separar partidas, história, ferramentas e contexto da página.');
 assert.ok(app.includes('nav-category-count') && app.includes('page-subtitle') && app.includes('setMobileNavGroup(group.label)'), 'Navegação deve exibir contagens, descrição da página e manter a categoria ativa.');
-const descriptionsBlock=app.match(/const featureDescriptions=\\{([\\s\\S]*?)\\};/);
+const descriptionsBlock=app.match(/const featureDescriptions=\{([\s\S]*?)\};/);
 const describedKeys=[...((descriptionsBlock?.[1]||'').matchAll(/(?:^|,)([A-Za-z][A-Za-z0-9]*):'/g))].map(match=>match[1]);
 assert.ok(navKeys.every(key=>describedKeys.includes(key)), 'Todas as páginas navegáveis devem possuir uma descrição contextual.');
 assert.ok(app.includes('8 áreas') && app.includes("setPage('playoffs')") && app.includes("setPage('playerprops')"), 'A página inicial deve dar acesso às áreas de NBA e ferramentas.');
