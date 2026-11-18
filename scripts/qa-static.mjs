@@ -489,7 +489,7 @@ assert.ok(arena.includes('<svg') && styles.includes("url('/courtside-arena.svg')
 
 assert.ok(styles.includes('.layout{isolation:isolate}') && styles.includes('.layout:before{') && styles.includes("url('/courtside-arena.svg')"), 'Camadas ilustradas da arena devem permanecer visíveis dentro do contexto de empilhamento do aplicativo.');
 
-assert.ok(app.includes('className="home-hero"') && app.includes('NBA <em>EM TEMPO REAL</em>') && app.includes('Estatísticas completas, jogos ao vivo e tudo sobre a NBA em um só lugar.') && app.includes('/1040x760/2544.png'), 'Página inicial deve exibir o hero de NBA em tempo real com a foto oficial de LeBron James e a chamada de estatísticas completas.');
+assert.ok(app.includes('className="home-hero"') && app.includes('NBA <em>EM TEMPO REAL</em>') && app.includes('Estatísticas completas, jogos ao vivo e tudo sobre a NBA em um só lugar.') && app.includes('/520x380/2544.png'), 'Página inicial deve exibir o hero de NBA em tempo real com a foto oficial de LeBron James e a chamada de estatísticas completas.');
 assert.ok(app.includes('className="home-section-grid"') && ['Jogadores','Times','Jogos e calendário','Central ao vivo','Estatísticas','Notícias e destaques'].every(label=>app.includes(label)), 'Página inicial deve organizar as entradas principais em seis áreas claras sem remover as ferramentas existentes.');
 assert.ok(styles.includes('.home-hero{') && styles.includes('.home-section-grid{') && styles.includes('.home-hero-player img'), 'A identidade visual da página inicial deve ter hero responsivo com destaque visual do atleta.');
 
