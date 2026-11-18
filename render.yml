@@ -17,6 +17,8 @@ services:
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
         sync: false
+      - key: VITE_AUTH_REDIRECT_URL
+        value: https://courtside-family.onrender.com/
       - key: FAMILY_EMAILS
         sync: false
       - key: CORS_ORIGIN
