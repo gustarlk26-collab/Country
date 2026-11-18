@@ -329,6 +329,7 @@ assert.ok(app.includes('const filteredNavGroups=navGroups.map') && app.includes(
 assert.ok(app.includes('supabase.auth.resend({type:\'signup\'') && app.includes('emailRedirectTo:new URL(\'/\',window.location.origin).toString()') && app.includes('otp_expired'), 'Autenticação deve permitir reenviar confirmação e orientar links expirados.');
 assert.ok(app.includes('resendCooldown>0') && app.includes('setResendCooldown(60)') && app.includes('too many requests'), 'Reenvio de confirmação deve aplicar intervalo de segurança e tratar limites do provedor.');
 assert.ok(styles.includes('.nav-search{') && styles.includes('.hero-basketball,.hero-basketball-shadow{animation:none!important}') && styles.includes('@media(max-width:850px)'), 'Navegação pesquisável e hero simplificado em dispositivos móveis.');
+assert.ok(styles.includes('grid-template-columns:repeat(3,minmax(0,1fr))') && styles.includes('grid-template-columns:repeat(2,minmax(0,1fr))') && styles.includes('overflow:visible;gap:6px'), 'Categorias mobile devem caber em grade sem arraste horizontal.');
 console.log('Courtside QA estática aprovada: ' + features.length + ' funcionalidades, ' + navKeys.length + ' itens de navegação e ' + routes.length + ' rotas verificadas.');
 
 assert.ok(styles.includes('COURTSIDE ARENA ATMOSPHERE') && styles.includes('radial-gradient(ellipse at 50% 0%') && styles.includes('arenaLightSweep'), 'Fundo deve incluir geometria sutil de quadra e iluminação de arena em movimento.');
