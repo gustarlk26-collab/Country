@@ -31,6 +31,7 @@ assert.ok(navKeys.length >= 45, 'A navegação parece incompleta.');
 assert.ok(app.includes("{label:'Partidas'") && app.includes("{label:'NBA e história'") && app.includes("{label:'Ferramentas'") && app.includes('const activeNavGroup=navGroups.find'), 'A navegação deve separar partidas, história, ferramentas e contexto da página.');
 assert.ok(app.includes('nav-category-count') && app.includes('page-subtitle') && app.includes('setMobileNavGroup(group.label)'), 'Navegação deve exibir contagens, descrição da página e manter a categoria ativa.');
 assert.ok(app.includes("page==='boxscore'?navGroups.find(group=>group.label==='Partidas')") && app.includes("boxscore:'Veja o placar detalhado"), 'Box score deve preservar o contexto de navegação da categoria Partidas.');
+assert.ok(app.includes("useEffect(()=>{const group=navGroups.find(item=>item.items.some(([key])=>key===page))") && app.includes('if(group)setMobileNavGroup(group.label);},[page]);'), 'Atalhos internos devem manter a categoria mobile sincronizada com a página aberta.');
 const descriptionsBlock=app.match(/const featureDescriptions=\{([\s\S]*?)\};/);
 const describedKeys=[...((descriptionsBlock?.[1]||'').matchAll(/(?:^|,)([A-Za-z][A-Za-z0-9]*):'/g))].map(match=>match[1]);
 assert.ok(navKeys.every(key=>describedKeys.includes(key)), 'Todas as páginas navegáveis devem possuir uma descrição contextual.');
