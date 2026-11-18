@@ -1925,3 +1925,5 @@ box-shadow:inset -20px -22px 34px rgba(48,12,0,.48),inset 10px 10px 24px rgba(25
 @media(prefers-reduced-motion:reduce){
  .nav-search,.hero-basketball-stage,.hero-basketball,.hero-basketball-shadow{animation:none!important;transition:none!important}
 }
+
+@media(max-width:650px){.side-bottom{order:4}.sidebar>.brand{order:1}.nav-search{order:2}.sidebar>nav{order:3}}
